@@ -22,6 +22,8 @@
 #include "fmt.hpp"
 
 #include <cctype>
+#include <cstddef>
+
 
 const
 uint8_t*

@@ -27,6 +27,7 @@
 #include "ccb_flags.hpp"
 #include "pixel_converter.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
