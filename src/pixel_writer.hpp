@@ -161,6 +161,13 @@ public:
   }
 
   void
+  write_transparent(const uint32_t n_)
+  {
+    for(uint32_t i = 0; i < n_; i++)
+      write_rgba(0,0,0,0);
+  }
+
+  void
   write_0555(const uint16_t rgb_)
   {
     uint8_t r,g,b;

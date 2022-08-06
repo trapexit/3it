@@ -793,7 +793,7 @@ unpack_row(BitStreamReader &bs_,
         case PACK_TRANSPARENT:
           {
             count = bs_.read(6) + 1;
-            pw_.write(0,count);
+            pw_.write_transparent(count);
           }
           break;
         case PACK_PACKED:
