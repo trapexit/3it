@@ -96,20 +96,50 @@ pass0(const Bitmap        &b_,
 
 static
 void
-pass1_pack_packed(AbstractPackedImage &pi_)
+pass1_replace_alpha(AbstractPackedImage &pi_,
+                    RGB8888              transparent_)
+{
+  for(auto &pdp_list : pi_)
+    {
+      for(auto &pdp : pdp_list)
+        {
+          if(pdp.pixels[0].a == 0x00)
+            pdp.pixels[0] = transparent_;
+        }
+    }
+}
+
+static
+bool
+can_pack(PackedDataPacket &curpdp_,
+         PackedDataPacket &newpdp_)
+{
+  if(!(curpdp_.pixels[0] == newpdp_.pixels[0]))
+    return false;
+  if(newpdp_.pixels.size() < 64)
+    return true;
+  return false;
+}
+
+static
+void
+pass2_pack_packed(AbstractPackedImage &pi_)
 {
   for(auto &pdp_list : pi_)
     {
       std::vector<PackedDataPacket> newpdp_list;
 
       newpdp_list.emplace_back(pdp_list[0]);
+
       for(size_t i = 1; i < pdp_list.size(); i++)
         {
-          if((pdp_list[i].pixels[0] == newpdp_list.back().pixels[0]) &&
-             (newpdp_list.back().pixels.size() < 64))
+          PackedDataPacket &curpdp = pdp_list[i];
+          PackedDataPacket &newpdp = newpdp_list.back();
+
+          if(::can_pack(curpdp,newpdp))
             {
-              newpdp_list.back().type = PACK_PACKED;
-              newpdp_list.back().pixels.emplace_back(pdp_list[0].pixels[0]);
+              newpdp.type = PACK_PACKED;
+              newpdp.pixels.emplace_back(curpdp.pixels[0]);
             }
           else
             {
@@ -123,7 +153,27 @@ pass1_pack_packed(AbstractPackedImage &pi_)
 
 static
 void
-pass2_pack_literal(AbstractPackedImage &pi_)
+pass3_make_transparent(AbstractPackedImage &pi_,
+                       RGB8888              transparent_)
+{
+  for(auto &pdp_list : pi_)
+    {
+      for(auto &pdp : pdp_list)
+        {
+          if(!(pdp.pixels[0] == transparent_))
+            continue;
+
+          if(pdp.type == PACK_PACKED)
+            pdp.type = PACK_TRANSPARENT;
+          else if(pdp.type == PACK_LITERAL)
+            pdp.type = PACK_TRANSPARENT;
+        }
+    }
+}
+
+static
+void
+pass4_pack_literal(AbstractPackedImage &pi_)
 {
   for(auto &pdp_list : pi_)
     {
@@ -132,7 +182,7 @@ pass2_pack_literal(AbstractPackedImage &pi_)
       for(size_t i = 0; i < pdp_list.size();)
         {
           newpdp_list.emplace_back(pdp_list[i]);
-          if(pdp_list[i].type == PACK_PACKED)
+          if(pdp_list[i].type != PACK_LITERAL)
             {
               i++;
               continue;
@@ -149,23 +199,6 @@ pass2_pack_literal(AbstractPackedImage &pi_)
             }
         }
       pdp_list = newpdp_list;
-    }
-}
-
-static
-void
-pass3_pack_transparent(AbstractPackedImage &pi_,
-                       RGB8888              transparent_)
-{
-  for(auto &pdp_list : pi_)
-    {
-      for(auto &pdp : pdp_list)
-        {
-          if(pdp.pixels[0] == transparent_)
-            pdp.type = PACK_TRANSPARENT;
-          else if(pdp.pixels[0].a == 0xFF)
-            pdp.type = PACK_TRANSPARENT;
-        }
     }
 }
 
@@ -239,9 +272,10 @@ CelPacker::pack(const Bitmap            &b_,
 
 
   pass0(b_,api);
-  pass1_pack_packed(api);
-  pass2_pack_literal(api);
-  pass3_pack_transparent(api,transparent_color_);
+  pass1_replace_alpha(api,transparent_color_);
+  pass2_pack_packed(api);
+  pass3_make_transparent(api,transparent_color_);
+  pass4_pack_literal(api);
 
   api_to_bytevec(b_,api,pc_,pdat_);
 };
