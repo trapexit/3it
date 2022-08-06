@@ -36,6 +36,9 @@
 
 #include "fmt.hpp"
 
+#include <cstddef>
+
+
 static
 uint32_t
 round_up(const uint32_t number_,

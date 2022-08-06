@@ -1,8 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <array>
 #include <initializer_list>
+#include <vector>
+
+#include <cstddef>
 
 
 template<typename T>

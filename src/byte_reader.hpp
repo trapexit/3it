@@ -2,6 +2,8 @@
 
 #include "span.hpp"
 
+#include <cstddef>
+
 
 class ByteReader
 {
