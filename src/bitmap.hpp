@@ -13,7 +13,7 @@ struct Bitmap
 
   Bitmap(const int w_,
          const int h_,
-         const int n_)
+         const int n_ = 4)
   {
     reset(w_,h_,n_);
   }
@@ -21,7 +21,7 @@ struct Bitmap
   void
   reset(const int w_,
         const int h_,
-        const int n_)
+        const int n_ = 4)
   {
     w = w_;
     h = h_;

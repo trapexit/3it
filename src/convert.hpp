@@ -19,11 +19,11 @@
 #pragma once
 
 #include "bitmap.hpp"
+#include "bitmaps.hpp"
 #include "pdat.hpp"
 #include "plut.hpp"
 #include "span.hpp"
 
-#include <vector>
 
 union CelType
 {
@@ -38,32 +38,21 @@ union CelType
   uint8_t  switchable;
 };
 
-#define CODED    (1 << 7)
-#define UNCODED  (0 << 7)
-#define PACKED   (1 << 6)
-#define UNPACKED (0 << 6)
-#define LRFORM   (1 << 5)
-#define LINEAR   (0 << 5)
-#define BPP_1    1
-#define BPP_2    2
-#define BPP_4    4
-#define BPP_6    6
-#define BPP_8    8
-#define BPP_16   16
-
-
 namespace convert
 {
-  void banner_to_bitmap(cspan<uint8_t>       data,
-                        std::vector<Bitmap> &bitmaps);
-  void cel_to_bitmap(cspan<uint8_t>       data,
-                     std::vector<Bitmap> &bitmaps);
-  void anim_to_bitmap(cspan<uint8_t>       data,
-                      std::vector<Bitmap> &bitmaps);
-  void imag_to_bitmap(cspan<uint8_t>       data,
-                      std::vector<Bitmap> &bitmaps);
-  void to_bitmap(cspan<uint8_t>       data,
-                 std::vector<Bitmap> &bitmaps);
+  void banner_to_bitmap(cspan<uint8_t>  data,
+                        BitmapVec      &bitmaps);
+  void cel_to_bitmap(cspan<uint8_t>  data,
+                     BitmapVec      &bitmaps);
+  void anim_to_bitmap(cspan<uint8_t>  data,
+                      BitmapVec      &bitmaps);
+  void imag_to_bitmap(cspan<uint8_t>  data,
+                      BitmapVec      &bitmaps);
+  void nfs_shpm_to_bitmap(cspan<uint8_t>  data,
+                          BitmapVec      &bitmaps);
+
+  void to_bitmap(cspan<uint8_t>  data,
+                 BitmapVec      &bitmaps);
 
   void bitmap_to_cel(const Bitmap   &bitmap,
                      const CelType  &celtype,

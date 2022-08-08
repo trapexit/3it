@@ -8,8 +8,9 @@ CC    = $(COMPILER_PREFIX)-gcc
 CXX   = $(COMPILER_PREFIX)-g++
 STRIP = $(COMPILER_PREFIX)-strip
 
-OPT = -Os -static
+#OPT = -Os -static
 #OPT = -O0 -g -fsanitize=address -ggdb -fno-omit-frame-pointer
+OPT = -O0 -g -ggdb -fno-omit-frame-pointer
 CFLAGS = $(OPT) -Wall -MMD -MP
 CXXFLAGS = $(OPT) -Wall -std=c++17 -MMD -MP
 

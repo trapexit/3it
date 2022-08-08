@@ -157,6 +157,13 @@ public:
   }
 
 public:
+  cspan<T>
+  operator()(const size_t off_)
+  {
+    return cspan<T>(*this,off_);
+  }
+
+public:
   const T *data() const { return _data; }
   size_t   size() const { return _size; }
 
