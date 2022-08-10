@@ -25,6 +25,8 @@
 
 #include <vector>
 
+#include <cctype>
+
 // https://3dodev.com/documentation/file_formats/games/nfs
 
 /*
@@ -69,6 +71,22 @@
 #define UNCODED  0x10
 
 static
+std::string
+strip(const std::string &s_)
+{
+  std::string s;
+
+  for(const auto c : s_)
+    {
+      if(std::isspace(c))
+        continue;
+      s += c;
+    }
+
+  return s;
+}
+
+static
 void
 nfs_shpm_obj_to_bitmap(cspan<uint8_t>  obj_,
                        Bitmap         &bitmap_)
@@ -105,7 +123,7 @@ convert::nfs_shpm_to_bitmap(cspan<uint8_t>  data_,
                             BitmapVec      &bitmaps_)
 {
   ByteReader br;
-  ChunkID  obj_id;
+  char obj_id[5];
   uint32_t obj_offset;
   uint32_t obj_count;
 
@@ -116,10 +134,14 @@ convert::nfs_shpm_to_bitmap(cspan<uint8_t>  data_,
   br.seek(16);
   for(uint32_t i = 0; i < obj_count; i++)
     {
-      br.read((uint8_t*)&obj_id,4);
+      br.read(obj_id,4);
+      obj_id[4] = 0;
       br.readbe(obj_offset);
 
       bitmaps_.emplace_back();
+
+      bitmaps_.back().metadata["name"] = ::strip(std::string(obj_id));
+
       ::nfs_shpm_obj_to_bitmap(data_(obj_offset),bitmaps_.back());
     }
 }

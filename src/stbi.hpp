@@ -27,6 +27,5 @@ void     stbi_load(cPDAT   data,
                    Bitmap &bitmap);
 int      stbi_write(const Bitmap                &bitmap,
                     const std::filesystem::path &filepath,
-                    const std::string            format,
-                    const bool                   append_extension);
+                    const std::string            format);
 uint32_t stbi_identify(cPDAT data);

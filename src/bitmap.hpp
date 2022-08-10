@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <map>
+
 #include <memory>
 
 #include <cstddef>
@@ -76,8 +79,12 @@ struct Bitmap
     d.reset();
   }
 
+public:
   size_t w;
   size_t h;
   size_t n;
   std::shared_ptr<uint8_t[]> d;
+
+public:
+  std::map<std::string,std::string> metadata;
 };

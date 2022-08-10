@@ -59,22 +59,34 @@ namespace l
         for(size_t i = 0; i < bitmaps.size(); i++)
           {
             filepath = filepath_;
-            filepath += fmt::format(".{:0{}}",i,padding);
+            filepath += fmt::format("_{:0{}}",i,padding);
+            if(bitmaps[i].metadata.count("name"))
+              filepath += fmt::format("_{}",bitmaps[i].metadata.find("name")->second);
+            filepath += '.';
+            filepath += type_;
 
-            rv = stbi_write(bitmaps[i],filepath,type_,true);
+            rv = stbi_write(bitmaps[i],filepath,type_);
             if(rv)
-              fmt::print("Converted {} to {}.{}\n",filepath_,filepath,type_);
+              fmt::print("Converted {} to {}\n",filepath_,filepath);
             else
-              fmt::print("ERROR - failed to convert {} to {}.{}",filepath_,filepath,type_);
+              fmt::print("ERROR - failed writing file {}",filepath_,filepath);
           }
       }
     else
       {
-        rv = stbi_write(bitmaps[0],filepath_,type_,true);
+        fs::path filepath;
+
+        filepath  = filepath_;
+        if(bitmaps[0].metadata.count("name"))
+          filepath += fmt::format("_{}",bitmaps[0].metadata.find("name")->second);
+        filepath += '.';
+        filepath += type_;
+
+        rv = stbi_write(bitmaps[0],filepath,type_);
         if(rv)
-          fmt::print("Converted {0} to {0}.{1}\n",filepath_,type_);
+          fmt::print("Converted {} to {}\n",filepath_,filepath);
         else
-          fmt::print("ERROR - failed to convert {0} to {0}.{1}",filepath_,type_);
+          fmt::print("ERROR - failed writing file {}",filepath_,filepath);
       }
   }
 }
