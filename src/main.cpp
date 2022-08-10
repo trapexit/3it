@@ -23,8 +23,6 @@
 
 #include <locale>
 
-#include "bitstream.hpp"
-
 
 static
 std::string
@@ -289,6 +287,38 @@ generate_to_jpg_argparser(CLI::App         &app_,
                              "jpg"));
 }
 
+static
+void
+generate_to_nfs_shpm(CLI::App           &app_,
+                     Options::ToNFSSHPM &options_)
+{
+  CLI::App *subcmd;
+
+  subcmd = app_.add_subcommand("to-nfs-shpm","convert to NFS SHPM");
+  subcmd->add_option("filepath",options_.filepaths)
+    ->description("path to source image")
+    ->type_name("PATH")
+    ->check(CLI::ExistingFile)
+    ->required();
+  subcmd->add_option("-o,--output-path",options_.outputpath)
+    ->description("path to output file")
+    ->type_name("PATH");
+  subcmd->add_option("--packed",options_.packed)
+    ->description("Pack pixel data")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
+  subcmd->add_option("--transparent",options_.transparent)
+    ->description("Set packed pixel transparent color")
+    ->type_name("HEX_RGBA32")
+    ->option_text("COLOR:{black,white,magenta,cyan,0xRRGGBBAA} [magenta]")
+    ->transform(CLI::Validator(color2rgb_transform,""))
+    ->default_val("magenta")
+    ->take_last();
+
+  subcmd->callback(std::bind(SubCmd::to_nfs_shpm,
+                             std::cref(options_)));
+}
 
 static
 void
@@ -307,6 +337,7 @@ generate_argparser(CLI::App &app_,
   generate_to_bmp_argparser(app_,options_.to_image);
   generate_to_png_argparser(app_,options_.to_image);
   generate_to_jpg_argparser(app_,options_.to_image);
+  generate_to_nfs_shpm(app_,options_.to_nfs_shpm);
 }
 
 static

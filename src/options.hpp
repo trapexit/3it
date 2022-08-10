@@ -105,6 +105,14 @@ public:
     PathVec filepaths;
   };
 
+  struct ToNFSSHPM
+  {
+    PathVec  filepaths;
+    Path     outputpath;
+    bool     packed;
+    uint32_t transparent;
+  };
+
 
 public:
   Info       info;
@@ -112,4 +120,5 @@ public:
   ToCEL      to_cel;
   ToBanner   to_banner;
   ToImage    to_image;
+  ToNFSSHPM  to_nfs_shpm;
 };

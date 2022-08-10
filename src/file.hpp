@@ -18,17 +18,46 @@
 
 #pragma once
 
-#include "options.hpp"
+#include "span.hpp"
 
-namespace SubCmd
+#include <filesystem>
+
+#include <cstdio>
+
+
+class File
 {
-  void version();
-  void docs();
-  void info(const Options::Info &opts);
-  void list_chunks(const Options::ListChunks &opts);
-  void to_cel(const Options::ToCEL &opts);
-  void to_banner(const Options::ToBanner &opts);
-  void to_stb_image(const Options::ToImage &opts,
-                    const std::string      &type);
-  void to_nfs_shpm(const Options::ToNFSSHPM &opts);
-}
+public:
+  File();
+
+public:
+  void open(const std::filesystem::path &filepath, const char *mode);
+  void close();
+
+public:
+  void big_endian();
+  void little_endian();
+
+public:
+  size_t write(const void *ptr, const size_t size);
+  size_t read(void *ptr, const size_t size);
+
+public:
+  size_t write(uint8_t v);
+  size_t write(uint16_t v);
+  size_t write(uint32_t v);
+
+public:
+  size_t write(cspan<uint8_t> data);
+
+public:
+  int seek(long offset, int whence);
+
+public:
+  bool eof();
+  operator bool();
+
+private:
+  FILE *_file;
+  bool  _big_endian;
+};

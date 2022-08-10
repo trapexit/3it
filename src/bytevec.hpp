@@ -18,3 +18,5 @@ public:
     push_back(v[1]);
   }
 };
+
+typedef std::vector<ByteVec> ByteVecVec;
