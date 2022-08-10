@@ -1,8 +1,8 @@
 # 3it: 3DO Image Tool
 
 An all purpose 3DO image conversion tool. Can convert to and from JPEG, PNG,
-BMP, 3DO CEL, 3DO Banner, 3DO ANIM, and 3DO IMAG formats. Supports coded and
-uncoded, packed and unpacked, linear and lrform CELs.
+BMP, 3DO CEL, 3DO Banner, 3DO ANIM, 3DO IMAG, and NFS 3SH formats. Supports
+coded and uncoded, packed and unpacked, linear and lrform CELs.
 
 
 ## Usage
@@ -36,6 +36,7 @@ Subcommands:
 * concat-chunks
 * to IMAG
 * to ANIM
+* to NFS 3SH
 * ability to write text chunks
 
 
@@ -48,6 +49,7 @@ different ideas so the code is not entirely consistent. Will clean up as needed.
 ## Documentation
 
 * https://3dodev.com/ext/3DO/Portfolio_2.5/OnLineDoc/DevDocs/ppgfldr/ggsfldr/gpgfldr/5gpg.html
+* https://3dodev.com/documentation/file_formats/games/nfs
 
 
 ## External sites

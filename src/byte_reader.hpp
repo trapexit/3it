@@ -31,6 +31,12 @@ public:
                  data_.size());
   }
 
+  size_t
+  tell() const
+  {
+    return _idx;
+  }
+
   ByteReader&
   rewind()
   {
@@ -208,5 +214,17 @@ public:
     _idx += 4;
 
     return v;
+  }
+
+public:
+  operator cspan<uint8_t>() const
+  {
+    return cspan<uint8_t>(_data,_size,_idx);
+  }
+
+  cspan<uint8_t>
+  span() const
+  {
+    return cspan<uint8_t>(_data,_size,_idx);
   }
 };

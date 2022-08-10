@@ -38,6 +38,19 @@
 
 #include <cstddef>
 
+#define CODED    (1 << 7)
+#define UNCODED  (0 << 7)
+#define PACKED   (1 << 6)
+#define UNPACKED (0 << 6)
+#define LRFORM   (1 << 5)
+#define LINEAR   (0 << 5)
+#define BPP_1    1
+#define BPP_2    2
+#define BPP_4    4
+#define BPP_6    6
+#define BPP_8    8
+#define BPP_16   16
+
 
 static
 uint32_t
@@ -411,6 +424,9 @@ convert::to_bitmap(cspan<uint8_t>       data_,
     case FILE_ID_GIF:
       bitmaps_.emplace_back();
       stbi_load(data_,bitmaps_.back());
+      break;
+    case FILE_ID_NFS_SHPM:
+      convert::nfs_shpm_to_bitmap(data_,bitmaps_);
       break;
     default:
       throw std::runtime_error("unknown file type");
