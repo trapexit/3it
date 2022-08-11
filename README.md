@@ -26,6 +26,7 @@ Subcommands:
   to-bmp                      convert image to BMP
   to-png                      convert image to PNG
   to-jpg                      convert image to JPG
+  to-nfs-shpm                 convert image to Need for Speed SHPM
 ```
 
 
@@ -36,7 +37,6 @@ Subcommands:
 * concat-chunks
 * to IMAG
 * to ANIM
-* to NFS 3SH
 * ability to write text chunks
 
 
