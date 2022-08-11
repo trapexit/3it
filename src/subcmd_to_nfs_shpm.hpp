@@ -20,15 +20,8 @@
 
 #include "options.hpp"
 
+
 namespace SubCmd
 {
-  void version();
-  void docs();
-  void info(const Options::Info &opts);
-  void list_chunks(const Options::ListChunks &opts);
-  void to_cel(const Options::ToCEL &opts);
-  void to_banner(const Options::ToBanner &opts);
-  void to_stb_image(const Options::ToImage &opts,
-                    const std::string      &type);
   void to_nfs_shpm(const Options::ToNFSSHPM &opts);
 }
