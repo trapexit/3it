@@ -294,14 +294,14 @@ generate_to_nfs_shpm(CLI::App           &app_,
 {
   CLI::App *subcmd;
 
-  subcmd = app_.add_subcommand("to-nfs-shpm","convert to NFS SHPM");
+  subcmd = app_.add_subcommand("to-nfs-shpm","convert image to NFS SHPM");
   subcmd->add_option("filepath",options_.filepaths)
     ->description("path to source image")
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->required();
   subcmd->add_option("-o,--output-path",options_.outputpath)
-    ->description("path to output file")
+    ->description("Path to output file")
     ->type_name("PATH");
   subcmd->add_option("--packed",options_.packed)
     ->description("Pack pixel data")
