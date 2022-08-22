@@ -68,9 +68,9 @@ namespace l
 
             rv = stbi_write(bitmaps[i],filepath,type_);
             if(rv)
-              fmt::print(" * {}\n",filepath);
+              fmt::print(" - {}\n",filepath);
             else
-              fmt::print(" * ERROR - failed writing file {}",filepath);
+              fmt::print(" - ERROR - failed writing file {}",filepath);
           }
       }
     else
@@ -78,20 +78,80 @@ namespace l
         fs::path filepath;
 
         filepath  = filepath_;
-        if(bitmaps[0].metadata.count("name"))
-          filepath += fmt::format("_{}",bitmaps[0].metadata.find("name")->second);
+        if(bitmaps[0].has("name"))
+          filepath += fmt::format("_{}",bitmaps[0].name());
         filepath += '.';
         filepath += type_;
 
         rv = stbi_write(bitmaps[0],filepath,type_);
         if(rv)
-          fmt::print("Converted {} to {}\n",filepath_,filepath);
+          fmt::print(" - {}\n",filepath);
         else
-          fmt::print("ERROR - failed writing file {}",filepath_,filepath);
+          fmt::print(" - ERROR - failed writing file {}",filepath);
+      }
+  }
+
+  static
+  bool
+  same_extension(const fs::path         &filepath_,
+                 const Options::ToImage &opts_,
+                 const std::string      &type_)
+  {
+    if(opts_.ignore_target_ext == false)
+      return false;
+    if(filepath_.has_extension() == false)
+      return false;
+
+    std::string type;
+
+    type = '.' + type_;
+
+    return (filepath_.extension() == type);
+  }
+
+  static
+  void
+  handle_file(const fs::path         &filepath_,
+              const Options::ToImage &opts_,
+              const std::string      &type_)
+  {
+    fmt::print("{}:\n",filepath_);
+
+    if(l::same_extension(filepath_,opts_,type_))
+      {
+        fmt::print(" - WARNING - skipping file with target extension\n");
+        return;
+      }
+
+    try
+      {
+        l::to_stb_image(filepath_,type_);
+      }
+    catch(const std::system_error &e_)
+      {
+        fmt::print(" - ERROR - {} ({})\n",e_.what(),e_.code().message());
+      }
+    catch(const std::runtime_error &e_)
+      {
+        fmt::print(" - ERROR - {}\n",e_.what());
+      }
+  }
+
+  static
+  void
+  handle_dir(const fs::path         &dirpath_,
+             const Options::ToImage &opts_,
+             const std::string      &type_)
+  {
+    for(const fs::directory_entry &de : fs::recursive_directory_iterator(dirpath_))
+      {
+        if(!de.is_regular_file())
+          continue;
+
+        l::handle_file(de.path(),opts_,type_);
       }
   }
 }
-
 
 namespace SubCmd
 {
@@ -101,18 +161,12 @@ namespace SubCmd
   {
     for(const auto &filepath : opts_.filepaths)
       {
-        try
-          {
-            l::to_stb_image(filepath,type_);
-          }
-        catch(const std::system_error &e_)
-          {
-            fmt::print("ERROR - {} ({}): {}\n",e_.what(),e_.code().message(),filepath);
-          }
-        catch(const std::runtime_error &e_)
-          {
-            fmt::print("ERROR - {}: {}\n",e_.what(),filepath);
-          }
+        fs::directory_entry de(filepath);
+
+        if(de.is_regular_file())
+          l::handle_file(de.path(),opts_,type_);
+        else if(de.is_directory())
+          l::handle_dir(de.path(),opts_,type_);
       }
   }
 }

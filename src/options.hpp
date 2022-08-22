@@ -93,16 +93,19 @@ public:
     uint32_t  transparent;
     CCBFlags  ccb_flags;
     Pre0Flags pre0_flags;
+    bool      ignore_target_ext;
   };
 
   struct ToBanner
   {
     PathVec filepaths;
+    bool    ignore_target_ext;
   };
 
   struct ToImage
   {
     PathVec filepaths;
+    bool    ignore_target_ext;
   };
 
   struct ToNFSSHPM

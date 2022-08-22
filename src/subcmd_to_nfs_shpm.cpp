@@ -106,15 +106,7 @@ SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
   ByteVecVec pdats;
 
   for(const auto &filepath : opts_.filepaths)
-    {
-      ByteVec data;
-
-      ReadFile::read(filepath,data);
-      if(data.empty())
-        throw fmt::exception("file empty: {}",filepath);
-
-      convert::to_bitmap(data,bitmaps);
-    }
+    convert::to_bitmap(filepath,bitmaps);
 
   for(const auto &bitmap : bitmaps)
     {
@@ -133,11 +125,8 @@ SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
       outputpath += ".3sh";
     }
 
+  fmt::print("{}:\n",outputpath);
   l::write_file(bitmaps,pdats,opts_.packed,outputpath);
-
-  fmt::print("Converted [");
   for(const auto &filepath : opts_.filepaths)
-    fmt::print("{},",filepath);
-  fmt::print("\b] to {}\n",outputpath);
-
+    fmt::print(" - {}\n",filepath);
 }

@@ -176,7 +176,7 @@ generate_to_cel_argparser(CLI::App       &app_,
   subcmd->add_option("filepaths",options_.filepaths)
     ->description("path to image")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
   subcmd->add_option("-b,--bpp",options_.bpp)
     ->description("Bits per pixel")
@@ -205,6 +205,8 @@ generate_to_cel_argparser(CLI::App       &app_,
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();
+  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension");
   generate_ccb_flag_argparser(subcmd,options_.ccb_flags);
   generate_pre0_flag_argparser(subcmd,options_.pre0_flags);
 
@@ -225,6 +227,8 @@ generate_to_banner_argparser(CLI::App          &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->required();
+  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension");
 
   subcmd->callback(std::bind(SubCmd::to_banner,
                              std::cref(options_)));
@@ -241,8 +245,10 @@ generate_to_bmp_argparser(CLI::App         &app_,
   subcmd->add_option("filepath",options_.filepaths)
     ->description("path to source image")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension");
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -260,8 +266,10 @@ generate_to_png_argparser(CLI::App         &app_,
   subcmd->add_option("filepath",options_.filepaths)
     ->description("path to source image")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension");
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -279,8 +287,10 @@ generate_to_jpg_argparser(CLI::App         &app_,
   subcmd->add_option("filepath",options_.filepaths)
     ->description("path to source image")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension");
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
