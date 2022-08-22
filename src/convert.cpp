@@ -462,7 +462,7 @@ convert::to_bitmap(const fs::path &filepath_,
 
   for(auto &bitmap : bitmaps_)
     {
-      bitmap.set("filename",filepath_.filename().stem());
+      bitmap.set("filename",filepath_.filename().stem().string());
     }
 }
 
