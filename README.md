@@ -1,8 +1,8 @@
 # 3it: 3DO Image Tool
 
 An all purpose 3DO image conversion tool. Can convert to and from JPEG, PNG,
-BMP, 3DO CEL, 3DO Banner, 3DO ANIM, 3DO IMAG, and NFS 3SH formats. Supports
-coded and uncoded, packed and unpacked, linear and lrform CELs.
+BMP, 3DO CEL, 3DO Banner, 3DO ANIM, 3DO IMAG, NFS 3SH, and NFS wwww formats.
+Supports coded and uncoded, packed and unpacked, linear and lrform CELs.
 
 
 ## Usage
@@ -27,7 +27,13 @@ Subcommands:
   to-png                      convert image to PNG
   to-jpg                      convert image to JPG
   to-nfs-shpm                 convert image to Need for Speed SHPM
+
+$ 3it to-cel --help
+...
 ```
+
+All subcommands have their own help and arguments. Use `--help` or
+`--help-all` to see all available options.
 
 
 ## TODO
@@ -39,6 +45,7 @@ Subcommands:
 * to ANIM
 * ability to write text chunks
 * figure out NFS HSPT chunk
+* ability to write NFS wwww files? May deserve its own tool.
 
 
 ## Notes
