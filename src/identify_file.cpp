@@ -42,6 +42,7 @@ IdentifyFile::identify(cspan<uint8_t> data_)
     case FILE_ID_3DO_IMAGE:
     case FILE_ID_3DO_ANIM:
     case FILE_ID_NFS_SHPM:
+    case FILE_ID_NFS_WWWW:
       return type;
     default:
       break;

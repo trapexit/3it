@@ -41,7 +41,7 @@ public:
         const size_t   idx_ = 0)
   {
     _data = data_;
-    _size = size_;
+    _size = size_ * 8;
     _idx  = idx_;
   }
 
@@ -105,6 +105,12 @@ public:
   {
     if(_idx & 0x3F)
       skip(0x40 - (_idx & 0x3F));
+  }
+
+  size_t
+  size() const
+  {
+    return _size;
   }
 
   size_t

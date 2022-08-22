@@ -53,16 +53,11 @@ namespace l
   to_banner(const fs::path &filepath_)
   {
     ByteVec pdat;
-    ByteVec data;
-    std::vector<Bitmap> bitmaps;
+    BitmapVec bitmaps;
 
-    ReadFile::read(filepath_,data);
-    if(data.empty())
-      throw fmt::exception("file empty: {}",filepath_);
-
-    convert::to_bitmap(data,bitmaps);
+    convert::to_bitmap(filepath_,bitmaps);
     if(bitmaps.empty() || !bitmaps.front())
-      throw fmt::exception("failed to convert: {}",filepath_);
+      throw fmt::exception("failed to convert");
 
     convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmaps.front(),pdat);
 
@@ -74,7 +69,61 @@ namespace l
 
         WriteFile::banner(filepath,bitmaps.front().w,bitmaps.front().h,pdat);
 
-        fmt::print("Converted {} to {}\n",filepath_,filepath);
+        fmt::print(" - {}\n",filepath);
+      }
+  }
+
+  static
+  bool
+  same_extension(const fs::path          &filepath_,
+                 const Options::ToBanner &opts_)
+  {
+    if(opts_.ignore_target_ext == false)
+      return false;
+    if(filepath_.has_extension() == false)
+      return false;
+
+    return (filepath_.extension() == ".banner");
+  }
+
+  static
+  void
+  handle_file(const fs::path          &filepath_,
+              const Options::ToBanner &opts_)
+  {
+    fmt::print("{}:\n",filepath_);
+
+    if(l::same_extension(filepath_,opts_))
+      {
+        fmt::print(" - WARNING - skipping file with target extension\n");
+        return;
+      }
+
+    try
+      {
+        l::to_banner(filepath_);
+      }
+    catch(const std::system_error &e_)
+      {
+        fmt::print(" - ERROR - {} ({})\n",e_.what(),e_.code().message());
+      }
+    catch(const std::runtime_error &e_)
+      {
+        fmt::print(" - ERROR - {}\n",e_.what());
+      }
+  }
+
+  static
+  void
+  handle_dir(const fs::path          &dirpath_,
+             const Options::ToBanner &opts_)
+  {
+    for(const fs::directory_entry &de : fs::recursive_directory_iterator(dirpath_))
+      {
+        if(!de.is_regular_file())
+          continue;
+
+        l::handle_file(de.path(),opts_);
       }
   }
 }
@@ -86,18 +135,12 @@ namespace SubCmd
   {
     for(const auto &filepath : opts_.filepaths)
       {
-        try
-          {
-            l::to_banner(filepath);
-          }
-        catch(const std::system_error &e_)
-          {
-            fmt::print("ERROR - {} ({})\n",e_.what(),e_.code().message());
-          }
-        catch(const std::runtime_error &e_)
-          {
-            fmt::print("ERROR - {}\n",e_.what());
-          }
+        fs::directory_entry de(filepath);
+
+        if(de.is_regular_file())
+          l::handle_file(de.path(),opts_);
+        else if(de.is_directory())
+          l::handle_dir(de.path(),opts_);
       }
   }
 }

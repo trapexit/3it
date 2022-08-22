@@ -32,11 +32,15 @@
 #include "pixel_converter.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_writer.hpp"
+#include "read_file.hpp"
 #include "video_image.hpp"
 
 #include "fmt.hpp"
 
 #include <cstddef>
+
+namespace fs = std::filesystem;
+
 
 #define CODED    (1 << 7)
 #define UNCODED  (0 << 7)
@@ -232,24 +236,32 @@ convert::cel_to_bitmap(cspan<uint8_t>       data_,
       switch(chunk.id())
         {
         case CHUNK_CCB:
-          if(ccc && pdat)
-            {
-              bitmaps_.emplace_back();
-              ::to_bitmap(ccc,pdat,plut,bitmaps_.back());
-            }
+          {
+            if(ccc && pdat)
+              {
+                bitmaps_.emplace_back();
+                ::to_bitmap(ccc,pdat,plut,bitmaps_.back());
+              }
 
-          ccc = chunk;
-          pdat = cPDAT();
-          plut = PLUT();
+            ccc = chunk;
+            pdat = cPDAT();
+            plut = PLUT();
+          }
           break;
         case CHUNK_PDAT:
-          if(ccc && pdat)
-            {
-              bitmaps_.emplace_back();
-              ::to_bitmap(ccc,pdat,plut,bitmaps_.back());
-            }
+          {
+            uint32_t offset;
 
-          pdat = cPDAT(chunk.data(),chunk.data_size());
+            if(ccc && pdat)
+              {
+                bitmaps_.emplace_back();
+                ::to_bitmap(ccc,pdat,plut,bitmaps_.back());
+              }
+
+            offset = (ccc.ccbpre() ? 0 : (ccc.packed() ? 4 : 8));
+
+            pdat = cPDAT(chunk.data(),chunk.data_size()-offset,offset);
+          }
           break;
         case CHUNK_PLUT:
           plut = chunk;
@@ -271,7 +283,7 @@ convert::cel_to_bitmap(cspan<uint8_t>       data_,
           //fmt::print("Credits: {}\n",(const char*)chunk.data());
           break;
         default:
-          //fmt::print("WARNING - unknown chunk ID: {}\n",chunk.idstr());
+          fmt::print("WARNING - unknown chunk ID: {}\n",chunk.idstr());
           break;
         }
     }
@@ -398,8 +410,8 @@ convert::imag_to_bitmap(cspan<uint8_t>       data_,
 }
 
 void
-convert::to_bitmap(cspan<uint8_t>       data_,
-                   std::vector<Bitmap> &bitmaps_)
+convert::to_bitmap(cspan<uint8_t>  data_,
+                   BitmapVec      &bitmaps_)
 {
   uint32_t type;
 
@@ -428,8 +440,29 @@ convert::to_bitmap(cspan<uint8_t>       data_,
     case FILE_ID_NFS_SHPM:
       convert::nfs_shpm_to_bitmap(data_,bitmaps_);
       break;
+    case FILE_ID_NFS_WWWW:
+      convert::nfs_wwww_to_bitmap(data_,bitmaps_);
+      break;
     default:
-      throw std::runtime_error("unknown file type");
+      throw std::runtime_error("unknown image type");
+    }
+}
+
+void
+convert::to_bitmap(const fs::path &filepath_,
+                   BitmapVec      &bitmaps_)
+{
+  ByteVec data;
+
+  ReadFile::read(filepath_,data);
+  if(data.empty())
+    throw fmt::exception("file empty: {}",filepath_);
+
+  convert::to_bitmap(data,bitmaps_);
+
+  for(auto &bitmap : bitmaps_)
+    {
+      bitmap.set("filename",filepath_.filename().stem());
     }
 }
 
@@ -907,6 +940,9 @@ coded_packed_linear_to_bitmap(const uint32_t  bpp_,
   pw.reset(bitmap_,plut_,pluta_,bpp_);
   for(size_t y = 0; y < bitmap_.h; y++)
     {
+      if((offset << 3) >= bs.size())
+        throw fmt::exception("attempted out of bound read");
+
       bs.seek(offset<<3);
       pw.move_y(y);
 

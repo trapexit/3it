@@ -85,6 +85,18 @@ public:
   size_t n;
   std::shared_ptr<uint8_t[]> d;
 
+private:
+  std::map<std::string,std::string> _metadata;
+
 public:
-  std::map<std::string,std::string> metadata;
+  void set(const std::string &key,
+           const std::string &val);
+
+public:
+  bool has(const std::string &key) const;
+  std::string get(const std::string &key,
+                  const std::string &default_ = {}) const;
+
+  std::string name(const std::string &default_ = {}) const;
+  std::string name_or_guess() const;
 };

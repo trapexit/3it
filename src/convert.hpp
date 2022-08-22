@@ -24,6 +24,8 @@
 #include "plut.hpp"
 #include "span.hpp"
 
+#include <filesystem>
+
 
 union CelType
 {
@@ -50,9 +52,13 @@ namespace convert
                       BitmapVec      &bitmaps);
   void nfs_shpm_to_bitmap(cspan<uint8_t>  data,
                           BitmapVec      &bitmaps);
+  void nfs_wwww_to_bitmap(cspan<uint8_t>  data,
+                          BitmapVec      &bitmaps);
 
   void to_bitmap(cspan<uint8_t>  data,
                  BitmapVec      &bitmaps);
+  void to_bitmap(const std::filesystem::path &filepath,
+                 BitmapVec                   &bitmaps);
 
   void bitmap_to_cel(const Bitmap   &bitmap,
                      const CelType  &celtype,
