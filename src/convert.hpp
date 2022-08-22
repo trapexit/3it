@@ -50,6 +50,8 @@ namespace convert
                       BitmapVec      &bitmaps);
   void nfs_shpm_to_bitmap(cspan<uint8_t>  data,
                           BitmapVec      &bitmaps);
+  void nfs_wwww_to_bitmap(cspan<uint8_t>  data,
+                          BitmapVec      &bitmaps);
 
   void to_bitmap(cspan<uint8_t>  data,
                  BitmapVec      &bitmaps);

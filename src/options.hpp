@@ -113,7 +113,6 @@ public:
     uint32_t transparent;
   };
 
-
 public:
   Info       info;
   ListChunks list_chunks;

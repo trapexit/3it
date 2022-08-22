@@ -38,6 +38,7 @@ Subcommands:
 * to IMAG
 * to ANIM
 * ability to write text chunks
+* figure out NFS HSPT chunk
 
 
 ## Notes

@@ -40,15 +40,15 @@ namespace l
   {
     int rv;
     ByteVec data;
-    std::vector<Bitmap> bitmaps;
+    BitmapVec bitmaps;
 
     ReadFile::read(filepath_,data);
     if(data.empty())
-      throw fmt::exception("file empty: {}",filepath_);
+      throw fmt::exception("file empty");
 
     convert::to_bitmap(data,bitmaps);
     if(bitmaps.empty())
-      throw fmt::exception("failed to convert: {}",filepath_);
+      throw fmt::exception("failed to convert");
 
     if(bitmaps.size() > 1)
       {
@@ -60,16 +60,17 @@ namespace l
           {
             filepath = filepath_;
             filepath += fmt::format("_{:0{}}",i,padding);
-            if(bitmaps[i].metadata.count("name"))
-              filepath += fmt::format("_{}",bitmaps[i].metadata.find("name")->second);
+
+            if(bitmaps[i].has("name"))
+              filepath += fmt::format("_{}",bitmaps[i].name());
             filepath += '.';
             filepath += type_;
 
             rv = stbi_write(bitmaps[i],filepath,type_);
             if(rv)
-              fmt::print("Converted {} to {}\n",filepath_,filepath);
+              fmt::print(" * {}\n",filepath);
             else
-              fmt::print("ERROR - failed writing file {}",filepath_,filepath);
+              fmt::print(" * ERROR - failed writing file {}",filepath);
           }
       }
     else

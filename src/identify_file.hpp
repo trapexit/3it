@@ -42,6 +42,7 @@
 #define FILE_ID_HDR        STBI_FILE_TYPE_HDR
 #define FILE_ID_TGA        STBI_FILE_TYPE_TGA
 #define FILE_ID_NFS_SHPM   CHAR4LITERAL('S','H','P','M')
+#define FILE_ID_NFS_WWWW   CHAR4LITERAL('w','w','w','w')
 
 
 namespace IdentifyFile

@@ -19,6 +19,7 @@
 #include "convert.hpp"
 
 #include "byte_reader.hpp"
+#include "char4literal.hpp"
 #include "chunkid.hpp"
 
 #include "fmt.hpp"
@@ -45,77 +46,114 @@
 
   0x10   | 4              | ASCII identifier
   0x14   | 4              | offset in bytes from beginning of file to
-                            object
+  object
 
   Object header
   0x00   | 1              | type
-                            bit 7: packed?
-                            bit 6: ???
-                            bit 5: ???
-                            bit 4: uncoded?
-                            bit 3: ???
-                            bit 2-0: CEL BPP? (1->1,2->2,3->4,4->6,5->8,6->16)
-  0x01   | 1              | 0x00 ???
-  0x02   | 1              | 0x00 ???
-  0x03   | 1              | 0x00 ???
+  bit 7: packed?
+  bit 6: ???
+  bit 5: ???
+  bit 4: uncoded?
+  bit 3: ???
+  bit 2-0: CEL BPP? (1->1,2->2,3->4,4->6,5->8,6->16)
+  0x01   | 3              | plut offset (signed 24bit int)
   0x04   | 2              | width in pixels
   0x06   | 2              | height in pixels
   0x08   | 4              | 0x00000000 ???
   0x0C   | 4              | 0x00000000 ???
   0x10   | variable       | pixel data in 3DO CEL file format
- */
+*/
 
-#define BPP_16   0x6
+#define BPP_4    0x03
+#define BPP_6    0x04
+#define BPP_8    0x05
+#define BPP_16   0x06
 #define PACKED   0x80
 #define UNPACKED 0x00
+#define CODED    0x00
 #define UNCODED  0x10
 
-static
-std::string
-strip(const std::string &s_)
+namespace l
 {
-  std::string s;
+  static
+  std::string
+  strip(const char *s_)
+  {
+    std::string s;
 
-  for(const auto c : s_)
-    {
-      if(std::isspace(c))
-        continue;
-      s += c;
-    }
+    for(; *s_; s_++)
+      {
+        if(std::isspace(*s_))
+          continue;
+        s += *s_;
+      }
 
-  return s;
-}
+    return s;
+  }
 
-static
-void
-nfs_shpm_obj_to_bitmap(cspan<uint8_t>  obj_,
-                       Bitmap         &bitmap_)
-{
-  uint32_t w;
-  uint32_t h;
-  uint32_t type;
-  ByteReader br;
+  static
+  void
+  nfs_shpm_obj_to_bitmap(cspan<uint8_t>  data_,
+                         size_t          obj_offset_,
+                         Bitmap         &bitmap_)
+  {
+    uint32_t w;
+    uint32_t h;
+    uint8_t  type;
+    ByteReader br;
+    PLUT plut;
+    int32_t plut_offset;
 
-  br.reset(obj_);
+    br.reset(data_);
+    br.seek(obj_offset_);
 
-  type = br.u8();
-  br.skip(3);
-  w = br.u16be();
-  h = br.u16be();
-  br.skip(8);
+    type = br.u8();
+    plut_offset = br.i24be();
+    w = br.u16be();
+    h = br.u16be();
+    br.skip(8);
 
-  bitmap_.reset(w,h);
-  switch(type)
-    {
-    case (PACKED|UNCODED|BPP_16):
-      convert::uncoded_packed_linear_16bpp_to_bitmap(br,bitmap_);
-      break;
-    case (UNPACKED|UNCODED|BPP_16):
-      convert::uncoded_unpacked_linear_16bpp_to_bitmap(br,bitmap_);
-      break;
-    default:
-      throw fmt::exception("unknown NFS SHPM type: {:x}",type);
-    }
+    if(!(type & UNCODED))
+      {
+        size_t cur_off;
+
+        cur_off = br.tell();
+        br.seek(cur_off + plut_offset);
+        for(size_t i = 0; i < plut.size(); i++)
+          plut[i] = br.u16be();
+        br.seek(cur_off);
+      }
+
+    bitmap_.reset(w,h);
+    switch(type)
+      {
+      case (CODED|PACKED|BPP_4):
+        convert::coded_packed_linear_4bpp_to_bitmap(br,plut,0,bitmap_);
+        break;
+      case (CODED|PACKED|BPP_6):
+        convert::coded_packed_linear_6bpp_to_bitmap(br,plut,0,bitmap_);
+        break;
+      case (CODED|UNPACKED|BPP_6):
+        convert::coded_unpacked_linear_6bpp_to_bitmap(br,plut,0,bitmap_);
+        break;
+      case (CODED|PACKED|BPP_8):
+        convert::coded_packed_linear_8bpp_to_bitmap(br,plut,0,bitmap_);
+        break;
+      case (CODED|UNPACKED|BPP_8):
+        convert::coded_unpacked_linear_8bpp_to_bitmap(br,plut,0,bitmap_);
+        break;
+      case (PACKED|UNCODED|BPP_16):
+        convert::uncoded_packed_linear_16bpp_to_bitmap(br,bitmap_);
+        break;
+      case (UNPACKED|UNCODED|BPP_16):
+        convert::uncoded_unpacked_linear_16bpp_to_bitmap(br,bitmap_);
+        break;
+      default:
+        fmt::print(" * WARNING - unknown NFS SHPM type: 0x{:02x}; offset: {}\n",
+                   type,
+                   data_.off() + obj_offset_);
+      }
+  }
 }
 
 void
@@ -124,8 +162,8 @@ convert::nfs_shpm_to_bitmap(cspan<uint8_t>  data_,
 {
   ByteReader br;
   char obj_id[5];
-  uint32_t obj_offset;
   uint32_t obj_count;
+  uint32_t obj_offset;
 
   br.reset(data_);
 
@@ -134,14 +172,27 @@ convert::nfs_shpm_to_bitmap(cspan<uint8_t>  data_,
   br.seek(16);
   for(uint32_t i = 0; i < obj_count; i++)
     {
+      Bitmap bitmap;
+
       br.read(obj_id,4);
       obj_id[4] = 0;
       br.readbe(obj_offset);
 
-      bitmaps_.emplace_back();
+      switch(CHAR4LITERAL(obj_id[0],obj_id[1],obj_id[2],obj_id[3]))
+        {
+        case CHAR4LITERAL('p','l','t','0'):
+        case CHAR4LITERAL('p','l','t','1'):
+        case CHAR4LITERAL('p','l','t','2'):
+        case CHAR4LITERAL('p','l','t','3'):
+        case CHAR4LITERAL('!','o','r','i'):
+          continue;
+        }
 
-      bitmaps_.back().metadata["name"] = ::strip(std::string(obj_id));
-
-      ::nfs_shpm_obj_to_bitmap(data_(obj_offset),bitmaps_.back());
+      l::nfs_shpm_obj_to_bitmap(data_,obj_offset,bitmap);
+      if(bitmap)
+        {
+          bitmap.set("name",l::strip(obj_id));
+          bitmaps_.emplace_back(bitmap);
+        }
     }
 }

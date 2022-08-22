@@ -49,6 +49,7 @@ public:
   uint8_t  pluta() const;
   uint32_t type() const;
   uint32_t pdv() const;
+  bool     ccbpre() const;
 
 public:
   void bpp(const uint32_t bpp);

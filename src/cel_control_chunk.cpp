@@ -170,6 +170,12 @@ CelControlChunk::pdv() const
     }
 }
 
+bool
+CelControlChunk::ccbpre() const
+{
+  return (ccb_Flags & CCB_CCBPRE);
+}
+
 uint32_t
 CelControlChunk::type() const
 {

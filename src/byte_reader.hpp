@@ -31,6 +31,12 @@ public:
                  data_.size());
   }
 
+  bool
+  eof() const
+  {
+    return (_idx >= _size);
+  }
+
   size_t
   tell() const
   {
@@ -160,6 +166,12 @@ public:
     return _data[_idx++];
   }
 
+  int16_t
+  i16be()
+  {
+    return (int16_t)u16be();
+  }
+
   uint16_t
   u16be()
   {
@@ -182,6 +194,34 @@ public:
          (_data[_idx+0] << 0));
 
     _idx += 2;
+
+    return v;
+  }
+
+  int32_t
+  i24be()
+  {
+    int32_t v;
+
+    v = (((int8_t)_data[_idx+0] << 16) |
+         (_data[_idx+1] << 8) |
+         (_data[_idx+2] << 0));
+
+    _idx += 3;
+
+    return v;
+  }
+
+  uint32_t
+  u24be()
+  {
+    uint32_t v;
+
+    v = ((_data[_idx+0] << 16) |
+         (_data[_idx+1] <<  8) |
+         (_data[_idx+2] <<  0));
+
+    _idx += 3;
 
     return v;
   }

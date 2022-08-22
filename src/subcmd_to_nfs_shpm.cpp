@@ -38,10 +38,10 @@ namespace fs = std::filesystem;
 namespace l
 {
   void
-  write_file(const BitmapVec            &bitmaps_,
-             const std::vector<ByteVec> &pdats_,
-             const bool                  packed_,
-             const fs::path             &outputpath_)
+  write_file(const BitmapVec  &bitmaps_,
+             const ByteVecVec &pdats_,
+             const bool        packed_,
+             const fs::path   &outputpath_)
   {
     File f;
     fs::path outputpath;
@@ -64,11 +64,15 @@ namespace l
     f.write("SPoT",4);
 
     uint32_t offset = (16 + (object_count * 8));
-    for(const auto &pdat : pdats_)
+    for(size_t i = 0; i < object_count; i++)
       {
-        f.write("pdat",4);
+        std::string name;
+
+        name = bitmaps_[i].name_or_guess();
+
+        f.write(name.c_str(),4);
         f.write(offset);
-        offset += 16 + pdat.size();
+        offset += 16 + pdats_[i].size();
       }
 
     for(size_t i = 0; i < pdats_.size(); i++)
@@ -92,6 +96,7 @@ namespace l
     f.close();
   }
 }
+
 
 void
 SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
