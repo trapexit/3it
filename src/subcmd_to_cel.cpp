@@ -136,7 +136,7 @@ namespace l
     if(celtype_.lrform)
       ccc_.ccb_PRE1 |= PRE1_LRFORM;
     ccc_.ccb_PRE1 |= PRE1_TLLSB_PDC0;
-    ccc_.ccb_PRE1 |= (((w_ / (sizeof(uint32_t)/sizeof(uint16_t))) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);
+    ccc_.ccb_PRE1 |= (((w_ / (sizeof(uint32_t)/(celtype_.bpp / 8))) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);
 
     ccc_.ccb_Width  = w_;
     ccc_.ccb_Height = h_;
