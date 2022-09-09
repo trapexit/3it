@@ -2,6 +2,8 @@ COMPILER_PREFIX =
 PLATFORM = unix
 EXE = 3it
 
+JOBS := $(shell nproc)
+
 OUTPUT = build/$(EXE)
 
 CC    = $(COMPILER_PREFIX)-gcc
@@ -42,6 +44,11 @@ $(BUILDDIR)/%.cpp.o: src/%.cpp
 clean:
 	rm -rfv build/
 
-.PHONY: clean builddir
+release:
+	$(MAKE) -f Makefile -j$(JOBS) strip
+	$(MAKE) -f Makefile.win64 -j$(JOBS) strip
+	$(MAKE) -f Makefile.win32 -j$(JOBS) strip
+
+.PHONY: clean builddir release
 
 -include $(DEP)
