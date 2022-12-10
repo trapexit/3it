@@ -74,5 +74,7 @@ PLUT::build(const Bitmap &bitmap_)
     {
       c = *colors.begin();
       colors.erase(c);
+      if(colors.empty())
+        break;
     }
 }

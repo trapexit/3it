@@ -1133,5 +1133,13 @@ convert::bitmap_to_cel(const Bitmap   &bitmap_,
       return convert::bitmap_to_coded_packed_linear_8bpp(bitmap_,transparent_color_,pdat_,plut_);
     case (CODED|PACKED|LINEAR|BPP_16):
       return convert::bitmap_to_coded_packed_linear_16bpp(bitmap_,transparent_color_,pdat_,plut_);
+
+    default:
+      throw fmt::exception("invalid combination of attributes: "
+                           "coded={}, packed={}, linear={}, bpp={}",
+                           (bool)celtype_.coded,
+                           (bool)celtype_.packed,
+                           !(bool)celtype_.lrform,
+                           celtype_.bpp);
     }
 }
