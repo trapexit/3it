@@ -97,6 +97,14 @@ namespace l
   }
 
   static
+  uint32_t
+  round_up(const uint32_t number_,
+           const uint32_t multiple_)
+  {
+    return (((number_ + multiple_ - 1) / multiple_) * multiple_);
+  }
+
+  static
   void
   populate_ccc(const CelType   &celtype_,
                const int        w_,
@@ -136,7 +144,20 @@ namespace l
     if(celtype_.lrform)
       ccc_.ccb_PRE1 |= PRE1_LRFORM;
     ccc_.ccb_PRE1 |= PRE1_TLLSB_PDC0;
-    ccc_.ccb_PRE1 |= (((w_ / (sizeof(uint32_t)/(celtype_.bpp / 8))) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);
+
+    switch(celtype_.bpp)
+      {
+      case 1:
+      case 2:
+      case 4:
+      case 6:
+        ccc_.ccb_PRE1 |= (((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET8_SHIFT);
+        break;
+      case 8:
+      case 16:
+        ccc_.ccb_PRE1 |= (((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);
+        break;
+      }
 
     ccc_.ccb_Width  = w_;
     ccc_.ccb_Height = h_;
