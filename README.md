@@ -46,6 +46,7 @@ All subcommands have their own help and arguments. Use `--help` or
 * ability to write text chunks
 * figure out NFS HSPT chunk
 * ability to write NFS wwww files? May deserve its own tool.
+* Other game formats
 
 
 ## Notes
@@ -56,11 +57,13 @@ different ideas so the code is not entirely consistent. Will clean up as needed.
 
 ## Documentation
 
-* https://3dodev.com/ext/3DO/Portfolio_2.5/OnLineDoc/DevDocs/ppgfldr/ggsfldr/gpgfldr/5gpg.html
+* https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpg
+* https://3dodev.com/documentation/file_formats/media/container/3do
+* https://3dodev.com/documentation/file_formats/media/image/bannerscreen
 * https://3dodev.com/documentation/file_formats/games/nfs
 
 
-## External sites
+## Other Links
 
 * https://3dodev.com
 * https://github.com/trapexit/3dt
