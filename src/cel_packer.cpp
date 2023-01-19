@@ -16,12 +16,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-// https://3dodev.com/ext/3DO/Portfolio_2.5/OnLineDoc/DevDocs/ppgfldr/ggsfldr/gpgfldr/3gpga.html#XREF38473
+// Docs:
+// https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgd
+// https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpga
 
 #include "cel_packer.hpp"
 
 #include "bitmap.hpp"
 #include "bitstream.hpp"
+#include "bpp.hpp"
 #include "byte_reader.hpp"
 #include "bytevec.hpp"
 #include "ccb_flags.hpp"
@@ -29,7 +32,15 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
+
+
+#define BITS_PER_BYTE 8
+#define BYTES_PER_WORD 4
+#define BITS_PER_WORD (BITS_PER_BYTE * BYTES_PER_WORD)
+#define DATA_PACKET_DATA_TYPE_SIZE 2
+#define DATA_PACKET_PIXEL_COUNT_SIZE 6
 
 
 struct RGB8888
@@ -204,16 +215,55 @@ pass4_pack_literal(AbstractPackedImage &pi_)
 }
 
 static
+std::size_t
+calc_offset_width(const std::size_t bpp_)
+{
+  switch(bpp_)
+    {
+    case BPP_1:
+    case BPP_2:
+    case BPP_4:
+    case BPP_6:
+      return 8;
+    case BPP_8:
+    case BPP_16:
+      return 16;
+    }
+
+  throw std::runtime_error("invalid bpp");
+}
+
+// offset = number of words to next row minus 2
+// Meaning a min of 8 bytes per row.
+static
+void
+write_next_row_offset(BitStreamWriter   &bs_,
+                      const std::size_t  offset_width_,
+                      const std::size_t  next_row_offset_)
+{
+  std::size_t next_row_in_words;
+
+  next_row_in_words = (((bs_.tell() - next_row_offset_) / BITS_PER_WORD) - 2);
+  bs_.write(next_row_offset_,
+            offset_width_,
+            next_row_in_words);
+}
+
+static
 void
 api_to_bytevec(const Bitmap              &b_,
                const AbstractPackedImage &api_,
                const RGBA8888Converter   &pc_,
                ByteVec                   &pdat_)
 {
-  size_t next_row_offset;
-  BitStreamWriter bs;
 
-  pdat_.resize(b_.w * b_.h * 4);
+  BitStreamWriter bs;
+  std::size_t offset_width;
+  std::size_t next_row_offset;
+
+  offset_width = ::calc_offset_width(pc_.bpp());
+
+  pdat_.resize(b_.w * b_.h * BYTES_PER_WORD);
   bs.reset(pdat_);
 
   for(size_t i = 0; i < api_.size(); i++)
@@ -221,20 +271,20 @@ api_to_bytevec(const Bitmap              &b_,
       const auto &pdplist = api_[i];
 
       next_row_offset = bs.tell();
-      bs.skip(16);
+      bs.skip(offset_width);
       for(const auto &pdp : pdplist)
         {
-          bs.write(2,pdp.type);
+          bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
             case PACK_PACKED:
               uint32_t c;
-              bs.write(6,pdp.pixels.size()-1);
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
               c = pc_.convert(&pdp.pixels[0].r);
               bs.write(pc_.bpp(),c);
               break;
             case PACK_LITERAL:
-              bs.write(6,pdp.pixels.size()-1);
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
               for(const auto &pixel : pdp.pixels)
                 {
                   uint32_t c;
@@ -243,23 +293,20 @@ api_to_bytevec(const Bitmap              &b_,
                 }
               break;
             case PACK_TRANSPARENT:
-              bs.write(6,pdp.pixels.size()-1);
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
               break;
             case PACK_EOL:
               break;
             }
 
         }
-      bs.skip_to_32bit_boundary();
+      // The offset is minus 2 so need to be at least 2 words
+      bs.skip_to_64bit_boundary();
 
-      bs.write(next_row_offset,
-               16,
-               (((bs.tell() - next_row_offset) / 8 / 4) - 2));
+      ::write_next_row_offset(bs,offset_width,next_row_offset);
     }
 
-  bs.skip_to_32bit_boundary();
-
-  pdat_.resize(bs.tell() / 8);
+  pdat_.resize(bs.tell() / BITS_PER_BYTE);
 }
 
 void

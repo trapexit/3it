@@ -19,6 +19,7 @@
 #include "convert.hpp"
 
 #include "bitstream.hpp"
+#include "bpp.hpp"
 #include "byte_reader.hpp"
 #include "ccb_flags.hpp"
 #include "cel_control_chunk.hpp"
@@ -41,6 +42,11 @@
 
 namespace fs = std::filesystem;
 
+#define BITS_PER_BYTE  8
+#define BYTES_PER_WORD 4
+
+#define DATA_PACKET_DATA_TYPE_SIZE   2
+#define DATA_PACKET_PIXEL_COUNT_SIZE 6
 
 #define CODED    (1 << 7)
 #define UNCODED  (0 << 7)
@@ -48,12 +54,6 @@ namespace fs = std::filesystem;
 #define UNPACKED (0 << 6)
 #define LRFORM   (1 << 5)
 #define LINEAR   (0 << 5)
-#define BPP_1    1
-#define BPP_2    2
-#define BPP_4    4
-#define BPP_6    6
-#define BPP_8    8
-#define BPP_16   16
 
 
 static
@@ -829,12 +829,12 @@ unpack_row(BitStreamReader &bs_,
   bpp = pw_.bpp();
   do
     {
-      type = bs_.read(2);
+      type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
       switch(type)
         {
         case PACK_LITERAL:
           {
-            count = bs_.read(6) + 1;
+            count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
             for(size_t i = 0; i < count; i++)
               {
                 pixel = bs_.read(bpp);
@@ -844,13 +844,13 @@ unpack_row(BitStreamReader &bs_,
           break;
         case PACK_TRANSPARENT:
           {
-            count = bs_.read(6) + 1;
+            count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
             pw_.write_transparent(count);
           }
           break;
         case PACK_PACKED:
           {
-            count = bs_.read(6) + 1;
+            count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
             pixel = bs_.read(bpp);
             pw_.write(pixel,count);
           }
@@ -861,64 +861,65 @@ unpack_row(BitStreamReader &bs_,
     } while((type != PACK_EOL) && !pw_.row_filled());
 }
 
+static
+std::size_t
+calc_offset_width(const std::size_t bpp_)
+{
+  switch(bpp_)
+    {
+    case BPP_1:
+    case BPP_2:
+    case BPP_4:
+    case BPP_6:
+      return 8;
+    case BPP_8:
+    case BPP_16:
+      return 16;
+    }
+
+  throw fmt::exception("invalid bpp: {}",bpp_);
+}
+
+static
+void
+uncoded_packed_linear_Xbpp_to_bitmap(cPDAT        pdat_,
+                                     Bitmap      &bitmap_,
+                                     std::size_t  bpp_)
+{
+  PixelWriter pw;
+  std::size_t offset;
+  std::size_t offset_width;
+  BitStreamReader bs(pdat_);
+
+  offset = 0;
+  offset_width = ::calc_offset_width(bpp_);
+  pw.reset(bitmap_,bpp_);
+  for(size_t y = 0; y < bitmap_.h; y++)
+    {
+      if((offset * BITS_PER_BYTE) >= bs.size())
+        throw fmt::exception("attempted out of bound read");
+
+      bs.seek(offset * BITS_PER_BYTE);
+      pw.move_y(y);
+
+      offset += ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
+
+      ::unpack_row(bs,pw);
+    }
+}
+
 void
 convert::uncoded_packed_linear_16bpp_to_bitmap(cPDAT   pdat_,
                                                Bitmap &bitmap_)
 {
-  size_t offset;
-  PixelWriter pw;
-  BitStreamReader bs(pdat_);
-
-  offset = 0;
-  pw.reset(bitmap_,16);
-  for(size_t y = 0; y < bitmap_.h; y++)
-    {
-      bs.seek(offset<<3);
-      pw.move_y(y);
-
-      offset += ((bs.read(16) + 2) * 4);
-
-      ::unpack_row(bs,pw);
-    }
+  ::uncoded_packed_linear_Xbpp_to_bitmap(pdat_,bitmap_,BPP_16);
 }
 
 void
 convert::uncoded_packed_linear_8bpp_to_bitmap(cPDAT   pdat_,
                                               Bitmap &bitmap_)
 {
-  size_t offset;
-  PixelWriter pw;
-  BitStreamReader bs(pdat_);
-
-  offset = 0;
-  pw.reset(bitmap_,8);
-  for(size_t y = 0; y < bitmap_.h; y++)
-    {
-      bs.seek(offset<<3);
-      pw.move_y(y);
-
-      offset += ((bs.read(16) + 2) * 4);
-
-      ::unpack_row(bs,pw);
-    }
-}
-
-static
-uint32_t
-calc_offset_width(const uint32_t bpp_)
-{
-  switch(bpp_)
-    {
-    case 1:
-    case 2:
-    case 4:
-    case 6:
-      return 8;
-    case 8:
-    case 16:
-    default:
-      return 16;
-    }
+  ::uncoded_packed_linear_Xbpp_to_bitmap(pdat_,bitmap_,BPP_8);
 }
 
 static
@@ -929,24 +930,23 @@ coded_packed_linear_to_bitmap(const uint32_t  bpp_,
                               const uint8_t   pluta_,
                               Bitmap         &bitmap_)
 {
-  size_t offset;
-  uint32_t offset_width;
   PixelWriter pw;
+  std::size_t offset;
+  std::size_t offset_width;
   BitStreamReader bs(pdat_);
 
-  offset_width = calc_offset_width(bpp_);
-
   offset = 0;
+  offset_width = calc_offset_width(bpp_);
   pw.reset(bitmap_,plut_,pluta_,bpp_);
   for(size_t y = 0; y < bitmap_.h; y++)
     {
-      if((offset << 3) >= bs.size())
+      if((offset * BITS_PER_BYTE) >= bs.size())
         throw fmt::exception("attempted out of bound read");
 
-      bs.seek(offset<<3);
+      bs.seek(offset * BITS_PER_BYTE);
       pw.move_y(y);
 
-      offset += ((bs.read(offset_width) + 2) * 4);
+      offset += ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
 
       ::unpack_row(bs,pw);
     }
