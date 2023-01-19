@@ -26,7 +26,7 @@ namespace SubCmd
   {
     fmt::print("https://3dodev.com\n"
                "https://3dodev.com/documentation/file_formats\n"
-               "https://3dodev.com/ext/3DO/Portfolio_2.5/OnLineDoc/DevDocs/ppgfldr/ggsfldr/gpgfldr/5gpg.html\n"
-               "https://3dodev.com/ext/3DO/Portfolio_2.5/OnLineDoc/DevDocs/ppgfldr/ggsfldr/gpgfldr/00gpg1.html\n");
+               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpg\n"
+               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/00gpg1\n");
   }
 }
