@@ -99,4 +99,7 @@ public:
 
   std::string name(const std::string &default_ = {}) const;
   std::string name_or_guess() const;
+
+public:
+  uint32_t color_count() const;
 };

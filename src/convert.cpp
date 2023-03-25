@@ -27,7 +27,6 @@
 #include "cel_types.hpp"
 #include "chunk_ids.hpp"
 #include "chunk_reader.hpp"
-#include "color_check.hpp"
 #include "identify_file.hpp"
 #include "image_control_chunk.hpp"
 #include "pixel_converter.hpp"
@@ -39,6 +38,7 @@
 #include "fmt.hpp"
 
 #include <cstddef>
+#include <optional>
 
 namespace fs = std::filesystem;
 
@@ -100,14 +100,19 @@ coded_colors(int bpp_)
 
 static
 void
-check_colors(const Bitmap &bitmap_,
-             const int     bpp_)
+check_coded_colors(const Bitmap &bitmap_,
+                   const int     bpp_)
 {
-  int colors;
+  uint32_t colors;
+  uint32_t max_colors;
 
-  colors = ::coded_colors(bpp_);
-  if(ColorCheck::has_more_than(bitmap_,colors))
-    throw fmt::exception("image has more than {} colors",colors);
+  colors = bitmap_.color_count();
+  max_colors = ::coded_colors(bpp_);
+  if(colors > max_colors)
+    throw fmt::exception("input image has {} colors, more than the {} coded colors ({}bpp) possible",
+                         colors,
+                         max_colors,
+                         bpp_);
 }
 
 void
@@ -218,6 +223,27 @@ to_bitmap(CelControlChunk &ccc_,
                            ccc_.lrform(),
                            ccc_.bpp());
     }
+}
+
+static
+std::optional<PLUT>
+get_cel_file_plut(cspan<uint8_t> data_)
+{
+  PLUT plut;
+  ChunkVec chunks;
+
+  ChunkReader::chunkify(data_,chunks);
+  for(auto const &chunk : chunks)
+    {
+      if(chunk.id() != CHUNK_PLUT)
+        continue;
+
+      plut = chunk;
+
+      return plut;
+    }
+
+  return {};
 }
 
 void
@@ -574,7 +600,7 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
   uint16_t color;
   BitStreamWriter bs;
 
-  ::check_colors(bitmap_,bpp_);
+  ::check_coded_colors(bitmap_,bpp_);
 
   resize_pdat(bitmap_.w,bitmap_.h,bpp_,pdat_);
   bs.reset(pdat_);
@@ -654,9 +680,32 @@ bitmap_to_coded_packed_linear_Xbpp(const Bitmap   &bitmap_,
 {
   RGBA8888Converter pc(bpp_,plut_);
 
-  ::check_colors(bitmap_,bpp_);
+  ::check_coded_colors(bitmap_,bpp_);
 
-  plut_.build(bitmap_);
+  if(bitmap_.has("external-palette"))
+    {
+      uint32_t filetype;
+      ByteVec data;
+      fs::path filepath;
+      std::optional<PLUT> plut;
+
+      filepath = bitmap_.get("external-palette");
+
+      ReadFile::read(filepath,data);
+      filetype = IdentifyFile::identify(data);
+      if(!IdentifyFile::chunked_type(filetype))
+        throw fmt::exception("'{}' does not appear to be a 3DO formated file",filepath);
+
+      plut = ::get_cel_file_plut(data);
+      if(plut)
+        plut_ = plut.value();
+      else
+        throw fmt::exception("No CEL PLUT found in '{}'",filepath);
+    }
+  else
+    {
+      plut_.build(bitmap_);
+    }
 
   CelPacker::pack(bitmap_,pc,transparent_color_,pdat_);
 }

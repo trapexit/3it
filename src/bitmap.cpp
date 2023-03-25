@@ -18,6 +18,8 @@
 
 #include "bitmap.hpp"
 
+#include <unordered_set>
+
 
 bool
 Bitmap::has(const std::string &key_) const
@@ -77,4 +79,22 @@ Bitmap::name_or_guess() const
     return iter->second;
 
   return ::calculate_name(get("filename","????"));
+}
+
+uint32_t
+Bitmap::color_count() const
+{
+  std::unordered_set<uint32_t> colors;
+
+  for(size_t y = 0; y < h; y++)
+    {
+      for(size_t x = 0; x < w; x++)
+        {
+          const uint32_t *c = (const uint32_t*)xy(x,y);
+
+          colors.emplace(*c);
+        }
+    }
+
+  return colors.size();
 }

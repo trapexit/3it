@@ -31,7 +31,7 @@ WriteFile::cel(const std::filesystem::path &filepath_,
 {
   std::ofstreambe os;
 
-  os.open(filepath_,std::ofstream::binary);
+  os.open(filepath_,std::ofstream::binary|std::ofstream::trunc);
   if(!os)
     throw std::system_error(errno,std::system_category(),"failed to open "+filepath_.string());
 

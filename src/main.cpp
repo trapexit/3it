@@ -174,15 +174,20 @@ generate_to_cel_argparser(CLI::App       &app_,
 
   subcmd = app_.add_subcommand("to-cel","convert image to CEL");
   subcmd->add_option("filepaths",options_.filepaths)
-    ->description("path to image")
+    ->description("Path to image or directory")
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->take_last();
   subcmd->add_option("-b,--bpp",options_.bpp)
     ->description("Bits per pixel")
     ->type_name("BPP")
     ->default_val(16)
-    ->check(CLI::IsMember({1,2,4,6,8,16}));
+    ->check(CLI::IsMember({1,2,4,6,8,16}))
+    ->take_last();
   subcmd->add_option("--coded",options_.coded)
     ->description("Store coded CEL")
     ->default_val(false)
@@ -205,8 +210,16 @@ generate_to_cel_argparser(CLI::App       &app_,
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();
-  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
-    ->description("Ignore files with target extension");
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
+  subcmd->add_option("--external-palette",options_.external_palette)
+    ->description("Use a different CEL file's PLUT instead of building a unique one")
+    ->type_name("PATH")
+    ->check(CLI::ExistingFile)
+    ->take_last();
   generate_ccb_flag_argparser(subcmd,options_.ccb_flags);
   generate_pre0_flag_argparser(subcmd,options_.pre0_flags);
 
@@ -227,8 +240,11 @@ generate_to_banner_argparser(CLI::App          &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->required();
-  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
-    ->description("Ignore files with target extension");
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
 
   subcmd->callback(std::bind(SubCmd::to_banner,
                              std::cref(options_)));
@@ -247,8 +263,11 @@ generate_to_bmp_argparser(CLI::App         &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
-  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
-    ->description("Ignore files with target extension");
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -268,8 +287,11 @@ generate_to_png_argparser(CLI::App         &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
-  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
-    ->description("Ignore files with target extension");
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -289,8 +311,11 @@ generate_to_jpg_argparser(CLI::App         &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
-  subcmd->add_flag("-i,--ignore-target-ext",options_.ignore_target_ext)
-    ->description("Ignore files with target extension");
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -306,11 +331,11 @@ generate_to_nfs_shpm(CLI::App           &app_,
 
   subcmd = app_.add_subcommand("to-nfs-shpm","convert image to NFS SHPM");
   subcmd->add_option("filepath",options_.filepaths)
-    ->description("path to source image")
+    ->description("Path to source image")
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->required();
-  subcmd->add_option("-o,--output-path",options_.outputpath)
+  subcmd->add_option("-o,--output-path",options_.output_path)
     ->description("Path to output file")
     ->type_name("PATH");
   subcmd->add_option("--packed",options_.packed)
