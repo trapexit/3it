@@ -41,10 +41,10 @@ namespace l
   write_file(const BitmapVec  &bitmaps_,
              const ByteVecVec &pdats_,
              const bool        packed_,
-             const fs::path   &outputpath_)
+             const fs::path   &output_path_)
   {
     File f;
-    fs::path outputpath;
+    fs::path output_path;
     uint32_t length_of_file;
     uint32_t object_count;
 
@@ -54,7 +54,7 @@ namespace l
     for(const auto &pdat : pdats_)
       length_of_file += 16 + pdat.size();
 
-    f.open(outputpath_,"wb+");
+    f.open(output_path_,"wb+");
 
     f.big_endian();
 
@@ -101,7 +101,7 @@ namespace l
 void
 SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
 {
-  fs::path outputpath;
+  fs::path output_path;
   BitmapVec bitmaps;
   ByteVecVec pdats;
 
@@ -118,15 +118,15 @@ SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
         convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap,pdats.back());
     }
 
-  outputpath = opts_.outputpath;
-  if(outputpath.empty())
+  output_path = opts_.output_path;
+  if(output_path.empty())
     {
-      outputpath  = opts_.filepaths[0];
-      outputpath += ".3sh";
+      output_path  = opts_.filepaths[0];
+      output_path += ".3sh";
     }
 
-  fmt::print("{}:\n",outputpath);
-  l::write_file(bitmaps,pdats,opts_.packed,outputpath);
+  fmt::print("{}:\n",output_path);
+  l::write_file(bitmaps,pdats,opts_.packed,output_path);
   for(const auto &filepath : opts_.filepaths)
     fmt::print(" - {}\n",filepath);
 }

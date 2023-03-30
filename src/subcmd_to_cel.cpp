@@ -185,18 +185,15 @@ namespace l
          const Options::ToCEL &opts_)
   {
     CelType celtype;
-    CelControlChunk ccc;
-    PLUT plut;
-    ByteVec pdat;
     ByteVec data;
-    std::vector<Bitmap> bitmaps;
+    BitmapVec bitmaps;
 
     ReadFile::read(filepath_,data);
     if(data.empty())
       throw fmt::exception("file empty");
 
     convert::to_bitmap(data,bitmaps);
-    if(bitmaps.empty() || !bitmaps.front())
+    if(bitmaps.empty())
       throw fmt::exception("failed to convert");
 
     celtype.coded  = opts_.coded;
@@ -204,26 +201,41 @@ namespace l
     celtype.lrform = opts_.lrform;
     celtype.bpp    = opts_.bpp;
 
-    if(celtype.lrform && (bitmaps.front().h & 0x1))
+    for(auto &bitmap : bitmaps)
       {
-        bitmaps.front().h--;
-        fmt::print(" - WARNING - LRFORM needs to be an even number of vertical lines"
-                   ": truncating from {} to {} lines\n",
-                   bitmaps.front().h + 1,
-                   bitmaps.front().h);
+        if(celtype.lrform && (bitmap.h & 0x1))
+          {
+            bitmap.h--;
+            fmt::print(" - WARNING - LRFORM needs to be an even number of vertical lines"
+                       ": truncating from {} to {} lines\n",
+                       bitmap.h + 1,
+                       bitmap.h);
+          }
+
+        if(!opts_.external_palette.empty())
+          bitmap.set("external-palette",opts_.external_palette.string());
       }
 
-    convert::bitmap_to_cel(bitmaps.front(),celtype,opts_.transparent,pdat,plut);
-    l::populate_ccc(celtype,bitmaps.front().w,bitmaps.front().h,ccc);
-
-    if(!pdat.empty())
+    for(auto const &bitmap : bitmaps)
       {
+        PLUT plut;
+        ByteVec pdat;
+        CelControlChunk ccc;
         fs::path filepath;
+
+        convert::bitmap_to_cel(bitmap,celtype,opts_.transparent,pdat,plut);
+        if(pdat.empty())
+          continue;
+
+        l::populate_ccc(celtype,bitmap.w,bitmap.h,ccc);
 
         l::modify_ccb_flags(opts_.ccb_flags,ccc);
         l::modify_pre0_flags(opts_.pre0_flags,ccc);
 
-        filepath = l::generate_filepath(filepath_,ccc);
+        if(opts_.output_path.empty())
+          filepath = l::generate_filepath(filepath_,ccc);
+        else
+          filepath = opts_.output_path;
 
         WriteFile::cel(filepath,ccc,pdat,plut);
 

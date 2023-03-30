@@ -40,6 +40,30 @@ PLUT::operator=(const Chunk &chunk_)
   return *this;
 }
 
+static
+int
+distance(int a_,
+         int b_)
+{
+  return std::abs(a_ - b_);
+}
+
+static
+int
+closest(const PLUT     &plut_,
+        const uint16_t  color_)
+{
+  int32_t closest = 0;
+
+  for(size_t i = 0; i < plut_.size(); i++)
+    {
+      if(::distance(closest,color_) > ::distance(plut_[i],color_))
+        closest = plut_[i];
+    }
+
+  return closest;
+}
+
 int
 PLUT::lookup(const uint16_t color_) const
 {
@@ -49,7 +73,7 @@ PLUT::lookup(const uint16_t color_) const
         return i;
     }
 
-  return -1;
+  return ::closest(*this,color_);
 }
 
 void

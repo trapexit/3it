@@ -86,6 +86,7 @@ public:
   struct ToCEL
   {
     PathVec   filepaths;
+    Path      output_path;
     uint8_t   bpp;
     bool      coded;
     bool      lrform;
@@ -94,6 +95,7 @@ public:
     CCBFlags  ccb_flags;
     Pre0Flags pre0_flags;
     bool      ignore_target_ext;
+    Path      external_palette;
   };
 
   struct ToBanner
@@ -111,7 +113,7 @@ public:
   struct ToNFSSHPM
   {
     PathVec  filepaths;
-    Path     outputpath;
+    Path     output_path;
     bool     packed;
     uint32_t transparent;
   };
