@@ -16,6 +16,9 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+#include "memrw.hpp"
+#include "filerw.hpp"
+
 #include "subcmd.hpp"
 
 #include "CLI11.hpp"
@@ -252,6 +255,33 @@ generate_to_banner_argparser(CLI::App          &app_,
 
 static
 void
+generate_to_imag_argparser(CLI::App        &app_,
+                           Options::ToIMAG &options_)
+{
+  CLI::App *subcmd;
+
+  subcmd = app_.add_subcommand("to-imag","convert image to IMAG");
+  subcmd->add_option("filepaths",options_.filepaths)
+    ->description("path to image")
+    ->type_name("PATH")
+    ->check(CLI::ExistingFile)
+    ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->take_last();
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
+
+  subcmd->callback(std::bind(SubCmd::to_imag,
+                             std::cref(options_)));
+}
+
+static
+void
 generate_to_bmp_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
@@ -369,6 +399,7 @@ generate_argparser(CLI::App &app_,
   generate_list_chunks(app_,options_.list_chunks);
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
+  generate_to_imag_argparser(app_,options_.to_imag);
   generate_to_bmp_argparser(app_,options_.to_image);
   generate_to_png_argparser(app_,options_.to_image);
   generate_to_jpg_argparser(app_,options_.to_image);
