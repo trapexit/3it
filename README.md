@@ -21,8 +21,9 @@ Subcommands:
   docs                        print links to relevant documentation
   info                        prints info about the file
   list-chunks                 list 3DO file chunks
-  to-cel                      convert image to CEL
+  to-cel                      convert image to 3DO CEL
   to-banner                   convert image to banner
+  to-imag                     convert image to 3DO IMAG
   to-bmp                      convert image to BMP
   to-png                      convert image to PNG
   to-jpg                      convert image to JPG
@@ -41,7 +42,6 @@ All subcommands have their own help and arguments. Use `--help` or
 * dump APPSCRN from ISO
 * dump-chunks
 * concat-chunks
-* to IMAG
 * to ANIM
 * ability to write text chunks
 * figure out NFS HSPT chunk
@@ -57,14 +57,15 @@ different ideas so the code is not entirely consistent. Will clean up as needed.
 
 ## Documentation
 
+* https://3dodev.com
+* https://3dodev.com/documentation/file_formats
+* https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpg
 * https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpg
-* https://3dodev.com/documentation/file_formats/media/container/3do
-* https://3dodev.com/documentation/file_formats/media/image/bannerscreen
-* https://3dodev.com/documentation/file_formats/games/nfs
+* https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/00gpg1
 
 
 ## Other Links
 
-* https://3dodev.com
-* https://github.com/trapexit/3dt
-* https://github.com/trapexit/3do-devkit
+* 3DO Dev Repo: https://3dodev.com
+* 3DO Disc Tool: https://github.com/trapexit/3dt
+* 'Modern' 3DO DevKit: https://github.com/trapexit/3do-devkit

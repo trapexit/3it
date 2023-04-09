@@ -21,35 +21,43 @@
 #include "endian.hpp"
 
 #include <cstdint>
+#include <type_traits>
 
 
 static
 inline
-uint32_t
-byteswap(const uint32_t v_)
+int8_t
+byteswap(const int8_t v_)
 {
-  return (((v_ & UINT32_C(0x000000FF)) << 24) |
-          ((v_ & UINT32_C(0x0000FF00)) <<  8) |
-          ((v_ & UINT32_C(0x00FF0000)) >>  8) |
-          ((v_ & UINT32_C(0xFF000000)) >> 24));
-}
-
-static
-inline
-uint32_t
-byteswap_if_little_endian(const uint32_t v_)
-{
-  if(is_little_endian())
-    return byteswap(v_);
   return v_;
 }
 
 static
 inline
-void
-byteswap_if_little_endian(uint32_t *v_)
+uint8_t
+byteswap(const uint8_t v_)
 {
-  *v_ = byteswap_if_little_endian(*v_);
+  return v_;
+}
+
+static
+inline
+int16_t
+byteswap(const int16_t v_)
+{
+  return (((v_ & INT16_C(0x00FF)) << 8) |
+          ((v_ & INT16_C(0xFF00)) >> 8));
+
+}
+
+static
+inline
+uint16_t
+byteswap(const uint16_t v_)
+{
+  return (((v_ & UINT16_C(0x00FF)) << 8) |
+          ((v_ & UINT16_C(0xFF00)) >> 8));
+
 }
 
 static
@@ -65,54 +73,51 @@ byteswap(const int32_t v_)
 
 static
 inline
-int32_t
-byteswap_if_little_endian(const int32_t v_)
+uint32_t
+byteswap(const uint32_t v_)
+{
+  return (((v_ & UINT32_C(0x000000FF)) << 24) |
+          ((v_ & UINT32_C(0x0000FF00)) <<  8) |
+          ((v_ & UINT32_C(0x00FF0000)) >>  8) |
+          ((v_ & UINT32_C(0xFF000000)) >> 24));
+}
+
+template<typename T>
+static
+inline
+typename std::enable_if<std::is_fundamental<T>::value, T>::type
+byteswap_if_little_endian(const T v_)
 {
   if(is_little_endian())
     return byteswap(v_);
   return v_;
 }
 
+template<typename T>
 static
 inline
-void
-byteswap_if_little_endian(int32_t *v_)
+typename std::enable_if<std::is_pointer<T>::value, void>::type
+byteswap_if_little_endian(const T v_)
 {
   *v_ = byteswap_if_little_endian(*v_);
 }
 
+template<typename T>
 static
 inline
-uint16_t
-byteswap(const uint16_t v_)
+typename std::enable_if<std::is_fundamental<T>::value, T>::type
+byteswap_if_big_endian(const T v_)
 {
-  return (((v_ & UINT16_C(0x00FF)) << 8) |
-          ((v_ & UINT16_C(0xFF00)) >> 8));
-
-}
-
-static
-inline
-uint16_t
-byteswap_if_little_endian(const uint16_t v_)
-{
-  if(is_little_endian())
+  if(is_big_endian())
     return byteswap(v_);
   return v_;
 }
 
+template<typename T>
 static
 inline
-uint8_t
-byteswap(const uint8_t v_)
+typename std::enable_if<std::is_pointer<T>::value, void>::type
+byteswap_if_big_endian(const T v_)
 {
-  return v_;
-}
-
-static
-inline
-uint8_t
-byteswap_if_little_endian(const uint8_t v_)
-{
-  return v_;
+  *v_ = byteswap_if_big_endian(*v_);
 }

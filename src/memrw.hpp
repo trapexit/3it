@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2023, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -18,20 +18,27 @@
 
 #pragma once
 
-#include <cstdint>
+#include "datarw.hpp"
 
-constexpr
-bool
-is_little_endian(void)
+
+class MemRW : public DataRW
 {
-  const union { uint32_t i; char c[sizeof(uint32_t)]; } u = { 0x01020304 };
+private:
+  uint8_t *_data;
+  size_t   _size;
+  size_t   _idx;
 
-  return u.c[0] == 0x04;
-}
+public:
+  void reset(uint8_t      *data,
+             const size_t  size);
 
-constexpr
-bool
-is_big_endian(void)
-{
-  return !is_little_endian();
-}
+public:
+  ~MemRW();
+
+public:
+  bool eof() const;
+  size_t tell() const;
+  void seek(const size_t idx);
+  size_t read(uint8_t *p, const size_t count);
+  size_t write(uint8_t const * const p, const size_t count);
+};

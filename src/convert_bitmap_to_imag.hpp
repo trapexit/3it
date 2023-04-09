@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2023, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -18,20 +18,12 @@
 
 #pragma once
 
-#include <cstdint>
+#include "bitmap.hpp"
+#include "datarw.hpp"
 
-constexpr
-bool
-is_little_endian(void)
+namespace convert
 {
-  const union { uint32_t i; char c[sizeof(uint32_t)]; } u = { 0x01020304 };
-
-  return u.c[0] == 0x04;
-}
-
-constexpr
-bool
-is_big_endian(void)
-{
-  return !is_little_endian();
+  void
+  bitmap_to_imag(const Bitmap &bitmap,
+                 DataRW       &data);
 }

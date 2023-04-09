@@ -104,6 +104,13 @@ public:
     bool    ignore_target_ext;
   };
 
+  struct ToIMAG
+  {
+    PathVec filepaths;
+    Path    output_path;
+    bool    ignore_target_ext;
+  };
+
   struct ToImage
   {
     PathVec filepaths;
@@ -123,6 +130,7 @@ public:
   ListChunks list_chunks;
   ToCEL      to_cel;
   ToBanner   to_banner;
+  ToIMAG     to_imag;
   ToImage    to_image;
   ToNFSSHPM  to_nfs_shpm;
 };
