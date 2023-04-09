@@ -46,7 +46,7 @@ namespace l
     fs::path filepath;
 
     if(output_filepath_.empty())
-      filepath = "{filepath}{ext}";
+      filepath = "{filepath}.{ext}";
     else
       filepath = output_filepath_;
 
