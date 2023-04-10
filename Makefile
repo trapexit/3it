@@ -3,6 +3,8 @@ PLATFORM = unix
 EXE = 3it
 
 JOBS := $(shell nproc)
+PUID := $(shell id -u)
+PGID := $(shell id -g)
 
 OUTPUT = build/$(EXE)
 
@@ -53,11 +55,15 @@ clean:
 builddir:
 	mkdir -p $(BUILDDIR)
 
-release:
+release: clean
 	$(MAKE) -f Makefile -j$(JOBS) strip
 	$(MAKE) -f Makefile.win32 -j$(JOBS) strip
 	$(MAKE) -f Makefile.win64 -j$(JOBS) strip
 
-.PHONY: clean builddir release
+docker-release:
+	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:edge "/src/tools/docker-make-release"
+
+
+.PHONY: clean builddir release static-release
 
 -include $(DEPS)
