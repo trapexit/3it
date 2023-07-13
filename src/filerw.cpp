@@ -34,7 +34,7 @@ FileRW::open(std::string const &filepath_,
 int
 FileRW::open_write_trunc(std::string const &filepath_)
 {
-  return open(filepath_,"w+");
+  return open(filepath_,"w+b");
 }
 
 int
