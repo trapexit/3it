@@ -5,6 +5,7 @@
 #include "chunkid.hpp"
 
 #include <cstdint>
+#include <string>
 #include <type_traits>
 
 
@@ -50,6 +51,25 @@ public:
   uint32_t type() const;
   uint32_t pdv() const;
   bool     ccbpre() const;
+
+  uint8_t     pover() const;
+  std::string pover_str() const;
+
+  uint8_t pixc_1s(int pmode) const;
+  uint8_t pixc_ms(int pmode) const;
+  uint8_t pixc_mf(int pmode) const;
+  uint8_t pixc_df(int pmode) const;
+  uint8_t pixc_2s(int pmode) const;
+  uint8_t pixc_av(int pmode) const;
+  uint8_t pixc_2d(int pmode) const;
+
+  std::string pixc_1s_str(int pmode) const;
+  std::string pixc_ms_str(int pmode) const;
+  std::string pixc_mf_str(int pmode) const;
+  std::string pixc_df_str(int pmode) const;
+  std::string pixc_2s_str(int pmode) const;
+  std::string pixc_av_str(int pmode) const;
+  std::string pixc_2d_str(int pmode) const;
 
 public:
   void bpp(const uint32_t bpp);

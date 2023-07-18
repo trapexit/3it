@@ -101,6 +101,7 @@ namespace l
                        "   - pxor: {}\n"
                        "   - useav: {}\n"
                        "   - packed: {}\n"
+                       "   - pover: 0b{:02b} ({})\n"
                        "   - plutpos: {}\n"
                        "   - bgnd: {}\n"
                        "   - noblk: {}\n"
@@ -108,6 +109,20 @@ namespace l
                        " - width: {}\n"
                        " - height: {}\n"
                        " - ppmpc: 0x{:08X}\n"
+                       "   - P0 1S: 0b{:01b} ({})\n"
+                       "   - P0 MS: 0b{:02b} ({})\n"
+                       "   - P0 MF: 0b{:03b} ({})\n"
+                       "   - P0 DF: 0b{:02b} ({})\n"
+                       "   - P0 2S: 0b{:02b} ({})\n"
+                       "   - P0 AV: 0b{:05b} ({})\n"
+                       "   - P0 2D: 0b{:01b} ({})\n"
+                       "   - P1 1S: 0b{:01b} ({})\n"
+                       "   - P1 MS: 0b{:02b} ({})\n"
+                       "   - P1 MF: 0b{:03b} ({})\n"
+                       "   - P1 DF: 0b{:02b} ({})\n"
+                       "   - P1 2S: 0b{:02b} ({})\n"
+                       "   - P1 AV: 0b{:05b} ({})\n"
+                       "   - P1 2D: 0b{:01b} ({})\n"
                        " - pre0: 0x{:08X}\n"
                        "   - literal: {}\n"
                        "   - bgnd: {}\n"
@@ -148,6 +163,8 @@ namespace l
                        !!(ccc.ccb_Flags & CCB_PXOR),
                        !!(ccc.ccb_Flags & CCB_USEAV),
                        !!(ccc.ccb_Flags & CCB_PACKED),
+                       ccc.pover(),
+                       ccc.pover_str(),
                        !!(ccc.ccb_Flags & CCB_PLUTPOS),
                        !!(ccc.ccb_Flags & CCB_BGND),
                        !!(ccc.ccb_Flags & CCB_NOBLK),
@@ -155,6 +172,34 @@ namespace l
                        ccc.ccb_Width,
                        ccc.ccb_Height,
                        ccc.ccb_PPMPC,
+                       ccc.pixc_1s(0),
+                       ccc.pixc_1s_str(0),
+                       ccc.pixc_ms(0),
+                       ccc.pixc_ms_str(0),
+                       ccc.pixc_mf(0),
+                       ccc.pixc_mf_str(0),
+                       ccc.pixc_df(0),
+                       ccc.pixc_df_str(0),
+                       ccc.pixc_2s(0),
+                       ccc.pixc_2s_str(0),
+                       ccc.pixc_av(0),
+                       ccc.pixc_av_str(0),
+                       ccc.pixc_2d(0),
+                       ccc.pixc_2d_str(0),
+                       ccc.pixc_1s(1),
+                       ccc.pixc_1s_str(1),
+                       ccc.pixc_ms(1),
+                       ccc.pixc_ms_str(1),
+                       ccc.pixc_mf(1),
+                       ccc.pixc_mf_str(1),
+                       ccc.pixc_df(1),
+                       ccc.pixc_df_str(1),
+                       ccc.pixc_2s(1),
+                       ccc.pixc_2s_str(1),
+                       ccc.pixc_av(1),
+                       ccc.pixc_av_str(1),
+                       ccc.pixc_2d(1),
+                       ccc.pixc_2d_str(1),
                        ccc.ccb_PRE0,
                        !!(ccc.ccb_PRE0 & PRE0_LITERAL),
                        !!(ccc.ccb_PRE0 & PRE0_BGND),

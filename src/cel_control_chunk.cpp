@@ -24,6 +24,8 @@
 
 #include "byteswap.hpp"
 
+#include "fmt.hpp"
+
 
 CelControlChunk::CelControlChunk()
   : id(),
@@ -154,20 +156,9 @@ CelControlChunk::pluta() const
 uint32_t
 CelControlChunk::pdv() const
 {
-  uint32_t pdv;
+  // FIXME
 
-  pdv = ((ccb_PPMPC >> PPMP_1_SHIFT) & PPMPC_SF_MASK);
-  switch(pdv)
-    {
-    case PPMPC_SF_2:
-      return 2;
-    case PPMPC_SF_4:
-      return 4;
-    case PPMPC_SF_8:
-      return 8;
-    case PPMPC_SF_16:
-      return 16;
-    }
+  return -1;
 }
 
 bool
@@ -176,11 +167,239 @@ CelControlChunk::ccbpre() const
   return (ccb_Flags & CCB_CCBPRE);
 }
 
+uint8_t
+CelControlChunk::pover() const
+{
+  return ((ccb_Flags & CCB_POVER_MASK) >> CCB_POVER_SHIFT);
+}
+
+std::string
+CelControlChunk::pover_str() const
+{
+  switch(pover())
+    {
+    case 0:
+      return "use P-mode specified in pixel from pixel decoder";
+    case 1:
+      return "xx";
+    case 2:
+      return "use P-mode 0";
+    case 3:
+      return "use P-mode 1";
+    }
+
+  return "invalid value";
+}
+
+#define PPMPC_VAL(PMODE,PART) \
+  (((ccb_PPMPC >> (PMODE ? PPMP_P1_SHIFT : PPMP_P0_SHIFT)) & PPMPC_##PART##_MASK) >> PPMPC_##PART##_SHIFT)
+
+uint8_t
+CelControlChunk::pixc_1s(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,1S);
+}
+
+std::string
+CelControlChunk::pixc_1s_str(int pmode_) const
+{
+  switch(pixc_1s(pmode_))
+    {
+    case 0:
+      return "pixel is from the data decoder";
+    case 1:
+      return "pixel from current frame buffer";
+    }
+
+  return "invalid value";
+}
+
+uint8_t
+CelControlChunk::pixc_ms(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,MS);
+}
+
+std::string
+CelControlChunk::pixc_ms_str(int pmode_) const
+{
+  switch(pixc_ms(pmode_))
+    {
+    case 0:
+      return "PMV from CCB";
+    case 1:
+      return "PMV is AMV from data decoder";
+    case 2:
+      return "PMV and PDV from color value out of data decoder";
+    case 3:
+      return "PMV alone from the color value out of data decoder";
+    }
+
+  return "invalid value";
+}
+
+uint8_t
+CelControlChunk::pixc_mf(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,MF);
+}
+
+std::string
+CelControlChunk::pixc_mf_str(int pmode_) const
+{
+  uint8_t rv;
+
+  if(pixc_ms(pmode_) != 0)
+    return "MS != 0 so value not used";
+
+  rv = pixc_mf(pmode_) + 1;
+
+  return fmt::format("PMV = {}",rv);
+}
+
+uint8_t
+CelControlChunk::pixc_df(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,DF);
+}
+
+std::string
+CelControlChunk::pixc_df_str(int pmode_) const
+{
+  int rv;
+
+  if(pixc_ms(pmode_) == 2)
+    return fmt::format("MS set to 2. Value not used.");
+
+  rv = pixc_df(pmode_);
+  switch(rv)
+    {
+    case 0:
+      rv = 16;
+      break;
+    case 1:
+      rv = 2;
+      break;
+    case 2:
+      rv = 4;
+      break;
+    case 3:
+      rv = 8;
+      break;
+    }
+
+  return fmt::format("PDV = {}",rv);
+}
+
+uint8_t
+CelControlChunk::pixc_2s(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,2S);
+}
+
+std::string
+CelControlChunk::pixc_2s_str(int pmode_) const
+{
+  switch(pixc_2s(pmode_))
+    {
+    case 0:
+      return "0";
+    case 1:
+      return "CCB AV value";
+    case 2:
+      return "current fb pixel";
+    case 3:
+      return "pixel comes from data decoder";
+    }
+
+  return "invalid value";
+}
+
+uint8_t
+CelControlChunk::pixc_av(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,AV);
+}
+
+std::string
+CelControlChunk::pixc_av_str(int pmode_) const
+{
+  if(pixc_2s(pmode_) == 1)
+    return fmt::format("{}",pixc_av(pmode_));
+
+  uint8_t av;
+  std::string s;
+
+  av = pixc_av(pmode_);
+  switch(av >> 3)
+    {
+    case 0:
+      s += "SDV = 1;";
+      break;
+    case 1:
+      s += "SDV = 2;";
+      break;
+    case 2:
+      s += "SDV = 4;";
+      break;
+    case 3:
+      s += "SDV = lowest two bits of color from data decoder;";
+      break;
+    }
+
+  switch((av >> 2) & 0x1)
+    {
+    case 0:
+      s += "wrap preventer;";
+      break;
+    case 1:
+      s += "no wrap preventer;";
+      break;
+    }
+
+  switch((av >> 1) & 0x1)
+    {
+    case 0:
+      s += "no sign extension;";
+      break;
+    case 1:
+      s += "sign extension;";
+      break;
+    }
+
+  switch(av & 0x1)
+    {
+    case 0:
+      s += "add second source;";
+      break;
+    case 1:
+      s += "sub second source;";
+      break;
+    }
+
+  return s;
+}
+
+uint8_t
+CelControlChunk::pixc_2d(int pmode_) const
+{
+  return PPMPC_VAL(pmode_,2D);
+}
+
+std::string
+CelControlChunk::pixc_2d_str(int pmode_) const
+{
+  return fmt::format("{}",pixc_2d(pmode_) + 1);
+}
+
 uint32_t
 CelControlChunk::type() const
 {
   return CEL_TYPE(coded(),packed(),lrform(),bpp());
 }
+
+
+
 
 void
 CelControlChunk::byteswap_if_little_endian()
