@@ -19,8 +19,10 @@
 #include "plut.hpp"
 
 #include "byte_reader.hpp"
+#include "fmt.hpp"
 #include "pixel_converter.hpp"
 
+#include <stdexcept>
 #include <unordered_set>
 
 
@@ -42,36 +44,64 @@ PLUT::operator=(const Chunk &chunk_)
 
 static
 int
-distance(int a_,
-         int b_)
-{
-  return std::abs(a_ - b_);
-}
-
-static
-int
 closest(const PLUT     &plut_,
         const uint16_t  color_)
 {
-  int32_t closest = 0;
+  float  closest     = 10000000;
+  size_t closest_idx = 0;
+
+  float r = ((color_ >>  0) & 0x001F);
+  float g = ((color_ >>  5) & 0x001F);
+  float b = ((color_ >> 10) & 0x001F);
 
   for(size_t i = 0; i < plut_.size(); i++)
     {
-      if(::distance(closest,color_) > ::distance(plut_[i],color_))
-        closest = plut_[i];
+      float pr = ((plut_[i] >>  0) & 0x1F);
+      float pg = ((plut_[i] >>  5) & 0x1F);
+      float pb = ((plut_[i] >> 10) & 0x1F);
+      float distance;
+      float dr, dg, db;
+
+      dr = ((pr - r) * 0.30);
+      dg = ((pg - g) * 0.59);
+      db = ((pb - b) * 0.11);
+
+      distance = ((dr * dr) +
+                  (dg * dg) +
+                  (db * db));
+
+      if(distance > closest)
+        continue;
+
+      closest     = distance;
+      closest_idx = i;
     }
 
-  return closest;
+  return plut_[closest_idx];
 }
 
 int
-PLUT::lookup(const uint16_t color_) const
+PLUT::lookup(const uint16_t  color_,
+             bool const      allow_closest_,
+             bool           *closest_) const
 {
   for(size_t i = 0; i < size(); i++)
     {
       if(operator[](i) == color_)
         return i;
     }
+
+  if(allow_closest_ == false)
+    {
+      std::string err;
+
+      err = fmt::format("color {:#06x} not found in PLUT",color_);
+
+      throw std::runtime_error(err);
+    }
+
+  if(closest_ != nullptr)
+    *closest_ = true;
 
   return ::closest(*this,color_);
 }

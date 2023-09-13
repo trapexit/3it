@@ -597,7 +597,6 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
                                      ByteVec       &pdat_,
                                      PLUT          &plut_)
 {
-  uint16_t color;
   BitStreamWriter bs;
 
   ::check_coded_colors(bitmap_,bpp_);
@@ -605,11 +604,36 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
   resize_pdat(bitmap_.w,bitmap_.h,bpp_,pdat_);
   bs.reset(pdat_);
 
-  plut_.build(bitmap_);
+  if(bitmap_.has("external-palette"))
+    {
+      uint32_t filetype;
+      ByteVec data;
+      fs::path filepath;
+      std::optional<PLUT> plut;
+
+      filepath = bitmap_.get("external-palette");
+
+      ReadFile::read(filepath,data);
+      filetype = IdentifyFile::identify(data);
+      if(!IdentifyFile::chunked_type(filetype))
+        throw fmt::exception("'{}' does not appear to be a 3DO formated file",filepath);
+
+      plut = ::get_cel_file_plut(data);
+      if(plut)
+        plut_ = plut.value();
+      else
+        throw fmt::exception("No CEL PLUT found in '{}'",filepath);
+    }
+  else
+    {
+      plut_.build(bitmap_);
+    }
+
   for(size_t y = 0; y < bitmap_.h; y++)
     {
       for(size_t x = 0; x < bitmap_.w; x++)
         {
+          uint16_t color;
           const uint8_t *p = bitmap_.xy(x,y);
 
           color = RGBA8888Converter::to_rgb0555(p);
