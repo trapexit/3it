@@ -19,7 +19,7 @@
 #include "fmt.hpp"
 
 #define MAJOR 1
-#define MINOR 3
+#define MINOR 4
 #define PATCH 0
 
 namespace SubCmd
@@ -28,7 +28,8 @@ namespace SubCmd
   version()
   {
     fmt::print("3it v{}.{}.{}\n\n"
-               "https://github.com/trapexit/3it\n\n"
+               "https://github.com/trapexit/3it\n"
+               "https://github.com/trapexit/support\n\n"
                "ISC License (ISC)\n\n"
                "Copyright 2023, Antonio SJ Musumeci <trapexit@spawn.link>\n\n"
                "Permission to use, copy, modify, and/or distribute this software for\n"
