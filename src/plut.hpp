@@ -13,8 +13,10 @@ public:
   PLUT& operator=(const Chunk &chunk);
 
 public:
-  int lookup(const uint16_t color_) const;
+  int lookup(uint16_t const  color,
+             bool const      allow_closest = true,
+             bool           *closest       = nullptr) const;
 
 public:
-  void build(const Bitmap &bitmap);
+  void build(Bitmap const &bitmap);
 };

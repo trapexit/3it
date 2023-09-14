@@ -146,22 +146,24 @@
 /* These define the shifts required to get your PPMPC value into either
  * the 0 half or the 1 half of the PPMP
  */
-#define PPMP_0_SHIFT 0
-#define PPMP_1_SHIFT 16
+#define PPMP_P0_SHIFT 16
+#define PPMP_P1_SHIFT 0
 
 #define PPMPC_1S_MASK  0x00008000
 #define PPMPC_MS_MASK  0x00006000
 #define PPMPC_MF_MASK  0x00001C00
-#define PPMPC_SF_MASK  0x00000300
+#define PPMPC_DF_MASK  0x00000300
 #define PPMPC_2S_MASK  0x000000C0
 #define PPMPC_AV_MASK  0x0000003E
 #define PPMPC_2D_MASK  0x00000001
 
+#define PPMPC_1S_SHIFT  15
 #define PPMPC_MS_SHIFT  13
 #define PPMPC_MF_SHIFT  10
-#define PPMPC_SF_SHIFT  8
+#define PPMPC_DF_SHIFT  8
 #define PPMPC_2S_SHIFT  6
 #define PPMPC_AV_SHIFT  1
+#define PPMPC_2D_SHIFT  0
 
 /* PPMPC_1S_MASK definitions */
 #define PPMPC_1S_PDC   0x00000000
@@ -184,10 +186,10 @@
 #define PPMPC_MF_8  0x00001C00
 
 /* PPMPC_SF_MASK definitions */
-#define PPMPC_SF_2   0x00000100
-#define PPMPC_SF_4   0x00000200
-#define PPMPC_SF_8   0x00000300
-#define PPMPC_SF_16  0x00000000
+#define PPMPC_DF_2   0x00000100
+#define PPMPC_DF_4   0x00000200
+#define PPMPC_DF_8   0x00000300
+#define PPMPC_DF_16  0x00000000
 
 /* PPMPC_2S_MASK definitions */
 #define PPMPC_2S_0     0x00000000
