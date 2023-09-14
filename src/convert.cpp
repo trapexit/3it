@@ -33,6 +33,7 @@
 #include "pixel_converter.hpp"
 #include "pixel_writer.hpp"
 #include "read_file.hpp"
+#include "vecrw.hpp"
 #include "video_image.hpp"
 
 #include "fmt.hpp"
@@ -269,7 +270,7 @@ convert::cel_to_bitmap(cspan<uint8_t>       data_,
                 ::to_bitmap(ccc,pdat,plut,bitmaps_.back());
               }
 
-            ccc = chunk;
+            ccc  = chunk;
             pdat = cPDAT();
             plut = PLUT();
           }
@@ -391,19 +392,19 @@ convert::imag_to_bitmap(cspan<uint8_t>       data_,
           {
             cPDAT pdat(chunk.data(),chunk.data_size());
 
-            if(icc.bitsperpixel != 16)
+            if(icc.bitsperpixel  != 16)
               throw fmt::exception("bitsperpixel {} not yet supported",icc.bitsperpixel);
             if(icc.numcomponents != 3)
               throw fmt::exception("numcomponents {} not yet supported",icc.numcomponents);
-            if(icc.numplanes != 1)
+            if(icc.numplanes     != 1)
               throw fmt::exception("numplanes {} not yet supported",icc.numplanes);
-            if(icc.colorspace != 0)
+            if(icc.colorspace    != 0)
               throw fmt::exception("colorspace {} not yet supported",icc.colorspace);
-            if(icc.comptype != 0)
+            if(icc.comptype      != 0)
               throw fmt::exception("comptype {} not yet supported",icc.comptype);
-            if(icc.hvformat != 0)
+            if(icc.hvformat      != 0)
               throw fmt::exception("hvformat {} not yet supported",icc.hvformat);
-            if(icc.pixelorder != 1)
+            if(icc.pixelorder    != 1)
               throw fmt::exception("pixelorder {} not yet supported",icc.pixelorder);
 
             bitmaps_.emplace_back(icc.w,icc.h,4);
@@ -499,8 +500,11 @@ convert::bitmap_to_uncoded_unpacked_linear_8bpp(const Bitmap &bitmap_,
   uint8_t rgb;
   const size_t w = bitmap_.w;
   const size_t h = bitmap_.h;
+  VecRW pdat;
 
+  // Approximate. VecRW will manage the size as needed.
   pdat_.reserve(w * h * sizeof(uint8_t));
+  pdat.reset(&pdat_);
 
   for(size_t y = 0; y < h; y++)
     {
@@ -510,8 +514,10 @@ convert::bitmap_to_uncoded_unpacked_linear_8bpp(const Bitmap &bitmap_,
 
           rgb = RGBA8888Converter::to_rgb332(p);
 
-          pdat_.push_back(rgb);
+          pdat.writebe(rgb);
         }
+
+      pdat.skip_to_4byte_boundary();
     }
 }
 
@@ -519,25 +525,27 @@ void
 convert::bitmap_to_uncoded_unpacked_linear_16bpp(const Bitmap &bitmap_,
                                                  ByteVec      &pdat_)
 {
-  const uint8_t *p;
-  const uint8_t *pend;
-  const int      w = bitmap_.w;
-  const int      h = bitmap_.h;
-  const int      n = bitmap_.n;
-  const uint8_t *d = bitmap_.d.get();
-  union { uint8_t u8[2]; uint16_t u16; } rgb;
+  uint16_t rgb;
+  const int w = bitmap_.w;
+  const int h = bitmap_.h;
+  VecRW pdat;
 
+  // Approximate. VecRW will manage the size as needed.
   pdat_.reserve(w * h * sizeof(uint16_t));
+  pdat.reset(&pdat_);
 
-  p    = d;
-  pend = (d + (w * h * n));
-  for(; p < pend; p += n)
+  for(int y = 0; y < h; y++)
     {
-      rgb.u16 = RGBA8888Converter::to_rgb0555(p);
-      rgb.u16 = byteswap_if_little_endian(rgb.u16);
+      for(int x = 0; x < w; x++)
+        {
+          uint8_t const *p = bitmap_.xy(x,y);
 
-      pdat_.push_back(rgb.u8[0]);
-      pdat_.push_back(rgb.u8[1]);
+          rgb = RGBA8888Converter::to_rgb0555(p);
+
+          pdat.writebe(rgb);
+        }
+
+      pdat.skip_to_4byte_boundary();
     }
 }
 
@@ -545,28 +553,29 @@ void
 convert::bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap_,
                                                  ByteVec      &pdat_)
 {
+  uint16_t rgb;
   const int w = bitmap_.w;
   const int h = bitmap_.h;
-  union { uint8_t u8[2]; uint16_t u16; } rgb;
+  VecRW pdat;
 
+  // Approximate. VecRW will manage the size as needed.
   pdat_.reserve(w * h * sizeof(uint16_t));
+  pdat.reset(&pdat_);
 
   for(int y = 0; y < h; y += 2)
     {
       for(int x = 0; x < w; x++)
         {
           const uint8_t *lp = bitmap_.xy(x,y+0);
-          rgb.u16 = RGBA8888Converter::to_rgb0555(lp);
-          rgb.u16 = byteswap_if_little_endian(rgb.u16);
-          pdat_.push_back(rgb.u8[0]);
-          pdat_.push_back(rgb.u8[1]);
+          rgb = RGBA8888Converter::to_rgb0555(lp);
+          pdat.writebe(rgb);
 
           const uint8_t *rp = bitmap_.xy(x,y+1);
-          rgb.u16 = RGBA8888Converter::to_rgb0555(rp);
-          rgb.u16 = byteswap_if_little_endian(rgb.u16);
-          pdat_.push_back(rgb.u8[0]);
-          pdat_.push_back(rgb.u8[1]);
+          rgb = RGBA8888Converter::to_rgb0555(rp);
+          pdat.writebe(rgb);
         }
+
+      pdat.skip_to_4byte_boundary();
     }
 }
 
