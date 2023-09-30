@@ -106,12 +106,27 @@ PLUT::lookup(const uint16_t  color_,
   return ::closest(*this,color_);
 }
 
+bool
+PLUT::has_color(std::uint16_t const c_,
+                std::size_t const   end_idx_)
+{
+  for(std::size_t i = 0; i < end_idx_; i++)
+    {
+      if((*this)[i] == c_)
+        return true;
+    }
+
+  return false;
+}
+
 void
 PLUT::build(const Bitmap &bitmap_)
 {
   uint16_t color;
-  std::unordered_set<uint16_t> colors;
+  std::size_t idx;
+  PLUT &plut = *this;
 
+  idx = 0;
   for(size_t y = 0; y < bitmap_.h; y++)
     {
       for(size_t x = 0; x < bitmap_.w; x++)
@@ -120,15 +135,13 @@ PLUT::build(const Bitmap &bitmap_)
 
           color = RGBA8888Converter::to_rgb0555(p);
 
-          colors.emplace(color);
-        }
-    }
+          if(has_color(color,idx))
+            continue;
 
-  for(auto &c : *this)
-    {
-      c = *colors.begin();
-      colors.erase(c);
-      if(colors.empty())
-        break;
+          plut[idx++] = color;
+
+          if(idx >= size())
+            throw std::runtime_error("too many colors for 3DO PLUT");
+        }
     }
 }

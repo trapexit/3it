@@ -16,6 +16,8 @@ public:
   int lookup(uint16_t const  color,
              bool const      allow_closest = true,
              bool           *closest       = nullptr) const;
+  bool has_color(uint16_t const    color,
+                 std::size_t const end_idx = 32);
 
 public:
   void build(Bitmap const &bitmap);
