@@ -43,50 +43,18 @@
 #define DATA_PACKET_PIXEL_COUNT_SIZE 6
 
 
-struct RGB8888
-{
-  RGB8888(uint8_t r_,
-          uint8_t g_,
-          uint8_t b_,
-          uint8_t a_)
-    : r(r_),
-      g(g_),
-      b(b_),
-      a(a_)
-  {
-  }
-
-  RGB8888(uint32_t rgba_)
-    : r((rgba_ & 0xFF000000) >> 24),
-      g((rgba_ & 0x00FF0000) >> 16),
-      b((rgba_ & 0x0000FF00) >>  8),
-      a((rgba_ & 0x000000FF) >>  0)
-  {
-  }
-
-  bool
-  operator==(const RGB8888 &rhs_) const
-  {
-    return ((r == rhs_.r) &&
-            (g == rhs_.g) &&
-            (b == rhs_.b));
-  }
-
-  uint8_t r,g,b,a;
-};
-
 struct PackedDataPacket
 {
   uint8_t type;
-  std::vector<RGB8888> pixels;
+  std::vector<RGBA8888> pixels;
 };
 
 typedef std::vector<std::vector<PackedDataPacket> > AbstractPackedImage;
 
 static
 void
-pass0(const Bitmap        &b_,
-      AbstractPackedImage &pi_)
+pass0_build_api_from_bitmap(const Bitmap        &b_,
+                            AbstractPackedImage &pi_)
 {
   pi_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
@@ -95,28 +63,13 @@ pass0(const Bitmap        &b_,
 
       for(size_t x = 0; x < b_.w; x++)
         {
-          const uint8_t *p = b_.xy(x,y);
+          const RGBA8888 &p = *b_.xy(x,y);
           PackedDataPacket pdp;
 
           pdp.type = PACK_LITERAL;
-          pdp.pixels.emplace_back(p[0],p[1],p[2],p[3]);
+          pdp.pixels.emplace_back(p);
 
           pdp_list.emplace_back(pdp);
-        }
-    }
-}
-
-static
-void
-pass1_replace_alpha(AbstractPackedImage &pi_,
-                    RGB8888              transparent_)
-{
-  for(auto &pdp_list : pi_)
-    {
-      for(auto &pdp : pdp_list)
-        {
-          if(pdp.pixels[0].a == 0x00)
-            pdp.pixels[0] = transparent_;
         }
     }
 }
@@ -135,7 +88,7 @@ can_pack(PackedDataPacket &curpdp_,
 
 static
 void
-pass2_pack_packed(AbstractPackedImage &pi_)
+pass1_pack_packed(AbstractPackedImage &pi_)
 {
   for(auto &pdp_list : pi_)
     {
@@ -165,27 +118,31 @@ pass2_pack_packed(AbstractPackedImage &pi_)
 
 static
 void
-pass3_make_transparent(AbstractPackedImage &pi_,
-                       RGB8888              transparent_)
+pass2_mark_transparents(AbstractPackedImage &pi_)
 {
   for(auto &pdp_list : pi_)
     {
       for(auto &pdp : pdp_list)
         {
-          if(!(pdp.pixels[0] == transparent_))
+          if(pdp.pixels[0].a != 0)
             continue;
 
-          if(pdp.type == PACK_PACKED)
-            pdp.type = PACK_TRANSPARENT;
-          else if(pdp.type == PACK_LITERAL)
-            pdp.type = PACK_TRANSPARENT;
+          switch(pdp.type)
+            {
+            case PACK_PACKED:
+            case PACK_LITERAL:
+              pdp.type = PACK_TRANSPARENT;
+              break;
+            default:
+              break;
+            }
         }
     }
 }
 
 static
 void
-pass4_pack_literal(AbstractPackedImage &pi_)
+pass3_pack_literal(AbstractPackedImage &pi_)
 {
   for(auto &pdp_list : pi_)
     {
@@ -312,18 +269,14 @@ api_to_bytevec(const Bitmap              &b_,
 void
 CelPacker::pack(const Bitmap            &b_,
                 const RGBA8888Converter &pc_,
-                const uint32_t           transparent_color_,
                 ByteVec                 &pdat_)
 {
   AbstractPackedImage api;
-  RGB8888 transparent_color(transparent_color_);
 
-
-  pass0(b_,api);
-  pass1_replace_alpha(api,transparent_color_);
-  pass2_pack_packed(api);
-  pass3_make_transparent(api,transparent_color_);
-  pass4_pack_literal(api);
+  pass0_build_api_from_bitmap(b_,api);
+  pass1_pack_packed(api);
+  pass2_mark_transparents(api);
+  pass3_pack_literal(api);
 
   api_to_bytevec(b_,api,pc_,pdat_);
 };

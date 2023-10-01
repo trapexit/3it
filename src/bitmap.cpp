@@ -90,11 +90,33 @@ Bitmap::color_count() const
     {
       for(size_t x = 0; x < w; x++)
         {
-          const uint32_t *c = (const uint32_t*)xy(x,y);
+          const RGBA8888 *c = xy(x,y);
 
-          colors.emplace(*c);
+          if(c->a == 0)
+            continue;
+
+          colors.emplace(*(uint32_t*)c);
         }
     }
 
   return colors.size();
+}
+
+void
+Bitmap::replace_color(uint32_t const src_,
+                      uint32_t const dst_)
+{
+  RGBA8888 src(src_);
+  RGBA8888 dst(dst_);
+
+  for(size_t y = 0; y < h; y++)
+    {
+      for(size_t x = 0; x < w; x++)
+        {
+          RGBA8888 *c = xy(x,y);
+
+          if(*c == src)
+            *c = dst;
+        }
+    }
 }

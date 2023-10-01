@@ -60,11 +60,10 @@ namespace convert
   void to_bitmap(const std::filesystem::path &filepath,
                  BitmapVec                   &bitmaps);
 
-  void bitmap_to_cel(const Bitmap   &bitmap,
-                     const CelType  &celtype,
-                     const uint32_t  transparent_color,
-                     ByteVec        &pdat,
-                     PLUT           &plut);
+  void bitmap_to_cel(const Bitmap  &bitmap,
+                     const CelType &celtype,
+                     ByteVec       &pdat,
+                     PLUT          &plut);
 
   void bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap,
                                                ByteVec      &pdat);
@@ -74,12 +73,10 @@ namespace convert
   void bitmap_to_uncoded_unpacked_linear_16bpp(const Bitmap &bitmap,
                                                ByteVec      &pdat);
 
-  void bitmap_to_uncoded_packed_linear_8bpp(const Bitmap   &bitmap,
-                                            const uint32_t  transparent_color,
-                                            ByteVec        &pdat);
-  void bitmap_to_uncoded_packed_linear_16bpp(const Bitmap   &bitmap,
-                                             const uint32_t  transparent_color,
-                                             ByteVec        &pdat);
+  void bitmap_to_uncoded_packed_linear_8bpp(const Bitmap &bitmap,
+                                            ByteVec      &pdat);
+  void bitmap_to_uncoded_packed_linear_16bpp(const Bitmap &bitmap,
+                                             ByteVec      &pdat);
 
   void bitmap_to_coded_unpacked_linear_1bpp(const Bitmap &bitmap,
                                             ByteVec      &pdat,
@@ -100,30 +97,24 @@ namespace convert
                                              ByteVec      &pdat,
                                              PLUT         &plut);
 
-  void bitmap_to_coded_packed_linear_1bpp(const Bitmap   &bitmap,
-                                          const uint32_t  transparent_color,
-                                          ByteVec        &pdat,
-                                          PLUT           &plut);
-  void bitmap_to_coded_packed_linear_2bpp(const Bitmap   &bitmap,
-                                          const uint32_t  transparent_color,
-                                          ByteVec        &pdat,
-                                          PLUT           &plut);
-  void bitmap_to_coded_packed_linear_4bpp(const Bitmap   &bitmap,
-                                          const uint32_t  transparent_color,
-                                          ByteVec        &pdat,
-                                          PLUT           &plut);
-  void bitmap_to_coded_packed_linear_6bpp(const Bitmap   &bitmap,
-                                          const uint32_t  transparent_color,
-                                          ByteVec        &pdat,
-                                          PLUT           &plut);
-  void bitmap_to_coded_packed_linear_8bpp(const Bitmap   &bitmap,
-                                          const uint32_t  transparent_color,
-                                          ByteVec        &pdat,
-                                          PLUT           &plut);
-  void bitmap_to_coded_packed_linear_16bpp(const Bitmap   &bitmap,
-                                           const uint32_t  transparent_color,
-                                           ByteVec        &pdat,
-                                           PLUT           &plut);
+  void bitmap_to_coded_packed_linear_1bpp(const Bitmap &bitmap,
+                                          ByteVec      &pdat,
+                                          PLUT         &plut);
+  void bitmap_to_coded_packed_linear_2bpp(const Bitmap &bitmap,
+                                          ByteVec      &pdat,
+                                          PLUT         &plut);
+  void bitmap_to_coded_packed_linear_4bpp(const Bitmap &bitmap,
+                                          ByteVec      &pdat,
+                                          PLUT         &plut);
+  void bitmap_to_coded_packed_linear_6bpp(const Bitmap &bitmap,
+                                          ByteVec      &pdat,
+                                          PLUT         &plut);
+  void bitmap_to_coded_packed_linear_8bpp(const Bitmap &bitmap,
+                                          ByteVec      &pdat,
+                                          PLUT         &plut);
+  void bitmap_to_coded_packed_linear_16bpp(const Bitmap &bitmap,
+                                           ByteVec      &pdat,
+                                           PLUT         &plut);
 
   void uncoded_unpacked_linear_8bpp_to_bitmap(cPDAT   pdat,
                                               Bitmap &bitmap);

@@ -26,6 +26,7 @@
 #include "identify_file.hpp"
 #include "image_control_chunk.hpp"
 #include "options.hpp"
+#include "plut.hpp"
 #include "read_file.hpp"
 #include "video_image.hpp"
 
@@ -78,68 +79,68 @@ namespace l
           case CHUNK_CCB:
             ccc = chunk;
             fmt::print(" - id: {}\n"
-                       " - flags: 0x{:08X}\n"
-                       "   - skip: {}\n"
-                       "   - last: {}\n"
-                       "   - npabs: {}\n"
-                       "   - spabs: {}\n"
-                       "   - ppabs: {}\n"
-                       "   - ldsize: {}\n"
-                       "   - ldprs: {}\n"
-                       "   - ldppmp: {}\n"
-                       "   - ldplut: {}\n"
-                       "   - ccbpre: {}\n"
-                       "   - yoxy: {}\n"
-                       "   - acsc: {}\n"
-                       "   - alsc: {}\n"
-                       "   - acw: {}\n"
-                       "   - accw: {}\n"
-                       "   - twd: {}\n"
-                       "   - lce: {}\n"
-                       "   - ace: {}\n"
-                       "   - maria: {}\n"
-                       "   - pxor: {}\n"
-                       "   - useav: {}\n"
-                       "   - packed: {}\n"
-                       "   - pover: 0b{:02b} ({})\n"
-                       "   - plutpos: {}\n"
-                       "   - bgnd: {}\n"
-                       "   - noblk: {}\n"
-                       "   - pluta: {}\n"
-                       " - width: {}\n"
-                       " - height: {}\n"
-                       " - ppmpc: 0x{:08X}\n"
-                       "   - P0 1S: 0b{:01b} ({})\n"
-                       "   - P0 MS: 0b{:02b} ({})\n"
-                       "   - P0 MF: 0b{:03b} ({})\n"
-                       "   - P0 DF: 0b{:02b} ({})\n"
-                       "   - P0 2S: 0b{:02b} ({})\n"
-                       "   - P0 AV: 0b{:05b} ({})\n"
-                       "   - P0 2D: 0b{:01b} ({})\n"
-                       "   - P1 1S: 0b{:01b} ({})\n"
-                       "   - P1 MS: 0b{:02b} ({})\n"
-                       "   - P1 MF: 0b{:03b} ({})\n"
-                       "   - P1 DF: 0b{:02b} ({})\n"
-                       "   - P1 2S: 0b{:02b} ({})\n"
-                       "   - P1 AV: 0b{:05b} ({})\n"
-                       "   - P1 2D: 0b{:01b} ({})\n"
-                       " - pre0: 0x{:08X}\n"
-                       "   - literal: {}\n"
-                       "   - bgnd: {}\n"
-                       "   - skipx: {}\n"
-                       "   - vcnt: {}\n"
-                       "   - uncoded: {}\n"
-                       "   - rep8: {}\n"
-                       "   - bpp: {} ({}bpp)\n"
-                       " - pre1: 0x{:08X}\n"
-                       "   - woffset8: {}\n"
-                       "   - woffset10: {}\n"
-                       "   - noswap: {}\n"
-                       "   - unclsb: {}\n"
-                       "   - lrform: {}\n"
-                       "   - tlhpcnt: {}\n"
+                       "  - flags: 0x{:08X}\n"
+                       "    - skip: {}\n"
+                       "    - last: {}\n"
+                       "    - npabs: {}\n"
+                       "    - spabs: {}\n"
+                       "    - ppabs: {}\n"
+                       "    - ldsize: {}\n"
+                       "    - ldprs: {}\n"
+                       "    - ldppmp: {}\n"
+                       "    - ldplut: {}\n"
+                       "    - ccbpre: {}\n"
+                       "    - yoxy: {}\n"
+                       "    - acsc: {}\n"
+                       "    - alsc: {}\n"
+                       "    - acw: {}\n"
+                       "    - accw: {}\n"
+                       "    - twd: {}\n"
+                       "    - lce: {}\n"
+                       "    - ace: {}\n"
+                       "    - maria: {}\n"
+                       "    - pxor: {}\n"
+                       "    - useav: {}\n"
+                       "    - packed: {}\n"
+                       "    - pover: 0b{:02b} ({})\n"
+                       "    - plutpos: {}\n"
+                       "    - bgnd: {}\n"
+                       "    - noblk: {}\n"
+                       "    - pluta: {}\n"
+                       "  - width: {}\n"
+                       "  - height: {}\n"
+                       "  - ppmpc: 0x{:08X}\n"
+                       "    - P0 1S: 0b{:01b} ({})\n"
+                       "    - P0 MS: 0b{:02b} ({})\n"
+                       "    - P0 MF: 0b{:03b} ({})\n"
+                       "    - P0 DF: 0b{:02b} ({})\n"
+                       "    - P0 2S: 0b{:02b} ({})\n"
+                       "    - P0 AV: 0b{:05b} ({})\n"
+                       "    - P0 2D: 0b{:01b} ({})\n"
+                       "    - P1 1S: 0b{:01b} ({})\n"
+                       "    - P1 MS: 0b{:02b} ({})\n"
+                       "    - P1 MF: 0b{:03b} ({})\n"
+                       "    - P1 DF: 0b{:02b} ({})\n"
+                       "    - P1 2S: 0b{:02b} ({})\n"
+                       "    - P1 AV: 0b{:05b} ({})\n"
+                       "    - P1 2D: 0b{:01b} ({})\n"
+                       "  - pre0: 0x{:08X}\n"
+                       "    - literal: {}\n"
+                       "    - bgnd: {}\n"
+                       "    - skipx: {}\n"
+                       "    - vcnt: {}\n"
+                       "    - uncoded: {}\n"
+                       "    - rep8: {}\n"
+                       "    - bpp: {} ({}bpp)\n"
+                       "  - pre1: 0x{:08X}\n"
+                       "    - woffset8: {}\n"
+                       "    - woffset10: {}\n"
+                       "    - noswap: {}\n"
+                       "    - unclsb: {}\n"
+                       "    - lrform: {}\n"
+                       "    - tlhpcnt: {}\n"
                        ,
-                       ccc.id.str(),
+                       chunk.idstr(),
                        ccc.ccb_Flags,
                        !!(ccc.ccb_Flags & CCB_SKIP),
                        !!(ccc.ccb_Flags & CCB_LAST),
@@ -217,6 +218,24 @@ namespace l
                        !!(ccc.ccb_PRE1 & PRE1_LRFORM),
                        ((ccc.ccb_PRE1 & PRE1_TLHPCNT_MASK) >> PRE1_TLHPCNT_SHIFT)
                        );
+            break;
+          case CHUNK_PLUT:
+            PLUT plut;
+
+            plut = chunk;
+
+            fmt::print(" - id: {}\n"
+                       "  - plut:\n",
+                       chunk.idstr());
+            for(std::size_t i = 0; i < plut.size(); i++)
+              {
+                const uint8_t *c = (const uint8_t*)&plut[i];
+                fmt::print("   - {:02x}: {:02x}{:02x}\n"
+                           ,
+                           i,
+                           c[0],
+                           c[1]);
+              }
             break;
           }
       }

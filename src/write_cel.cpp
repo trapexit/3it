@@ -61,8 +61,8 @@ WriteFile::cel(const std::filesystem::path &filepath_,
       os.write("PLUT",4)
         .writebe((uint32_t)(4 + 4 + 4 + (plut_.size() * 2)))
         .writebe((uint32_t)plut_.size());
-      for(size_t i = 0; i < plut_.size(); i++)
-        os.writebe(plut_[i]);
+      for(auto c : plut_)
+        os.writebe(c);
     }
 
   os.write("PDAT",4)

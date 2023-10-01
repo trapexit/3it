@@ -32,13 +32,20 @@ std::string
 color2rgb_transform(std::string &s_)
 {
   if(s_ == "black")
-    s_ = "0x00000000";
+    s_ = "0x000000FF";
   else if(s_ == "white")
-    s_ = "0xFFFFFF00";
+    s_ = "0xFFFFFFFF";
   else if(s_ == "magenta")
-    s_ = "0xFF00FF00";
+    s_ = "0xFF00FFFF";
   else if(s_ == "cyan")
-    s_ = "0x00FFFF00";
+    s_ = "0x00FFFFFF";
+  else if(s_ == "red")
+    s_ = "0xFF0000FF";
+  else if(s_ == "green")
+    s_ = "0x00FF00FF";
+  else if(s_ == "blue")
+    s_ = "0x0000FFFF";
+
   return {};
 }
 
@@ -209,7 +216,7 @@ generate_to_cel_argparser(CLI::App       &app_,
   subcmd->add_option("--transparent",options_.transparent)
     ->description("Set packed pixel transparent color")
     ->type_name("HEX_RGBA32")
-    ->option_text("COLOR:{black,white,magenta,cyan,0xRRGGBBAA} [magenta]")
+    ->option_text("COLOR:{black,white,red,green,blue,magenta,cyan,0xRRGGBBAA} [magenta]")
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();
@@ -376,7 +383,7 @@ generate_to_nfs_shpm(CLI::App           &app_,
   subcmd->add_option("--transparent",options_.transparent)
     ->description("Set packed pixel transparent color")
     ->type_name("HEX_RGBA32")
-    ->option_text("COLOR:{black,white,magenta,cyan,0xRRGGBBAA} [magenta]")
+    ->option_text("COLOR:{black,white,red,green,blue,magenta,cyan,0xRRGGBBAA} [magenta]")
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();

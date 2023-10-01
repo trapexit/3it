@@ -42,10 +42,10 @@ public:
         const uint8_t  bpp_  = 0,
         const bool     rep8_ = false)
   {
-    _data = b_.d.get();
+    _data = (uint8_t*)b_.d.get();
     _w    = b_.w;
     _h    = b_.h;
-    _n    = b_.n;
+    _n    = sizeof(RGBA8888);
     _idx  = 0;
 
     _bpp   = bpp_;
@@ -60,18 +60,17 @@ public:
         const uint8_t  pluta_,
         const uint8_t  bpp_)
   {
-    _data = b_.d.get();
+    _data = (uint8_t*)b_.d.get();
     _w    = b_.w;
     _h    = b_.h;
-    _n    = b_.n;
+    _n    = sizeof(RGBA8888);
     _idx  = 0;
 
     _bpp   = bpp_;
     _coded = true;
     _rep8  = false;
     _pluta = pluta_;
-    for(size_t i = 0; i < plut_.size(); i++)
-      _plut[i] = plut_[i];
+    _plut  = plut_;
   }
 
   void
@@ -186,7 +185,7 @@ public:
     uint32_t amv;
 
     amv = ((rgb_ & 0x3FE) >> 5);
-    rgb = (_plut[rgb_ & 0x1F] & 0x7FFF);
+    rgb = (_plut.at(rgb_ & 0x1F) & 0x7FFF);
 
     write_uncoded_16bpp(rgb);
   }
@@ -268,7 +267,7 @@ public:
     uint16_t rgb;
 
     amv = (p_ >> 5);
-    rgb = _plut[p_ & 0x1F];
+    rgb = _plut.at(p_ & 0x1F);
 
     write_uncoded_16bpp(rgb);
   }
@@ -287,7 +286,7 @@ public:
   {
     uint16_t p;
 
-    p = _plut[p_ & 0x1F];
+    p = _plut.at(p_ & 0x1F);
 
     write_uncoded_16bpp(p);
   }
@@ -297,7 +296,7 @@ public:
   {
     uint16_t p;
 
-    p = _plut[(p_ & 0x0F) | (_pluta & 0x10)];
+    p = _plut.at((p_ & 0x0F) | (_pluta & 0x10));
 
     write_uncoded_16bpp(p);
   }
@@ -307,7 +306,7 @@ public:
   {
     uint16_t p;
 
-    p = _plut[(p_ & 0x03) | (_pluta & 0x1C)];
+    p = _plut.at((p_ & 0x03) | (_pluta & 0x1C));
 
     write_uncoded_16bpp(p);
   }
@@ -317,7 +316,7 @@ public:
   {
     uint16_t p;
 
-    p = _plut[(p_ & 0x01) | (_pluta & 0x1E)];
+    p = _plut.at((p_ & 0x01) | (_pluta & 0x1E));
 
     write_uncoded_16bpp(p);
   }

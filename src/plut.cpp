@@ -26,6 +26,12 @@
 #include <unordered_set>
 
 
+std::size_t
+PLUT::max_size() const
+{
+  return 32;
+}
+
 PLUT&
 PLUT::operator=(const Chunk &chunk_)
 {
@@ -35,9 +41,11 @@ PLUT::operator=(const Chunk &chunk_)
   br.reset(chunk_.data(),
            chunk_.size());
 
+  clear();
+
   count = br.u32be();
   for(uint32_t i = 0; i < count; i++)
-    (*this)[i] = br.u16be();
+    push_back(br.u16be());
 
   return *this;
 }
@@ -107,12 +115,11 @@ PLUT::lookup(const uint16_t  color_,
 }
 
 bool
-PLUT::has_color(std::uint16_t const c_,
-                std::size_t const   end_idx_)
+PLUT::has_color(std::uint16_t const c_)
 {
-  for(std::size_t i = 0; i < end_idx_; i++)
+  for(auto c : *this)
     {
-      if((*this)[i] == c_)
+      if(c == c_)
         return true;
     }
 
@@ -123,24 +130,25 @@ void
 PLUT::build(const Bitmap &bitmap_)
 {
   uint16_t color;
-  std::size_t idx;
-  PLUT &plut = *this;
 
-  idx = 0;
+  clear();
   for(size_t y = 0; y < bitmap_.h; y++)
     {
       for(size_t x = 0; x < bitmap_.w; x++)
         {
-          const uint8_t *p = bitmap_.xy(x,y);
+          const RGBA8888 *p = bitmap_.xy(x,y);
+
+          if(p->a == 0)
+            continue;
 
           color = RGBA8888Converter::to_rgb0555(p);
 
-          if(has_color(color,idx))
+          if(has_color(color))
             continue;
 
-          plut[idx++] = color;
+          push_back(color);
 
-          if(idx >= size())
+          if(size() > max_size())
             throw std::runtime_error("too many colors for 3DO PLUT");
         }
     }

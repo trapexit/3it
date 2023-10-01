@@ -82,7 +82,6 @@ stbi_load(const fs::path &filepath_,
   b_.d.reset(d);
   b_.w = (size_t)w;
   b_.h = (size_t)h;
-  b_.n = (size_t)4;
 }
 
 void
@@ -99,7 +98,6 @@ stbi_load(cPDAT   data_,
   b_.d.reset(d);
   b_.w = (size_t)w;
   b_.h = (size_t)h;
-  b_.n = (size_t)4;
 }
 
 int
@@ -112,11 +110,11 @@ stbi_write(const Bitmap      &b_,
   filepath = filepath_.string();
 
   if(format_ == "bmp")
-    return stbi_write_bmp(filepath.c_str(),b_.w,b_.h,b_.n,b_.d.get());
+    return stbi_write_bmp(filepath.c_str(),b_.w,b_.h,4,b_.d.get());
   if(format_ == "png")
-    return stbi_write_png(filepath.c_str(),b_.w,b_.h,b_.n,b_.d.get(),(b_.w * b_.n));
+    return stbi_write_png(filepath.c_str(),b_.w,b_.h,4,b_.d.get(),(b_.w * 4));
   if(format_ == "jpg")
-    return stbi_write_jpg(filepath.c_str(),b_.w,b_.h,b_.n,b_.d.get(),100);
+    return stbi_write_jpg(filepath.c_str(),b_.w,b_.h,4,b_.d.get(),100);
 
   throw std::runtime_error("unknown stb_image format");
 }

@@ -214,6 +214,8 @@ namespace l
 
         if(!opts_.external_palette.empty())
           bitmap.set("external-palette",opts_.external_palette.string());
+
+        bitmap.replace_color(opts_.transparent,0x00000000);
       }
 
     for(auto const &bitmap : bitmaps)
@@ -223,7 +225,7 @@ namespace l
         CelControlChunk ccc;
         fs::path filepath;
 
-        convert::bitmap_to_cel(bitmap,celtype,opts_.transparent,pdat,plut);
+        convert::bitmap_to_cel(bitmap,celtype,pdat,plut);
         if(pdat.empty())
           continue;
 
