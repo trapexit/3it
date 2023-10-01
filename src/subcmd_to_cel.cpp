@@ -239,6 +239,8 @@ namespace l
         else
           filepath = opts_.output_path;
 
+        if(opts_.write_plut == false)
+          plut.clear();
         WriteFile::cel(filepath,ccc,pdat,plut);
 
         fmt::print(" - {}\n",filepath);

@@ -230,6 +230,11 @@ generate_to_cel_argparser(CLI::App       &app_,
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->take_last();
+  subcmd->add_option("--write-plut",options_.write_plut)
+    ->description("Write PLUT to 3DO CEL file")
+    ->default_val(true)
+    ->default_str("true")
+    ->take_last();
   generate_ccb_flag_argparser(subcmd,options_.ccb_flags);
   generate_pre0_flag_argparser(subcmd,options_.pre0_flags);
 

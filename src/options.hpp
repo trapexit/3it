@@ -96,6 +96,7 @@ public:
     Pre0Flags pre0_flags;
     bool      ignore_target_ext;
     Path      external_palette;
+    bool      write_plut;
   };
 
   struct ToBanner

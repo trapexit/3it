@@ -56,7 +56,7 @@ WriteFile::cel(const std::filesystem::path &filepath_,
     .writebe(ccc_.ccb_Width)
     .writebe(ccc_.ccb_Height);
 
-  if(ccc_.coded())
+  if(ccc_.coded() && !plut_.empty())
     {
       os.write("PLUT",4)
         .writebe((uint32_t)(4 + 4 + 4 + (plut_.size() * 2)))
