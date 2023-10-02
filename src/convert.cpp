@@ -514,7 +514,8 @@ convert::bitmap_to_uncoded_unpacked_linear_8bpp(const Bitmap &bitmap_,
 
           rgb = RGBA8888Converter::to_rgb332(p);
 
-          pdat.writebe(rgb);
+
+          pdat.u8(rgb);
         }
 
       pdat.skip_to_4byte_boundary();
@@ -542,7 +543,7 @@ convert::bitmap_to_uncoded_unpacked_linear_16bpp(const Bitmap &bitmap_,
 
           rgb = RGBA8888Converter::to_rgb0555(p);
 
-          pdat.writebe(rgb);
+          pdat.u16be(rgb);
         }
 
       pdat.skip_to_4byte_boundary();
@@ -568,11 +569,11 @@ convert::bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap_,
         {
           const RGBA8888 *lp = bitmap_.xy(x,y+0);
           rgb = RGBA8888Converter::to_rgb0555(lp);
-          pdat.writebe(rgb);
+          pdat.u16be(rgb);
 
           const RGBA8888 *rp = bitmap_.xy(x,y+1);
           rgb = RGBA8888Converter::to_rgb0555(rp);
-          pdat.writebe(rgb);
+          pdat.u16be(rgb);
         }
 
       pdat.skip_to_4byte_boundary();

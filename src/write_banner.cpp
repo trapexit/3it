@@ -20,7 +20,7 @@
 
 #include "byteswap.hpp"
 #include "video_image.hpp"
-#include "ofstreambe.hpp"
+#include "filerw.hpp"
 
 #include "fmt.hpp"
 
@@ -34,40 +34,28 @@ void
 WriteFile::banner(const fs::path &filepath_,
                   const int       width_,
                   const int       height_,
-                  cspan<uint8_t>  pdat_)
+                  ByteVec        &pdat_)
 {
-  VideoImage vi;
-  std::ofstreambe os;
+  FileRW f;
 
-  os.open(filepath_,std::ofstream::binary|std::ofstream::trunc);
-  if(!os)
+  f.open_write_trunc(filepath_);
+  if(f.error())
     throw std::system_error(errno,std::system_category(),"failed to open "+filepath_.string());
 
-  vi.vi_Version   = 0x01;
-  memcpy(&vi.vi_Pattern[0],"APPSCRN",sizeof(vi.vi_Pattern));
-  vi.vi_Size      = pdat_.size();
-  vi.vi_Height    = height_;
-  vi.vi_Width     = width_;
-  vi.vi_Depth     = 16;
-  vi.vi_Type      = 0x00;
-  vi.vi_Reserved1 = 0x00;
-  vi.vi_Reserved2 = 0x00;
-  vi.vi_Reserved3 = 0x00000000;
+  f.u8(0x01);                   // vi_Version
+  f.w("APPSCRN");               // vi_Pattern
+  f.u32be(pdat_.size());        // vi_Size
+  f.u16be(height_);             // vi_Height
+  f.u16be(width_);              // vi_Width
+  f.u8(16);                     // vi_Depth
+  f.u8(0);                      // vi_Type
+  f.u8(0);                      // vi_Reserved1
+  f.u8(0);                      // vi_Reserved2
+  f.u32be(0);                   // vi_Reserved3
+  f.w(pdat_);
 
-  os.writebe(vi.vi_Version)
-    .write(vi.vi_Pattern,sizeof(vi.vi_Pattern))
-    .writebe(vi.vi_Size)
-    .writebe(vi.vi_Height)
-    .writebe(vi.vi_Width)
-    .writebe(vi.vi_Depth)
-    .writebe(vi.vi_Type)
-    .writebe(vi.vi_Reserved1)
-    .writebe(vi.vi_Reserved2)
-    .writebe(vi.vi_Reserved3)
-    .write(&pdat_[0],pdat_.size());
-
-  if(!os)
+  if(f.error())
     throw std::system_error(errno,std::system_category(),"failed to write "+filepath_.string());
 
-  os.close();
+  f.close();
 }

@@ -11,8 +11,7 @@ FileRW::FileRW()
 
 FileRW::~FileRW()
 {
-  if(_file)
-    fclose(_file);
+  close();
 }
 
 int
@@ -44,15 +43,30 @@ FileRW::open_write_trunc(std::filesystem::path const &filepath_)
 }
 
 int
-FileRW::error()
+FileRW::close()
 {
-  return ferror(_file);
+  int rv;
+
+  if(_file == NULL)
+    return 0;
+
+  rv = fclose(_file);
+
+  _file = NULL;
+
+  return rv;
 }
 
 bool
 FileRW::eof() const
 {
   return feof(_file);
+}
+
+bool
+FileRW::error() const
+{
+  return ferror(_file);
 }
 
 size_t
@@ -68,8 +82,8 @@ FileRW::seek(const size_t idx_)
 }
 
 size_t
-FileRW::read(uint8_t       *p_,
-             const size_t  count_)
+FileRW::_r(void         *p_,
+           const size_t  count_)
 {
   size_t rv;
 
@@ -79,8 +93,8 @@ FileRW::read(uint8_t       *p_,
 }
 
 size_t
-FileRW::write(uint8_t const * const p_,
-              const size_t         count_)
+FileRW::_w(const void   *p_,
+           const size_t  count_)
 {
   size_t rv;
 
