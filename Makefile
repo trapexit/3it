@@ -64,6 +64,6 @@ docker-release:
 	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:edge "/src/tools/docker-make-release"
 
 
-.PHONY: clean builddir release static-release
+.PHONY: clean builddir release docker-release
 
 -include $(DEPS)

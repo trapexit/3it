@@ -19,6 +19,7 @@
 #pragma once
 
 #include "plut.hpp"
+#include "rgba8888.hpp"
 
 #include <cstdint>
 
@@ -31,10 +32,13 @@ public:
 
 public:
   static uint8_t  to_rgb332(const uint8_t *p);
+  static uint8_t  to_rgb332(const RGBA8888 *p);
   static uint16_t to_rgb0555(const uint8_t *p);
+  static uint16_t to_rgb0555(const RGBA8888 *p);
 
 public:
   uint32_t convert(const uint8_t *p) const;
+  uint32_t convert(const RGBA8888 *p) const;
 
 public:
   int bpp() const { return _bpp; }

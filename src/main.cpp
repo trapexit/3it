@@ -32,13 +32,20 @@ std::string
 color2rgb_transform(std::string &s_)
 {
   if(s_ == "black")
-    s_ = "0x00000000";
+    s_ = "0x000000FF";
   else if(s_ == "white")
-    s_ = "0xFFFFFF00";
+    s_ = "0xFFFFFFFF";
   else if(s_ == "magenta")
-    s_ = "0xFF00FF00";
+    s_ = "0xFF00FFFF";
   else if(s_ == "cyan")
-    s_ = "0x00FFFF00";
+    s_ = "0x00FFFFFF";
+  else if(s_ == "red")
+    s_ = "0xFF0000FF";
+  else if(s_ == "green")
+    s_ = "0x00FF00FF";
+  else if(s_ == "blue")
+    s_ = "0x0000FFFF";
+
   return {};
 }
 
@@ -209,7 +216,7 @@ generate_to_cel_argparser(CLI::App       &app_,
   subcmd->add_option("--transparent",options_.transparent)
     ->description("Set packed pixel transparent color")
     ->type_name("HEX_RGBA32")
-    ->option_text("COLOR:{black,white,magenta,cyan,0xRRGGBBAA} [magenta]")
+    ->option_text("COLOR:{black,white,red,green,blue,magenta,cyan,0xRRGGBBAA} [magenta]")
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();
@@ -222,6 +229,11 @@ generate_to_cel_argparser(CLI::App       &app_,
     ->description("Use a different CEL file's PLUT instead of building a unique one")
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
+    ->take_last();
+  subcmd->add_option("--write-plut",options_.write_plut)
+    ->description("Write PLUT to 3DO CEL file")
+    ->default_val(true)
+    ->default_str("true")
     ->take_last();
   generate_ccb_flag_argparser(subcmd,options_.ccb_flags);
   generate_pre0_flag_argparser(subcmd,options_.pre0_flags);
@@ -376,7 +388,7 @@ generate_to_nfs_shpm(CLI::App           &app_,
   subcmd->add_option("--transparent",options_.transparent)
     ->description("Set packed pixel transparent color")
     ->type_name("HEX_RGBA32")
-    ->option_text("COLOR:{black,white,magenta,cyan,0xRRGGBBAA} [magenta]")
+    ->option_text("COLOR:{black,white,red,green,blue,magenta,cyan,0xRRGGBBAA} [magenta]")
     ->transform(CLI::Validator(color2rgb_transform,""))
     ->default_val("magenta")
     ->take_last();

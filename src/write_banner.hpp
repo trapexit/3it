@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "span.hpp"
+#include "bytevec.hpp"
 
 #include <filesystem>
 
@@ -29,5 +29,5 @@ namespace WriteFile
   banner(const std::filesystem::path &path,
          const int                    w,
          const int                    h,
-         cspan<uint8_t>               pdat);
+         ByteVec                     &pdat);
 }

@@ -19,6 +19,12 @@ VecRW::eof() const
   return (_idx >= _vec->size());
 }
 
+bool
+VecRW::error() const
+{
+  return false;
+}
+
 size_t
 VecRW::tell() const
 {
@@ -34,15 +40,17 @@ VecRW::seek(const size_t idx_)
 }
 
 size_t
-VecRW::read(uint8_t       *p_,
-            const size_t  count_)
+VecRW::_r(void         *p_,
+          const size_t  count_)
 {
   size_t rv;
+  uint8_t *p;
 
   rv = 0;
+  p = (uint8_t*)p_;
   for(size_t i = 0; i < count_ && !eof(); i++)
     {
-      *p_++ = _vec->operator[](_idx++);
+      *p++ = (*_vec)[_idx++];
       rv++;
     }
 
@@ -50,11 +58,11 @@ VecRW::read(uint8_t       *p_,
 }
 
 size_t
-VecRW::write(uint8_t const * const p_,
-             const size_t         count_)
+VecRW::_w(const void   *p_,
+          const size_t  count_)
 {
   std::size_t rv;
-  std::uint8_t const *p = p_;
+  std::uint8_t const *p = (std::uint8_t const*)p_;
 
   if((_idx + count_) > _vec->size())
     _vec->resize(_vec->size() + count_);
@@ -62,7 +70,7 @@ VecRW::write(uint8_t const * const p_,
   rv = 0;
   for(size_t i = 0; i < count_; i++)
     {
-      _vec->operator[](_idx++) = *p++;
+      (*_vec)[_idx++] = *p++;
       rv++;
     }
 

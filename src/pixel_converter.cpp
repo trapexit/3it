@@ -42,6 +42,14 @@ RGBA8888Converter::to_rgb332(const uint8_t *p_)
           ((p_[2] & 0xC0) >> 6));
 }
 
+uint8_t
+RGBA8888Converter::to_rgb332(const RGBA8888 *p_)
+{
+  return (((p_->r & 0xE0) << 0) |
+          ((p_->g & 0xE0) >> 3) |
+          ((p_->b & 0xC0) >> 6));
+}
+
 uint16_t
 RGBA8888Converter::to_rgb0555(const uint8_t *p_)
 {
@@ -50,8 +58,41 @@ RGBA8888Converter::to_rgb0555(const uint8_t *p_)
           ((p_[2] & 0xF8) >> 3));
 }
 
+uint16_t
+RGBA8888Converter::to_rgb0555(const RGBA8888 *p_)
+{
+  return (((p_->r & 0xF8) << 7) |
+          ((p_->g & 0xF8) << 2) |
+          ((p_->b & 0xF8) >> 3));
+}
+
 uint32_t
 RGBA8888Converter::convert(const uint8_t *p_) const
+{
+  if(_coded == false)
+    {
+      switch(_bpp)
+        {
+        case 8:
+          return to_rgb332(p_);
+        case 16:
+          return to_rgb0555(p_);
+        default:
+          return 0;
+        }
+    }
+  else
+    {
+      uint16_t c;
+
+      c = to_rgb0555(p_);
+
+      return _plut->lookup(c);
+    }
+}
+
+uint32_t
+RGBA8888Converter::convert(const RGBA8888 *p_) const
 {
   if(_coded == false)
     {

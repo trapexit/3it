@@ -30,6 +30,5 @@ namespace CelPacker
   void
   pack(const Bitmap            &b_,
        const RGBA8888Converter &pc_,
-       const uint32_t           transparent_color_,
        ByteVec                 &pdat_);
 }

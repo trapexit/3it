@@ -18,7 +18,7 @@
 
 #include "write_cel.hpp"
 
-#include "ofstreambe.hpp"
+#include "filerw.hpp"
 
 #include "fmt.hpp"
 
@@ -26,51 +26,51 @@
 void
 WriteFile::cel(const std::filesystem::path &filepath_,
                const CelControlChunk       &ccc_,
-               cspan<uint8_t>               pdat_,
+               const ByteVec               &pdat_,
                const PLUT                  &plut_)
 {
-  std::ofstreambe os;
+  FileRW f;
 
-  os.open(filepath_,std::ofstream::binary|std::ofstream::trunc);
-  if(!os)
+  f.open_write_trunc(filepath_);
+  if(f.error())
     throw std::system_error(errno,std::system_category(),"failed to open "+filepath_.string());
 
-  os.writebe(ccc_.id.uint32())
-    .writebe(ccc_.chunk_size)
-    .writebe(ccc_.ccb_version)
-    .writebe(ccc_.ccb_Flags)
-    .writebe(ccc_.ccb_NextPtr)
-    .writebe(ccc_.ccb_CelData)
-    .writebe(ccc_.ccb_PLUTPtr)
-    .writebe(ccc_.ccb_X)
-    .writebe(ccc_.ccb_Y)
-    .writebe(ccc_.ccb_hdx)
-    .writebe(ccc_.ccb_hdy)
-    .writebe(ccc_.ccb_vdx)
-    .writebe(ccc_.ccb_vdy)
-    .writebe(ccc_.ccb_ddx)
-    .writebe(ccc_.ccb_ddy)
-    .writebe(ccc_.ccb_PPMPC)
-    .writebe(ccc_.ccb_PRE0)
-    .writebe(ccc_.ccb_PRE1)
-    .writebe(ccc_.ccb_Width)
-    .writebe(ccc_.ccb_Height);
+  f.u32be(ccc_.id.uint32());
+  f.u32be(ccc_.chunk_size);
+  f.u32be(ccc_.ccb_version);
+  f.u32be(ccc_.ccb_Flags);
+  f.u32be(ccc_.ccb_NextPtr);
+  f.u32be(ccc_.ccb_CelData);
+  f.u32be(ccc_.ccb_PLUTPtr);
+  f.i32be(ccc_.ccb_X);
+  f.i32be(ccc_.ccb_Y);
+  f.i32be(ccc_.ccb_hdx);
+  f.i32be(ccc_.ccb_hdy);
+  f.i32be(ccc_.ccb_vdx);
+  f.i32be(ccc_.ccb_vdy);
+  f.i32be(ccc_.ccb_ddx);
+  f.i32be(ccc_.ccb_ddy);
+  f.u32be(ccc_.ccb_PPMPC);
+  f.u32be(ccc_.ccb_PRE0);
+  f.u32be(ccc_.ccb_PRE1);
+  f.i32be(ccc_.ccb_Width);
+  f.i32be(ccc_.ccb_Height);
 
-  if(ccc_.coded())
+  if(ccc_.coded() && !plut_.empty())
     {
-      os.write("PLUT",4)
-        .writebe((uint32_t)(4 + 4 + 4 + (plut_.size() * 2)))
-        .writebe((uint32_t)plut_.size());
-      for(size_t i = 0; i < plut_.size(); i++)
-        os.writebe(plut_[i]);
+      f.w("PLUT");
+      f.u32be(4 + 4 + 4 + (plut_.size() * 2));
+      f.u32be(plut_.size());
+      for(auto p : plut_)
+        f.u16be(p);
     }
 
-  os.write("PDAT",4)
-    .writebe((uint32_t)(pdat_.size() + 4 + 4))
-    .write(&pdat_[0],pdat_.size());
+  f.w("PDAT");
+  f.u32be(pdat_.size() + 4 + 4);
+  f.w(pdat_);
 
-  if(!os)
+  if(f.error())
     throw std::system_error(errno,std::system_category(),"failed to write "+filepath_.string());
 
-  os.close();
+  f.close();
 }

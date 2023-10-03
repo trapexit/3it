@@ -20,7 +20,6 @@
 
 #include "cel_control_chunk.hpp"
 #include "plut.hpp"
-#include "span.hpp"
 
 #include <filesystem>
 
@@ -30,6 +29,6 @@ namespace WriteFile
   void
   cel(const std::filesystem::path &path,
       const CelControlChunk       &ccc,
-      cspan<uint8_t>               pdat,
+      const ByteVec               &pdat,
       const PLUT                  &plut);
 }

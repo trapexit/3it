@@ -38,8 +38,11 @@ public:
 
 public:
   bool   eof() const;
+  bool   error() const;
   size_t tell() const;
   void   seek(const size_t idx);
-  size_t read(uint8_t *p, const size_t count);
-  size_t write(uint8_t const * const p, const size_t count);
+
+protected:
+  size_t _r(void *p, const size_t count);
+  size_t _w(const void *p, const size_t count);
 };

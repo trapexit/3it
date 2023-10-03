@@ -113,7 +113,7 @@ SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
       pdats.emplace_back();
 
       if(opts_.packed)
-        convert::bitmap_to_uncoded_packed_linear_16bpp(bitmap,opts_.transparent,pdats.back());
+        convert::bitmap_to_uncoded_packed_linear_16bpp(bitmap,pdats.back());
       else
         convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap,pdats.back());
     }

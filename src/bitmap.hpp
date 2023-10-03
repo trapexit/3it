@@ -1,69 +1,70 @@
 #pragma once
 
-#include <string>
-#include <map>
-
-#include <memory>
+#include "rgba8888.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 
+#include <string>
+#include <map>
+#include <memory>
 
 struct Bitmap
 {
   Bitmap() = default;
 
-  Bitmap(const int w_,
-         const int h_,
-         const int n_ = 4)
+  Bitmap(const std::size_t w_,
+         const std::size_t h_)
   {
-    reset(w_,h_,n_);
+    reset(w_,h_);
   }
 
   void
-  reset(const int w_,
-        const int h_,
-        const int n_ = 4)
+  reset(const std::size_t w_,
+        const std::size_t h_)
   {
     w = w_;
     h = h_;
-    n = n_;
-    d = std::make_unique<uint8_t[]>(w * h * n);
+    d = std::make_unique<uint8_t[]>(w * h * sizeof(RGBA8888));
   }
 
-  uint8_t*
-  xy(size_t x_,
-     size_t y_)
+  RGBA8888*
+  xy(const std::size_t x_,
+     const std::size_t y_)
   {
-    size_t offset;
+    RGBA8888 *p;
+    std::size_t offset;
 
-    offset = ((w * y_ * n) + (x_ * n));
+    p = (RGBA8888*)d.get();
+    offset = ((w * y_) + x_);
 
-    return &d.get()[offset];
+    return &p[offset];
   }
 
   const
-  uint8_t*
-  xy(size_t x_,
-     size_t y_) const
+  RGBA8888*
+  xy(const std::size_t x_,
+     const std::size_t y_) const
   {
-    size_t offset;
+    RGBA8888 *p;
+    std::size_t offset;
 
-    offset = ((w * y_ * n) + (x_ * n));
+    p = (RGBA8888*)d.get();
+    offset = ((w * y_) + x_);
 
-    return &d.get()[offset];
+    return &p[offset];
   }
 
-  uint8_t*
-  y(size_t y_)
+  RGBA8888*
+  y(const std::size_t y_)
   {
     return xy(0,y_);
   }
 
   const
-  uint8_t*
-  y(size_t y_) const
+  RGBA8888*
+  y(std::size_t y_) const
   {
     return xy(0,y_);
   }
@@ -80,9 +81,8 @@ struct Bitmap
   }
 
 public:
-  size_t w;
-  size_t h;
-  size_t n;
+  std::size_t w;
+  std::size_t h;
   std::shared_ptr<uint8_t[]> d;
 
 private:
@@ -102,4 +102,6 @@ public:
 
 public:
   uint32_t color_count() const;
+  void replace_color(uint32_t const src,
+                     uint32_t const dst);
 };
