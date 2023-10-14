@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2023, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -16,19 +16,10 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "fmt.hpp"
+#pragma once
 
-
-namespace SubCmd
-{
-  void
-  docs()
-  {
-    fmt::print("https://3dodev.com\n"
-               "https://3dodev.com/documentation/file_formats\n"
-               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpg\n"
-               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpg\n"
-               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgh\n"
-               "https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/00gpg1\n");
-  }
-}
+#define CHUNK_ID_SIZE        sizeof(uint32_t)
+#define CHUNK_SIZE_SIZE      sizeof(uint32_t)
+#define CHUNK_HDR_SIZE       (CHUNK_ID_SIZE + CHUNK_SIZE_SIZE)
+#define CHUNK_PLUT_SIZE_SIZE sizeof(uint32_t)
+#define CHUNK_PLUT_VAL_SIZE  sizeof(uint16_t)
