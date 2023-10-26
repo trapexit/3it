@@ -20,6 +20,25 @@
 // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgd
 // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpga
 
+/*
+  This code is not optimal wrt speed or space but it really doesn't
+  need to be and makes the code easier to understand. It is broken
+  down into multiple, order dependant passes.
+
+  0. Convert the raw bitmap into an abstract form. Absolutely worse
+  'packed' form with every pixel being an individual literal
+  packet. Sets alpha == 0 pixels to be RGBA == 0000 to make further
+  logic easier.
+  1. Walk over rows and turn contiguous lists of pixels of the same
+  color into packed packets.
+  2. Go over all packets and change those with alpha set to 0 as
+  transparent.
+  3. Compress lists of literal packets into a literal packet.
+  4. Find instances of literal packets followed by packed (or packed
+  followed by literal) and check if it would take less space if
+  combined and do so. This will be run multiple times till the size stops reducing.
+*/
+
 #include "cel_packer.hpp"
 
 #include "bitmap.hpp"
@@ -46,27 +65,83 @@
 struct PackedDataPacket
 {
   uint8_t type;
+  uint8_t bpp;
   std::vector<RGBA8888> pixels;
+
+  bool is_literal() const { return type == PACK_LITERAL; };
+  bool is_packed() const { return type == PACK_PACKED; };
+  bool is_literal_or_packed() const { return is_literal() || is_packed(); }
+
+  size_t size() const;
+  size_t raw_literal_size() const;
 };
 
 typedef std::vector<std::vector<PackedDataPacket> > AbstractPackedImage;
 
+
+size_t
+PackedDataPacket::size() const
+{
+  switch(type)
+    {
+    case PACK_LITERAL:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE +
+              (pixels.size() * bpp));
+    case PACK_TRANSPARENT:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE);
+    case PACK_PACKED:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE +
+              bpp);
+    case PACK_EOL:
+      return (DATA_PACKET_DATA_TYPE_SIZE);
+    }
+
+  return 0;
+}
+
+size_t
+PackedDataPacket::raw_literal_size() const
+{
+  switch(type)
+    {
+    case PACK_LITERAL:
+    case PACK_PACKED:
+      return (pixels.size() * bpp);
+    case PACK_TRANSPARENT:
+    case PACK_EOL:
+      return 0;
+    }
+
+  return 0;
+}
+
 static
 void
 pass0_build_api_from_bitmap(const Bitmap        &b_,
-                            AbstractPackedImage &pi_)
+                            uint8_t              bpp_,
+                            AbstractPackedImage &api_)
 {
-  pi_.resize(b_.h);
+  api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
-      std::vector<PackedDataPacket> &pdp_list = pi_[y];
+      std::vector<PackedDataPacket> &pdp_list = api_[y];
 
       for(size_t x = 0; x < b_.w; x++)
         {
-          const RGBA8888 &p = *b_.xy(x,y);
+          RGBA8888 p;
           PackedDataPacket pdp;
 
+          // If alpha is 0 then zero out the color to make packing
+          // easier later
+          p = *b_.xy(x,y);
+          if(p.a == 0)
+            p = RGBA8888(0);
+
           pdp.type = PACK_LITERAL;
+          pdp.bpp  = bpp_;
           pdp.pixels.emplace_back(p);
 
           pdp_list.emplace_back(pdp);
@@ -88,9 +163,9 @@ can_pack(PackedDataPacket &curpdp_,
 
 static
 void
-pass1_pack_packed(AbstractPackedImage &pi_)
+pass1_pack_packed(AbstractPackedImage &api_)
 {
-  for(auto &pdp_list : pi_)
+  for(auto &pdp_list : api_)
     {
       std::vector<PackedDataPacket> newpdp_list;
 
@@ -118,9 +193,9 @@ pass1_pack_packed(AbstractPackedImage &pi_)
 
 static
 void
-pass2_mark_transparents(AbstractPackedImage &pi_)
+pass2_mark_transparents(AbstractPackedImage &api_)
 {
-  for(auto &pdp_list : pi_)
+  for(auto &pdp_list : api_)
     {
       for(auto &pdp : pdp_list)
         {
@@ -170,6 +245,120 @@ pass3_pack_literal(AbstractPackedImage &pi_)
       pdp_list = newpdp_list;
     }
 }
+
+static
+size_t
+api_row_size(std::vector<PackedDataPacket> const &pdp_list_)
+{
+  size_t rv;
+
+  rv = 0;
+  for(auto const &pdp : pdp_list_)
+    rv += pdp.size();
+
+  return rv;
+}
+
+static
+size_t
+api_size(AbstractPackedImage &api_)
+{
+  size_t rv;
+
+  rv = 0;
+  for(auto const &pdp_list : api_)
+    rv += api_row_size(pdp_list);
+
+  return rv;
+}
+
+static
+void
+pass4_compress_literal_and_packed(AbstractPackedImage &api_)
+{
+  for(auto &pdp_list : api_)
+    {
+      std::vector<PackedDataPacket> newpdp_list;
+
+      for(auto const &pdp : pdp_list)
+        {
+          switch(pdp.type)
+            {
+            case PACK_LITERAL:
+              {
+                if(newpdp_list.empty())
+                  {
+                    newpdp_list.emplace_back(pdp);
+                    break;
+                  }
+
+                auto &newpdp = newpdp_list.back();
+                if(newpdp.is_literal_or_packed())
+                  {
+                    if(newpdp.size() >= newpdp.raw_literal_size())
+                      {
+                        newpdp.type = PACK_LITERAL;
+                        for(auto &p : pdp.pixels)
+                          newpdp.pixels.emplace_back(p);
+                      }
+                    else
+                      {
+                        newpdp_list.emplace_back(pdp);
+                      }
+                  }
+                else
+                  {
+                    newpdp_list.emplace_back(pdp);
+                  }
+              }
+              break;
+            case PACK_TRANSPARENT:
+            case PACK_EOL:
+              newpdp_list.emplace_back(pdp);
+              break;
+            case PACK_PACKED:
+              {
+                if(newpdp_list.empty() || !newpdp_list.back().is_literal())
+                  {
+                    newpdp_list.emplace_back(pdp);
+                    break;
+                  }
+
+                auto &newpdp = newpdp_list.back();
+                if(pdp.size() > pdp.raw_literal_size())
+                  {
+                    for(auto &p : pdp.pixels)
+                      newpdp.pixels.emplace_back(p);
+                  }
+                else
+                  {
+                    newpdp_list.emplace_back(pdp);
+                  }
+              }
+              break;
+            }
+        }
+
+      pdp_list = newpdp_list;
+    }
+}
+
+static
+void
+pass4_combine(AbstractPackedImage &api_)
+{
+  size_t prev_size;
+  size_t comp_size;
+
+  do
+    {
+      prev_size = api_size(api_);
+      pass4_compress_literal_and_packed(api_);
+      comp_size = api_size(api_);
+    }
+  while(comp_size != prev_size);
+}
+
 
 static
 std::size_t
@@ -273,10 +462,11 @@ CelPacker::pack(const Bitmap            &b_,
 {
   AbstractPackedImage api;
 
-  pass0_build_api_from_bitmap(b_,api);
+  pass0_build_api_from_bitmap(b_,pc_.bpp(),api);
   pass1_pack_packed(api);
   pass2_mark_transparents(api);
   pass3_pack_literal(api);
+  pass4_combine(api);
 
   api_to_bytevec(b_,api,pc_,pdat_);
 };

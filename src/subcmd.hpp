@@ -26,6 +26,7 @@ namespace SubCmd
   void docs();
   void info(const Options::Info &opts);
   void list_chunks(const Options::ListChunks &opts);
+  void dump_packed_instructions(const Options::ListChunks &opts);
   void to_cel(const Options::ToCEL &opts);
   void to_banner(const Options::ToBanner &opts);
   void to_imag(const Options::ToIMAG &opts);
