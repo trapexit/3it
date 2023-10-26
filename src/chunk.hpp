@@ -45,6 +45,7 @@ public:
   uint32_t       size() const;
   const uint8_t *data() const;
   uint32_t       data_size() const;
+  std::string    valid() const;
 
 public:
   Chunk& operator=(cspan<uint8_t>);
