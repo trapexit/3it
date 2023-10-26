@@ -37,39 +37,39 @@ public:
 
   struct CCBFlags
   {
-    Flag skip;
-    Flag last;
-    Flag npabs;
-    Flag spabs;
-    Flag ppabs;
-    Flag ldsize;
-    Flag ldprs;
-    Flag ldppmp;
-    Flag ldplut;
-    Flag ccbpre;
-    Flag yoxy;
-    Flag acsc;
-    Flag alsc;
-    Flag acw;
-    Flag accw;
-    Flag twd;
-    Flag lce;
-    Flag ace;
-    Flag maria;
-    Flag pxor;
-    Flag useav;
-    Flag packed;
-    Flag plutpos;
-    Flag bgnd;
-    Flag noblk;
+    Flag skip    = Flag::DEFAULT;
+    Flag last    = Flag::DEFAULT;
+    Flag npabs   = Flag::DEFAULT;
+    Flag spabs   = Flag::DEFAULT;
+    Flag ppabs   = Flag::DEFAULT;
+    Flag ldsize  = Flag::DEFAULT;
+    Flag ldprs   = Flag::DEFAULT;
+    Flag ldppmp  = Flag::DEFAULT;
+    Flag ldplut  = Flag::DEFAULT;
+    Flag ccbpre  = Flag::DEFAULT;
+    Flag yoxy    = Flag::DEFAULT;
+    Flag acsc    = Flag::DEFAULT;
+    Flag alsc    = Flag::DEFAULT;
+    Flag acw     = Flag::DEFAULT;
+    Flag accw    = Flag::DEFAULT;
+    Flag twd     = Flag::DEFAULT;
+    Flag lce     = Flag::DEFAULT;
+    Flag ace     = Flag::DEFAULT;
+    Flag maria   = Flag::DEFAULT;
+    Flag pxor    = Flag::DEFAULT;
+    Flag useav   = Flag::DEFAULT;
+    Flag packed  = Flag::DEFAULT;
+    Flag plutpos = Flag::DEFAULT;
+    Flag bgnd    = Flag::DEFAULT;
+    Flag noblk   = Flag::DEFAULT;
   };
 
   struct Pre0Flags
   {
-    Flag literal;
-    Flag bgnd;
-    Flag uncoded;
-    Flag rep8;
+    Flag literal = Flag::DEFAULT;
+    Flag bgnd    = Flag::DEFAULT;
+    Flag uncoded = Flag::DEFAULT;
+    Flag rep8    = Flag::DEFAULT;
   };
 
   struct Info

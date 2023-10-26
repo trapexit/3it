@@ -129,6 +129,8 @@ namespace l
     ccc_.ccb_Flags |= CCB_BGND;
     if(celtype_.packed)
       ccc_.ccb_Flags |= CCB_PACKED;
+    if(celtype_.coded)
+      ccc_.ccb_Flags |= CCB_LDPLUT;
 
     ccc_.ccb_hdx = ONE_12_20;
     ccc_.ccb_vdy = ONE_16_16;

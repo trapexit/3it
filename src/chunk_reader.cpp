@@ -31,8 +31,14 @@ ChunkReader::chunkify(cspan<uint8_t>  data_,
 
   while(iter < end)
     {
-      chunks_.resize(chunks_.size() + 1);
-      chunks_.back() = cspan<uint8_t>(iter,end);
-      iter += chunks_.back().size();
+      Chunk tmp;
+
+      tmp = cspan<uint8_t>(iter,end);
+      if(!tmp)
+        break;
+
+      chunks_.emplace_back(tmp);
+
+      iter += tmp.size();
     }
 }

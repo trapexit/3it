@@ -157,3 +157,9 @@ Chunk::validate(cspan<uint8_t> chunk_)
 
   return {};
 }
+
+std::string
+Chunk::valid() const
+{
+  return validate(_chunk);
+}
