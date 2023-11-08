@@ -105,6 +105,23 @@ generate_list_chunks(CLI::App            &app_,
   subcmd->callback(std::bind(SubCmd::list_chunks,std::cref(opts_)));
 }
 
+static
+void
+generate_dump_packed_instructions(CLI::App            &app_,
+                                  Options::ListChunks &opts_)
+{
+  CLI::App *subcmd;
+
+  subcmd = app_.add_subcommand("dump-packed-instructions","print out a packed CEL's instruction list");
+  subcmd->add_option("filepaths",opts_.filepaths)
+    ->description("path to images")
+    ->type_name("PATH")
+    ->check(CLI::ExistingFile)
+    ->required();
+
+  subcmd->callback(std::bind(SubCmd::dump_packed_instructions,std::cref(opts_)));
+}
+
 #define ADD_FLAG(NAME)                                          \
   subcmd_->add_option("--ccb-"#NAME,flags_.NAME)                \
   ->description("Set CCB flag "#NAME)                           \
@@ -409,6 +426,7 @@ generate_argparser(CLI::App &app_,
   generate_docs_argparser(app_);
   generate_info_argparser(app_,options_.info);
   generate_list_chunks(app_,options_.list_chunks);
+  //  generate_dump_packed_instructions(app_,options_.list_chunks);
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
   generate_to_imag_argparser(app_,options_.to_imag);
