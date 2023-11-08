@@ -19,7 +19,7 @@
 #include "fmt.hpp"
 
 #define MAJOR 1
-#define MINOR 5
+#define MINOR 6
 #define PATCH 0
 
 namespace SubCmd
