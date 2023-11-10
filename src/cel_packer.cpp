@@ -32,11 +32,14 @@
   1. Walk over rows and turn contiguous lists of pixels of the same
   color into packed packets.
   2. Go over all packets and change those with alpha set to 0 as
-  transparent.
-  3. Compress lists of literal packets into a literal packet.
-  4. Find instances of literal packets followed by packed (or packed
-  followed by literal) and check if it would take less space if
-  combined and do so. This will be run multiple times till the size stops reducing.
+  transparent packets.
+  3. Find instances of literal packets followed by packed, packed
+  followed by literal, or literal after literal and check if it would
+  take less space if combined and do so. This will be run till the
+  size stops reducing.
+  4. Split abstract packets with a counter greater than 64 into
+  multiple packets of size 64 or less.
+  5. Remove trailing transparent packets and replace with EOL.
 */
 
 #include "cel_packer.hpp"
@@ -54,6 +57,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "fmt/core.h"
+
 
 #define BITS_PER_BYTE 8
 #define BYTES_PER_WORD 4
@@ -70,13 +75,14 @@ struct PackedDataPacket
 
   bool is_literal() const { return type == PACK_LITERAL; };
   bool is_packed() const { return type == PACK_PACKED; };
-  bool is_literal_or_packed() const { return is_literal() || is_packed(); }
+  bool is_transparent() const { return type == PACK_TRANSPARENT; };
 
   size_t size() const;
   size_t raw_literal_size() const;
 };
 
-typedef std::vector<std::vector<PackedDataPacket> > AbstractPackedImage;
+typedef std::vector<PackedDataPacket>    PackedDataPacketVec;
+typedef std::vector<PackedDataPacketVec> AbstractPackedImage;
 
 
 size_t
@@ -127,7 +133,7 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
   api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
-      std::vector<PackedDataPacket> &pdp_list = api_[y];
+      PackedDataPacketVec &pdpvec = api_[y];
 
       for(size_t x = 0; x < b_.w; x++)
         {
@@ -144,50 +150,38 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           pdp.bpp  = bpp_;
           pdp.pixels.emplace_back(p);
 
-          pdp_list.emplace_back(pdp);
+          pdpvec.emplace_back(pdp);
         }
     }
-}
-
-static
-bool
-can_pack(PackedDataPacket &curpdp_,
-         PackedDataPacket &newpdp_)
-{
-  if(!(curpdp_.pixels[0] == newpdp_.pixels[0]))
-    return false;
-  if(newpdp_.pixels.size() < 64)
-    return true;
-  return false;
 }
 
 static
 void
 pass1_pack_packed(AbstractPackedImage &api_)
 {
-  for(auto &pdp_list : api_)
+  for(auto &pdpvec : api_)
     {
-      std::vector<PackedDataPacket> newpdp_list;
+      PackedDataPacketVec newpdpvec;
 
-      newpdp_list.emplace_back(pdp_list[0]);
+      newpdpvec.emplace_back(pdpvec[0]);
 
-      for(size_t i = 1; i < pdp_list.size(); i++)
+      for(size_t i = 1; i < pdpvec.size(); i++)
         {
-          PackedDataPacket &curpdp = pdp_list[i];
-          PackedDataPacket &newpdp = newpdp_list.back();
+          PackedDataPacket &curpdp = pdpvec[i];
+          PackedDataPacket &newpdp = newpdpvec.back();
 
-          if(::can_pack(curpdp,newpdp))
+          if(curpdp.pixels[0] == newpdp.pixels[0])
             {
               newpdp.type = PACK_PACKED;
               newpdp.pixels.emplace_back(curpdp.pixels[0]);
             }
           else
             {
-              newpdp_list.emplace_back(pdp_list[i]);
+              newpdpvec.emplace_back(pdpvec[i]);
             }
         }
 
-      pdp_list = newpdp_list;
+      pdpvec = newpdpvec;
     }
 }
 
@@ -195,54 +189,15 @@ static
 void
 pass2_mark_transparents(AbstractPackedImage &api_)
 {
-  for(auto &pdp_list : api_)
+  for(auto &pdpvec : api_)
     {
-      for(auto &pdp : pdp_list)
+      for(auto &pdp : pdpvec)
         {
           if(pdp.pixels[0].a != 0)
             continue;
 
-          switch(pdp.type)
-            {
-            case PACK_PACKED:
-            case PACK_LITERAL:
-              pdp.type = PACK_TRANSPARENT;
-              break;
-            default:
-              break;
-            }
+          pdp.type = PACK_TRANSPARENT;
         }
-    }
-}
-
-static
-void
-pass3_pack_literal(AbstractPackedImage &pi_)
-{
-  for(auto &pdp_list : pi_)
-    {
-      std::vector<PackedDataPacket> newpdp_list;
-
-      for(size_t i = 0; i < pdp_list.size();)
-        {
-          newpdp_list.emplace_back(pdp_list[i]);
-          if(pdp_list[i].type != PACK_LITERAL)
-            {
-              i++;
-              continue;
-            }
-
-          i++;
-          while((i < pdp_list.size()) && newpdp_list.back().pixels.size() < 64)
-            {
-              if(pdp_list[i].type != PACK_LITERAL)
-                break;
-
-              newpdp_list.back().pixels.emplace_back(pdp_list[i].pixels[0]);
-              i++;
-            }
-        }
-      pdp_list = newpdp_list;
     }
 }
 
@@ -274,78 +229,57 @@ api_size(AbstractPackedImage &api_)
 
 static
 void
-pass4_compress_literal_and_packed(AbstractPackedImage &api_)
+pass3_compress_literal_and_packed(AbstractPackedImage &api_)
 {
-  for(auto &pdp_list : api_)
+  for(auto &pdpvec : api_)
     {
-      std::vector<PackedDataPacket> newpdp_list;
+      std::vector<PackedDataPacket> newpdpvec;
 
-      for(auto const &pdp : pdp_list)
+      newpdpvec.emplace_back(pdpvec.front());
+
+      for(size_t i = 1; i < pdpvec.size(); i++)
         {
-          switch(pdp.type)
+          auto &pdp    = pdpvec[i];
+          auto &newpdp = newpdpvec.back();
+
+          if(newpdp.is_literal() && pdp.is_literal())
             {
-            case PACK_LITERAL:
-              {
-                if(newpdp_list.empty())
-                  {
-                    newpdp_list.emplace_back(pdp);
-                    break;
-                  }
-
-                auto &newpdp = newpdp_list.back();
-                if(newpdp.is_literal_or_packed())
-                  {
-                    if(newpdp.size() >= newpdp.raw_literal_size())
-                      {
-                        newpdp.type = PACK_LITERAL;
-                        for(auto &p : pdp.pixels)
-                          newpdp.pixels.emplace_back(p);
-                      }
-                    else
-                      {
-                        newpdp_list.emplace_back(pdp);
-                      }
-                  }
-                else
-                  {
-                    newpdp_list.emplace_back(pdp);
-                  }
-              }
-              break;
-            case PACK_TRANSPARENT:
-            case PACK_EOL:
-              newpdp_list.emplace_back(pdp);
-              break;
-            case PACK_PACKED:
-              {
-                if(newpdp_list.empty() || !newpdp_list.back().is_literal())
-                  {
-                    newpdp_list.emplace_back(pdp);
-                    break;
-                  }
-
-                auto &newpdp = newpdp_list.back();
-                if(pdp.size() > pdp.raw_literal_size())
-                  {
-                    for(auto &p : pdp.pixels)
-                      newpdp.pixels.emplace_back(p);
-                  }
-                else
-                  {
-                    newpdp_list.emplace_back(pdp);
-                  }
-              }
-              break;
+              for(auto &p : pdp.pixels)
+                newpdp.pixels.emplace_back(p);
+              continue;
             }
+
+          if(newpdp.is_literal() && pdp.is_packed())
+            {
+              if(pdp.size() >= pdp.raw_literal_size())
+                {
+                  for(auto &p : pdp.pixels)
+                    newpdp.pixels.emplace_back(p);
+                  continue;
+                }
+            }
+
+          if(newpdp.is_packed() && pdp.is_literal())
+            {
+              if(newpdp.size() >= newpdp.raw_literal_size())
+                {
+                  newpdp.type = PACK_LITERAL;
+                  for(auto &p : pdp.pixels)
+                    newpdp.pixels.emplace_back(p);
+                  continue;
+                }
+            }
+
+          newpdpvec.emplace_back(pdp);
         }
 
-      pdp_list = newpdp_list;
+      pdpvec = newpdpvec;
     }
 }
 
 static
 void
-pass4_combine(AbstractPackedImage &api_)
+pass3_combine(AbstractPackedImage &api_)
 {
   size_t prev_size;
   size_t comp_size;
@@ -353,12 +287,56 @@ pass4_combine(AbstractPackedImage &api_)
   do
     {
       prev_size = api_size(api_);
-      pass4_compress_literal_and_packed(api_);
+      pass3_compress_literal_and_packed(api_);
       comp_size = api_size(api_);
     }
   while(comp_size != prev_size);
 }
 
+static
+void
+pass4_split_large_packets(AbstractPackedImage &api_)
+{
+  for(auto &pdpvec : api_)
+    {
+      PackedDataPacketVec newpdpvec;
+
+      for(auto &pdp : pdpvec)
+        {
+          PackedDataPacket newpdp;
+
+          newpdp.type = pdp.type;
+          auto i  = pdp.pixels.begin();
+          auto ei = pdp.pixels.end();
+          while(i != ei)
+            {
+              newpdp.pixels.clear();
+              for(size_t c = 0; i != ei && c < 64; ++c, ++i)
+                newpdp.pixels.emplace_back(*i);
+              newpdpvec.emplace_back(newpdp);
+            }
+        }
+
+      pdpvec = newpdpvec;
+    }
+}
+
+static
+void
+pass5_remove_trailing_transparents(AbstractPackedImage &api_)
+{
+  for(auto &pdpvec : api_)
+    {
+      for(auto i = pdpvec.rbegin(); i != pdpvec.rend(); ++i)
+        {
+          if(!i->is_transparent())
+            break;
+
+          i->type = PACK_EOL;
+          i->pixels.clear();
+        }
+    }
+}
 
 static
 std::size_t
@@ -414,12 +392,14 @@ api_to_bytevec(const Bitmap              &b_,
 
   for(size_t i = 0; i < api_.size(); i++)
     {
-      const auto &pdplist = api_[i];
+      const auto &pdpvec = api_[i];
 
       next_row_offset = bs.tell();
       bs.skip(offset_width);
-      for(const auto &pdp : pdplist)
+      for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
         {
+          auto const &pdp = *i;
+
           bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
@@ -442,9 +422,12 @@ api_to_bytevec(const Bitmap              &b_,
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
               break;
             case PACK_EOL:
+              // In case there are multiple EOLs due to trimming of
+              // transparent packets. Just ensure EOL ends the
+              // processing for the line.
+              i = pdpvec.end() - 1;
               break;
             }
-
         }
       // The offset is minus 2 so need to be at least 2 words
       bs.skip_to_64bit_boundary();
@@ -465,8 +448,9 @@ CelPacker::pack(const Bitmap            &b_,
   pass0_build_api_from_bitmap(b_,pc_.bpp(),api);
   pass1_pack_packed(api);
   pass2_mark_transparents(api);
-  pass3_pack_literal(api);
-  pass4_combine(api);
+  pass3_combine(api);
+  pass4_split_large_packets(api);
+  pass5_remove_trailing_transparents(api);
 
   api_to_bytevec(b_,api,pc_,pdat_);
 };
