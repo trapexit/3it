@@ -85,23 +85,27 @@ public:
 
   struct ToCEL
   {
-    PathVec   filepaths;
-    Path      output_path;
-    uint8_t   bpp;
-    bool      coded;
-    bool      lrform;
-    bool      packed;
-    uint32_t  transparent;
-    CCBFlags  ccb_flags;
-    Pre0Flags pre0_flags;
-    bool      ignore_target_ext;
-    Path      external_palette;
-    bool      write_plut;
+    PathVec     filepaths;
+    Path        output_path;
+    uint8_t     bpp;
+    bool        coded;
+    bool        lrform;
+    bool        packed;
+    uint32_t    transparent;
+    CCBFlags    ccb_flags;
+    Pre0Flags   pre0_flags;
+    bool        ignore_target_ext;
+    Path        external_palette;
+    bool        write_plut;
+    int         rotation;
+    std::string find_smallest;
+    bool        generate_all;
   };
 
   struct ToBanner
   {
     PathVec filepaths;
+    Path    output_path;
     bool    ignore_target_ext;
   };
 
@@ -122,6 +126,7 @@ public:
   struct ToImage
   {
     PathVec filepaths;
+    Path    output_path;
     bool    ignore_target_ext;
   };
 

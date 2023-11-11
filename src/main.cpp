@@ -24,7 +24,11 @@
 #include "CLI11.hpp"
 #include "fmt.hpp"
 
+#include <filesystem>
+
 #include <locale>
+
+namespace fs = std::filesystem;
 
 
 static
@@ -198,6 +202,9 @@ generate_to_cel_argparser(CLI::App       &app_,
                           Options::ToCEL &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-cel","convert image to CEL");
   subcmd->add_option("filepaths",options_.filepaths)
@@ -208,6 +215,8 @@ generate_to_cel_argparser(CLI::App       &app_,
   subcmd->add_option("-o,--output-path",options_.output_path)
     ->description("Path to output file")
     ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
     ->take_last();
   subcmd->add_option("-b,--bpp",options_.bpp)
     ->description("Bits per pixel")
@@ -252,8 +261,55 @@ generate_to_cel_argparser(CLI::App       &app_,
     ->default_val(true)
     ->default_str("true")
     ->take_last();
+  subcmd->add_option("--rotation",options_.rotation)
+    ->description("Set the degrees rotation")
+    ->default_val(0)
+    ->check(CLI::IsMember({0,90,180,270}))
+    ->take_last();
+  subcmd->add_flag("--generate-all",options_.generate_all)
+    ->description("Generate every valid permutation of CEL type")
+    ->default_val(false)
+    ->default_str("false")
+    ->excludes("--coded")
+    ->excludes("--packed")
+    ->excludes("--lrform")
+    ->excludes("--bpp")
+    ->excludes("--rotation")
+    ->take_last();
+  subcmd->add_option("--find-smallest",options_.find_smallest)
+    ->description("Find the smallest CEL format")
+    ->default_val("")
+    ->check(CLI::IsMember({"regular","rotation"}))
+    ->excludes("--generate-all")
+    ->excludes("--coded")
+    ->excludes("--packed")
+    ->excludes("--lrform")
+    ->excludes("--bpp")
+    ->excludes("--rotation")
+    ->take_last();
   generate_ccb_flag_argparser(subcmd,options_.ccb_flags);
   generate_pre0_flag_argparser(subcmd,options_.pre0_flags);
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.cel'\n"
+                 "  {coded}: 'coded' or 'uncoded'\n"
+                 "  {packed}: 'packed' or 'unpacked'\n"
+                 "  {lrform}: 'lrform' or 'linear'\n"
+                 "  {_lrform}: '_lrform' or ''\n"
+                 "  {bpp}: '1', '2', '4', '6', '8', or '16'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {flags}: hex of CCB Flags\n"
+                 "  {pixc}: hex of CCB PIXC\n"
+                 "  {rotation}: rotation of the bitmap relative to input in degrees\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
+
 
   subcmd->callback(std::bind(SubCmd::to_cel,
                              std::cref(options_)));
@@ -265,18 +321,40 @@ generate_to_banner_argparser(CLI::App          &app_,
                              Options::ToBanner &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-banner","convert image to banner");
   subcmd->add_option("filepaths",options_.filepaths)
-    ->description("path to image")
+    ->description("Path to image or directory")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
+    ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.banner'\n"
+                 "  {bpp}: '16'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_banner,
                              std::cref(options_)));
@@ -288,22 +366,39 @@ generate_to_imag_argparser(CLI::App        &app_,
                            Options::ToIMAG &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-imag","convert image to IMAG");
   subcmd->add_option("filepaths",options_.filepaths)
-    ->description("path to image")
+    ->description("Path to image or directory")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
   subcmd->add_option("-o,--output-path",options_.output_path)
     ->description("Path to output file")
     ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
     ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.imag'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_imag,
                              std::cref(options_)));
@@ -315,22 +410,39 @@ generate_to_lrform_argparser(CLI::App          &app_,
                              Options::ToLRFORM &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-lrform","convert image to raw LRFORM");
   subcmd->add_option("filepaths",options_.filepaths)
-    ->description("path to image")
+    ->description("Path to image or directory")
     ->type_name("PATH")
-    ->check(CLI::ExistingFile)
+    ->check(CLI::ExistingPath)
     ->required();
   subcmd->add_option("-o,--output-path",options_.output_path)
     ->description("Path to output file")
     ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
     ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.imag'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_lrform,
                              std::cref(options_)));
@@ -342,18 +454,39 @@ generate_to_bmp_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-bmp","convert image to BMP");
-  subcmd->add_option("filepath",options_.filepaths)
-    ->description("path to source image")
+  subcmd->add_option("filepaths",options_.filepaths)
+    ->description("Path to image or directory")
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
+    ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.bmp'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -366,18 +499,39 @@ generate_to_png_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-png","convert image to PNG");
-  subcmd->add_option("filepath",options_.filepaths)
-    ->description("path to source image")
+  subcmd->add_option("filepaths",options_.filepaths)
+    ->description("Path to image or directory")
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
+    ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.png'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -390,18 +544,39 @@ generate_to_jpg_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
+  fs::path default_output_path;
+
+  default_output_path = "{filepath}{_index}{_name}{ext}";
 
   subcmd = app_.add_subcommand("to-jpg","convert image to JPG");
-  subcmd->add_option("filepath",options_.filepaths)
-    ->description("path to source image")
+  subcmd->add_option("filepaths",options_.filepaths)
+    ->description("Path to image or directory")
     ->type_name("PATH")
     ->check(CLI::ExistingPath)
     ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->default_val(default_output_path)
+    ->default_str(default_output_path)
+    ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
     ->default_str("false")
     ->take_last();
+  subcmd->footer("Output Path Template Values:\n"
+                 "  {filepath}: input filepath\n"
+                 "  {dirpath}: base path of filepath\n"
+                 "  {filename}: just the input filename without extension\n"
+                 "  {origext}: input file extension (with .)\n"
+                 "  {ext}: '.jpg'\n"
+                 "  {w}: image width\n"
+                 "  {h}: image height\n"
+                 "  {_name}: internal name of the image prefixed with '_' if supported, else empty\n"
+                 "  {index}: index of image in input if contained multiple\n"
+                 "  {_index}: index of image in input list if > 1 prepended with '_', else empty\n"
+                 );
 
   subcmd->callback(std::bind(SubCmd::to_stb_image,
                              std::cref(options_),
@@ -457,7 +632,7 @@ generate_argparser(CLI::App &app_,
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
   generate_to_imag_argparser(app_,options_.to_imag);
-  generate_to_lrform_argparser(app_,options_.to_lrform);  
+  generate_to_lrform_argparser(app_,options_.to_lrform);
   generate_to_bmp_argparser(app_,options_.to_image);
   generate_to_png_argparser(app_,options_.to_image);
   generate_to_jpg_argparser(app_,options_.to_image);

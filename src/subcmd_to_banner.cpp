@@ -23,6 +23,7 @@
 #include "options.hpp"
 #include "read_file.hpp"
 #include "stbi.hpp"
+#include "template.hpp"
 #include "video_image.hpp"
 #include "write_banner.hpp"
 
@@ -38,36 +39,69 @@ namespace l
 {
   static
   fs::path
-  generate_filepath(const fs::path filepath_)
+  generate_filepath(const fs::path  src_filepath_,
+                    const fs::path  dst_filepath_,
+                    const Bitmap   &bitmap_)
   {
     fs::path filepath;
+    std::unordered_map<std::string,std::string> extra =
+      {
+        {"bpp","16"},
+        {"w",fmt::to_string(bitmap_.w)},
+        {"h",fmt::to_string(bitmap_.h)},
+        {"_name",bitmap_.has("name") ? "_" + bitmap_.get("name") : ""},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
 
-    filepath  = filepath_;
-    filepath += ".banner";
+    filepath = resolve_path_template(src_filepath_,
+                                     dst_filepath_,
+                                     ".banner",
+                                     extra);
 
     return filepath;
   }
 
   static
   void
-  to_banner(const fs::path &filepath_)
+  to_banner(const fs::path          &filepath_,
+            const Options::ToBanner &opts_)
   {
-    ByteVec pdat;
     BitmapVec bitmaps;
 
     convert::to_bitmap(filepath_,bitmaps);
-    if(bitmaps.empty() || !bitmaps.front())
+    if(bitmaps.empty())
       throw fmt::exception("failed to convert");
 
-    convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmaps.front(),pdat);
-
-    if(!pdat.empty())
+    for(auto &bitmap : bitmaps)
       {
+        ByteVec pdat;
         fs::path filepath;
 
-        filepath = l::generate_filepath(filepath_);
+        if(bitmap.h & 0x1)
+          {
+            bitmap.h--;
+            fmt::print(" - WARNING - banners need to be an even number of vertical lines"
+                       ": truncating from {} to {} lines\n",
+                       bitmap.h + 1,
+                       bitmap.h);
+          }
 
-        WriteFile::banner(filepath,bitmaps.front().w,bitmaps.front().h,pdat);
+        if(((bitmap.w != 320) && (bitmap.h != 240)) ||
+           ((bitmap.w != 352) && (bitmap.h != 288)))
+          {
+            fmt::print(" - WARNING - non-fullscreen banners are not supported by 3DO OS\n");
+          }
+        convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmap,pdat);
+
+        if(pdat.empty())
+          continue;
+
+        filepath = l::generate_filepath(filepath_,
+                                        opts_.output_path,
+                                        bitmap);
+
+        WriteFile::banner(filepath,bitmap.w,bitmap.h,pdat);
 
         fmt::print(" - {}\n",filepath);
       }
@@ -101,7 +135,7 @@ namespace l
 
     try
       {
-        l::to_banner(filepath_);
+        l::to_banner(filepath_,opts_);
       }
     catch(const std::system_error &e_)
       {

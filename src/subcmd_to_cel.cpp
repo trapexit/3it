@@ -29,6 +29,7 @@
 #include "options.hpp"
 #include "read_file.hpp"
 #include "stbi.hpp"
+#include "template.hpp"
 #include "write_cel.hpp"
 
 #include "fmt.hpp"
@@ -167,18 +168,262 @@ namespace l
 
   static
   fs::path
-  generate_filepath(const fs::path        &filepath_,
+  generate_filepath(const fs::path         src_filepath_,
+                    const fs::path         dst_filepath_,
+                    const Bitmap          &bitmap_,
                     const CelControlChunk &ccc_)
   {
     fs::path filepath;
+    std::unordered_map<std::string,std::string> extra =
+      {
+        {"coded",(ccc_.coded() ? "coded" : "uncoded")},
+        {"packed",(ccc_.packed() ? "packed" : "unpacked")},
+        {"lrform",(ccc_.lrform() ? "lrform" : "linear")},
+        {"_lrform",(ccc_.lrform() ? "_lrform" : "")},
+        {"bpp",fmt::to_string(ccc_.bpp())},
+        {"w",fmt::to_string(ccc_.ccb_Width)},
+        {"h",fmt::to_string(ccc_.ccb_Height)},
+        {"flags",fmt::format("{:08x}",ccc_.ccb_Flags)},
+        {"pixc",fmt::format("{:08x}",ccc_.ccb_PPMPC)},
+        {"rotation",fmt::to_string(bitmap_.get("rotation"))},
+        {"_name",bitmap_.has("name") ? "_" + bitmap_.get("name") : ""},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
 
-    filepath = filepath_;
-    filepath += (ccc_.coded() ? "_coded" : "_uncoded");
-    filepath += (ccc_.packed() ? "_packed" : "_unpacked");
-    filepath += fmt::format("_{}bpp",ccc_.bpp());
-    filepath += ".cel";
+    filepath = resolve_path_template(src_filepath_,
+                                     dst_filepath_,
+                                     ".cel",
+                                     extra);
 
     return filepath;
+  }
+
+  static
+  void
+  write_file(const fs::path        &filepath_,
+             const Options::ToCEL  &opts_,
+             const CelControlChunk &ccc_,
+             const ByteVec         &pdat_,
+             const PLUT            &plut_)
+  {
+    PLUT plut;
+
+    if(opts_.write_plut == true)
+      plut = plut_;
+
+    WriteFile::cel(filepath_,ccc_,pdat_,plut);
+    fmt::print(" - {}\n",filepath_);
+  }
+
+  static
+  void
+  find_smallest_regular(Bitmap  &bitmap_,
+                        CelType &celtype_,
+                        PLUT    &plut_,
+                        ByteVec &pdat_)
+  {
+    CelType tmp_celtype;
+    PLUT    tmp_plut;
+    ByteVec tmp_pdat;
+    Bitmap  tmp_bitmap;
+    PLUT    best_plut;
+    ByteVec best_pdat;
+    CelType best_celtype;
+    Bitmap  best_bitmap;
+    std::array<bool,2>    packeds   = {false, true};
+    std::array<bool,2>    codeds    = {false, true};
+    std::array<uint8_t,6> bpps      = {1,2,4,6,8,16};
+
+    best_celtype = tmp_celtype = celtype_;
+    best_plut    = tmp_plut    = plut_;
+    best_pdat    = tmp_pdat    = pdat_;
+    best_bitmap  = tmp_bitmap  = bitmap_;
+    for(const auto bpp : bpps)
+      {
+        for(const auto packed : packeds)
+          {
+            for(const auto coded : codeds)
+              {
+                tmp_celtype.bpp    = bpp;
+                tmp_celtype.lrform = false;
+                tmp_celtype.packed = packed;
+                tmp_celtype.coded  = coded;
+                try
+                  {
+                    convert::bitmap_to_cel(bitmap_,tmp_celtype,tmp_pdat,tmp_plut);
+                  }
+                catch(...)
+                  {
+                    continue;
+                  }
+
+                if(!best_pdat.empty() && (tmp_pdat.size() >= best_pdat.size()))
+                  continue;
+
+                best_celtype = tmp_celtype;
+                best_pdat    = tmp_pdat;
+                best_plut    = tmp_plut;
+                best_bitmap  = bitmap_;
+              }
+          }
+      }
+
+    celtype_ = best_celtype;
+    plut_    = best_plut;
+    pdat_    = best_pdat;
+    bitmap_  = best_bitmap;
+  }
+
+  static
+  void
+  find_smallest_rotation(Bitmap  &bitmap_,
+                         CelType &celtype_,
+                         PLUT    &plut_,
+                         ByteVec &pdat_)
+  {
+    CelType tmp_celtype;
+    PLUT    tmp_plut;
+    ByteVec tmp_pdat;
+    Bitmap  tmp_bitmap;
+    PLUT    best_plut;
+    ByteVec best_pdat;
+    CelType best_celtype;
+    Bitmap  best_bitmap;
+    std::array<int,4>     rotations = {0,90,180,270};
+    std::array<bool,2>    packeds   = {false, true};
+    std::array<bool,2>    codeds    = {false, true};
+    std::array<uint8_t,6> bpps      = {1,2,4,6,8,16};
+
+    best_celtype = tmp_celtype = celtype_;
+    best_plut    = tmp_plut    = plut_;
+    best_pdat    = tmp_pdat    = pdat_;
+    best_bitmap  = tmp_bitmap  = bitmap_;
+    for(auto rotation : rotations)
+      {
+        bitmap_.rotate_to(rotation);
+
+        for(const auto bpp : bpps)
+          {
+            for(const auto packed : packeds)
+              {
+                for(const auto coded : codeds)
+                  {
+                    tmp_celtype.bpp    = bpp;
+                    tmp_celtype.lrform = false;
+                    tmp_celtype.packed = packed;
+                    tmp_celtype.coded  = coded;
+                    try
+                      {
+                        convert::bitmap_to_cel(bitmap_,tmp_celtype,tmp_pdat,tmp_plut);
+                      }
+                    catch(...)
+                      {
+                        continue;
+                      }
+
+                    if(!best_pdat.empty() && (tmp_pdat.size() >= best_pdat.size()))
+                      continue;
+
+                    best_celtype = tmp_celtype;
+                    best_pdat    = tmp_pdat;
+                    best_plut    = tmp_plut;
+                    best_bitmap  = bitmap_;
+                  }
+              }
+          }
+      }
+
+    celtype_ = best_celtype;
+    plut_    = best_plut;
+    pdat_    = best_pdat;
+    bitmap_  = best_bitmap;
+  }
+
+  static
+  void
+  convert(const fs::path       &filepath_,
+          const Options::ToCEL &opts_,
+          Bitmap               &bitmap_)
+  {
+    PLUT plut;
+    ByteVec pdat;
+    CelType celtype;
+    CelControlChunk ccc;
+    fs::path filepath;
+
+    celtype.bpp    = opts_.bpp;
+    celtype.coded  = opts_.coded;
+    celtype.lrform = opts_.lrform;
+    celtype.packed = opts_.packed;
+
+    if(opts_.find_smallest.empty())
+      convert::bitmap_to_cel(bitmap_,celtype,pdat,plut);
+    else if(opts_.find_smallest == "regular")
+      l::find_smallest_regular(bitmap_,celtype,plut,pdat);
+    else if(opts_.find_smallest == "rotation")
+      l::find_smallest_rotation(bitmap_,celtype,plut,pdat);
+    else
+      throw std::runtime_error("");
+
+
+    if(pdat.empty())
+      return;
+
+    l::populate_ccc(celtype,bitmap_.w,bitmap_.h,ccc);
+
+    l::modify_ccb_flags(opts_.ccb_flags,ccc);
+    l::modify_pre0_flags(opts_.pre0_flags,ccc);
+
+    filepath = l::generate_filepath(filepath_,
+                                    opts_.output_path,
+                                    bitmap_,
+                                    ccc);
+
+    l::write_file(filepath,opts_,ccc,pdat,plut);
+  }
+
+  static
+  void
+  generate_all_cel_types(const fs::path       &filepath_,
+                         const Options::ToCEL &opts_,
+                         const BitmapVec      &bitmaps_)
+  {
+    Options::ToCEL opts;
+    std::string filepath_template;
+
+    std::array<bool,2>    packeds   = {false, true};
+    std::array<bool,2>    codeds    = {false, true};
+    std::array<uint8_t,6> bpps      = {1,2,4,6,8,16};
+
+    opts = opts_;
+    filepath_template = "{filepath}_{coded}_{packed}_{bpp}bpp{_index}{ext}";
+    opts.output_path = filepath_template;
+    for(auto bitmap : bitmaps_)
+      {
+        for(const auto bpp : bpps)
+          {
+            for(const auto packed : packeds)
+              {
+                for(const auto coded : codeds)
+                  {
+                    opts.bpp    = bpp;
+                    opts.coded  = coded;
+                    opts.lrform = false;
+                    opts.packed = packed;
+
+                    try
+                      {
+                        l::convert(filepath_,opts,bitmap);
+                      }
+                    catch(const std::runtime_error &e_)
+                      {
+
+                      }
+                  }
+              }
+          }
+      }
   }
 
   static
@@ -186,7 +431,6 @@ namespace l
   to_cel(const fs::path       &filepath_,
          const Options::ToCEL &opts_)
   {
-    CelType celtype;
     ByteVec data;
     BitmapVec bitmaps;
 
@@ -198,14 +442,11 @@ namespace l
     if(bitmaps.empty())
       throw fmt::exception("failed to convert");
 
-    celtype.coded  = opts_.coded;
-    celtype.packed = opts_.packed;
-    celtype.lrform = opts_.lrform;
-    celtype.bpp    = opts_.bpp;
-
     for(auto &bitmap : bitmaps)
       {
-        if(celtype.lrform && (bitmap.h & 0x1))
+        bitmap.rotate_to(opts_.rotation);
+
+        if(opts_.lrform && (bitmap.h & 0x1))
           {
             bitmap.h--;
             fmt::print(" - WARNING - LRFORM needs to be an even number of vertical lines"
@@ -220,33 +461,11 @@ namespace l
         bitmap.replace_color(opts_.transparent,0x00000000);
       }
 
-    for(auto const &bitmap : bitmaps)
-      {
-        PLUT plut;
-        ByteVec pdat;
-        CelControlChunk ccc;
-        fs::path filepath;
+    if(opts_.generate_all)
+      return generate_all_cel_types(filepath_,opts_,bitmaps);
 
-        convert::bitmap_to_cel(bitmap,celtype,pdat,plut);
-        if(pdat.empty())
-          continue;
-
-        l::populate_ccc(celtype,bitmap.w,bitmap.h,ccc);
-
-        l::modify_ccb_flags(opts_.ccb_flags,ccc);
-        l::modify_pre0_flags(opts_.pre0_flags,ccc);
-
-        if(opts_.output_path.empty())
-          filepath = l::generate_filepath(filepath_,ccc);
-        else
-          filepath = opts_.output_path;
-
-        if(opts_.write_plut == false)
-          plut.clear();
-        WriteFile::cel(filepath,ccc,pdat,plut);
-
-        fmt::print(" - {}\n",filepath);
-      }
+    for(auto &bitmap : bitmaps)
+      l::convert(filepath_,opts_,bitmap);
   }
 
   static
@@ -271,7 +490,7 @@ namespace l
 
     if(l::same_extension(filepath_,opts_))
       {
-        fmt::print(" - WARNING - skipping file with target extension\n");
+        fmt::print(" - INFO - skipping file with target extension\n");
         return;
       }
 

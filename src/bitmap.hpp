@@ -12,12 +12,19 @@
 
 struct Bitmap
 {
-  Bitmap() = default;
+  Bitmap()
+    : w(0),
+      h(0),
+      d()
+  {
+    set("rotation","0");
+  }
 
   Bitmap(const std::size_t w_,
          const std::size_t h_)
   {
     reset(w_,h_);
+    set("rotation","0");
   }
 
   void
@@ -27,6 +34,7 @@ struct Bitmap
     w = w_;
     h = h_;
     d = std::make_unique<uint8_t[]>(w * h * sizeof(RGBA8888));
+    set("rotation","0");
   }
 
   RGBA8888*
@@ -78,6 +86,8 @@ struct Bitmap
   reset()
   {
     d.reset();
+    _metadata.clear();
+    set("rotation","0");
   }
 
 public:
@@ -104,4 +114,9 @@ public:
   uint32_t color_count() const;
   void replace_color(uint32_t const src,
                      uint32_t const dst);
+
+  void rotate_to(unsigned);
+  void rotate_90();
+  void rotate_180();
+  void rotate_270();
 };

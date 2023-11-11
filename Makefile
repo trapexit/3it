@@ -15,11 +15,11 @@ STRIP = $(COMPILER_PREFIX)-strip
 ifeq ($(DEBUG),1)
 OPT := -O0 -ggdb
 else
-OPT := -Os -static
+OPT := -O3 -static
 endif
 
 ifeq ($(SANITIZE),1)
-OPT += -fsanitize=undefined
+OPT += -fsanitize=address
 endif
 
 CFLAGS = $(OPT) -Wall

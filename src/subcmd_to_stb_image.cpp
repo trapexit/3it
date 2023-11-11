@@ -23,6 +23,7 @@
 #include "options.hpp"
 #include "read_file.hpp"
 #include "stbi.hpp"
+#include "template.hpp"
 #include "video_image.hpp"
 
 #include "fmt.hpp"
@@ -34,15 +35,41 @@ namespace fs = std::filesystem;
 
 namespace l
 {
+  static
+  fs::path
+  generate_filepath(const fs::path     src_filepath_,
+                    const fs::path     dst_filepath_,
+                    const std::string  ext_,
+                    const Bitmap      &bitmap_)
+  {
+    fs::path filepath;
+    std::unordered_map<std::string,std::string> extra =
+      {
+        {"w",fmt::to_string(bitmap_.w)},
+        {"h",fmt::to_string(bitmap_.h)},
+        {"_name",bitmap_.has("name") ? "_" + bitmap_.get("name") : ""},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
+
+    filepath = resolve_path_template(src_filepath_,
+                                     dst_filepath_,
+                                     ext_,
+                                     extra);
+
+    return filepath;
+  }
+
   void
-  to_stb_image(const fs::path    &filepath_,
-               const std::string  type_)
+  to_stb_image(const fs::path         &input_filepath_,
+               const Options::ToImage &opts_,
+               const std::string       type_)
   {
     int rv;
     ByteVec data;
     BitmapVec bitmaps;
 
-    ReadFile::read(filepath_,data);
+    ReadFile::read(input_filepath_,data);
     if(data.empty())
       throw fmt::exception("file empty");
 
@@ -50,44 +77,20 @@ namespace l
     if(bitmaps.empty())
       throw fmt::exception("failed to convert");
 
-    if(bitmaps.size() > 1)
+    for(auto &bitmap : bitmaps)
       {
-        int padding;
-        fs::path filepath;
+        fs::path output_filepath;
 
-        padding = fmt::format("{}",bitmaps.size()).size();
-        for(size_t i = 0; i < bitmaps.size(); i++)
-          {
-            filepath = filepath_;
-            filepath += fmt::format("_{:0{}}",i,padding);
+        output_filepath = l::generate_filepath(input_filepath_,
+                                               opts_.output_path,
+                                               "." + type_,
+                                               bitmap);
 
-            if(bitmaps[i].has("name"))
-              filepath += fmt::format("_{}",bitmaps[i].name());
-            filepath += '.';
-            filepath += type_;
-
-            rv = stbi_write(bitmaps[i],filepath,type_);
-            if(rv)
-              fmt::print(" - {}\n",filepath);
-            else
-              fmt::print(" - ERROR - failed writing file {}",filepath);
-          }
-      }
-    else
-      {
-        fs::path filepath;
-
-        filepath  = filepath_;
-        if(bitmaps[0].has("name"))
-          filepath += fmt::format("_{}",bitmaps[0].name());
-        filepath += '.';
-        filepath += type_;
-
-        rv = stbi_write(bitmaps[0],filepath,type_);
+        rv = stbi_write(bitmap,output_filepath,type_);
         if(rv)
-          fmt::print(" - {}\n",filepath);
+          fmt::print(" - {}\n",output_filepath);
         else
-          fmt::print(" - ERROR - failed writing file {}",filepath);
+          fmt::print(" - ERROR - failed writing file {}",output_filepath);
       }
   }
 
@@ -125,7 +128,7 @@ namespace l
 
     try
       {
-        l::to_stb_image(filepath_,type_);
+        l::to_stb_image(filepath_,opts_,type_);
       }
     catch(const std::system_error &e_)
       {

@@ -169,6 +169,8 @@ to_bitmap(CelControlChunk &ccc_,
       convert::uncoded_unpacked_linear_16bpp_to_bitmap(pdat_,b_);
       break;
     case UNCODED_UNPACKED_LRFORM_16BPP:
+      if(ccc_.ccb_Height & 1)
+        b_.reset(ccc_.ccb_Width,ccc_.ccb_Height+1);
       convert::uncoded_unpacked_lrform_16bpp_to_bitmap(pdat_,b_);
       break;
     case UNCODED_PACKED_LINEAR_8BPP:
@@ -473,6 +475,14 @@ convert::to_bitmap(cspan<uint8_t>  data_,
     default:
       throw std::runtime_error("unknown image type");
     }
+
+  unsigned i = 0;
+  unsigned const width = (std::floor(std::log10(bitmaps_.size())) + 1);
+  if(bitmaps_.size() > 1)
+    {
+      for(auto &bitmap : bitmaps_)
+        bitmap.set("index",fmt::format("{:0{}}",i++,width));
+    }
 }
 
 void
@@ -527,8 +537,8 @@ convert::bitmap_to_uncoded_unpacked_linear_16bpp(const Bitmap &bitmap_,
                                                  ByteVec      &pdat_)
 {
   uint16_t rgb;
-  const int w = bitmap_.w;
-  const int h = bitmap_.h;
+  int w = bitmap_.w;
+  int h = bitmap_.h;
   VecRW pdat;
 
   // Approximate. VecRW will manage the size as needed.
@@ -554,10 +564,14 @@ void
 convert::bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap_,
                                                  ByteVec      &pdat_)
 {
-  uint16_t rgb;
-  const int w = bitmap_.w;
-  const int h = bitmap_.h;
+  int w;
+  int h;
   VecRW pdat;
+  uint16_t rgb;
+
+  // LRForm height must be an even number of rows so truncate if odd.
+  w = bitmap_.w;
+  h = (bitmap_.h & ~0x1);
 
   // Approximate. VecRW will manage the size as needed.
   pdat_.reserve(w * h * sizeof(uint16_t));

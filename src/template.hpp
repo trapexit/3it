@@ -15,3 +15,16 @@
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
+
+#pragma once
+
+#include <filesystem>
+#include <string>
+#include <unordered_map>
+
+std::filesystem::path
+resolve_path_template(const std::filesystem::path &input_filepath,
+                      const std::filesystem::path &output_filepath,
+                      const std::string           &ext_,
+                      const std::unordered_map<std::string,std::string> &extra_);
+
