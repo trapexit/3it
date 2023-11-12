@@ -57,8 +57,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "fmt/core.h"
-
 
 #define BITS_PER_BYTE 8
 #define BYTES_PER_WORD 4
