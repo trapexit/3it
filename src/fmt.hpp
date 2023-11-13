@@ -57,6 +57,7 @@ namespace fmt
             Args &&... args_)
   {
     return fmt::vexception(fmt_,
-                           fmt::make_args_checked<Args...>(fmt_,args_...));
+                           fmt::make_format_args(args_...));
+
   }
 }
