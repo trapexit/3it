@@ -40,6 +40,7 @@ struct fmt::formatter<std::filesystem::path> : formatter<std::string>
 namespace fmt
 {
   static
+  inline
   std::runtime_error
   vexception(fmt::string_view fmt_,
              fmt::format_args args_)
@@ -52,6 +53,8 @@ namespace fmt
   }
 
   template<typename Str, typename... Args>
+  static
+  inline
   std::runtime_error
   exception(Str const &fmt_,
             Args &&... args_)
