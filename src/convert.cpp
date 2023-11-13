@@ -473,6 +473,14 @@ convert::to_bitmap(cspan<uint8_t>  data_,
     default:
       throw std::runtime_error("unknown image type");
     }
+
+  unsigned i = 0;
+  unsigned const width = (std::floor(std::log10(bitmaps_.size())) + 1);
+  if(bitmaps_.size() > 1)
+    {
+      for(auto &bitmap : bitmaps_)
+        bitmap.set("index",fmt::format("{:0{}}",i++,width));
+    }
 }
 
 void

@@ -29,6 +29,7 @@
 #include "options.hpp"
 #include "read_file.hpp"
 #include "stbi.hpp"
+#include "template.hpp"
 #include "write_cel.hpp"
 
 #include "fmt.hpp"
@@ -167,18 +168,32 @@ namespace l
 
   static
   fs::path
-  generate_filepath(const fs::path        &filepath_,
-                    const CelControlChunk &ccc_)
+  generate_filepath(fs::path const        &input_filepath_,
+                    fs::path const        &output_filepath_,
+                    CelControlChunk const &ccc_,
+                    Bitmap const          &bitmap_)
   {
-    fs::path filepath;
+    fs::path rv;
+    std::unordered_map<std::string,std::string> extra =
+      {
+        {"coded",(ccc_.coded() ? "coded" : "uncoded")},
+        {"packed",(ccc_.packed() ? "packed" : "unpacked")},
+        {"bpp",fmt::format("{}",ccc_.bpp())},
+        {"w",fmt::format("{}",ccc_.ccb_Width)},
+        {"h",fmt::format("{}",ccc_.ccb_Height)},
+        {"flags",fmt::format("{:08x}",ccc_.ccb_Flags)},
+        {"pixc",fmt::format("{:08x}",ccc_.ccb_PPMPC)},
+        {"rotation",fmt::format("{}",0)},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
 
-    filepath = filepath_;
-    filepath += (ccc_.coded() ? "_coded" : "_uncoded");
-    filepath += (ccc_.packed() ? "_packed" : "_unpacked");
-    filepath += fmt::format("_{}bpp",ccc_.bpp());
-    filepath += ".cel";
+    rv = resolve_template(input_filepath_,
+                          output_filepath_,
+                          ".cel",
+                          extra);
 
-    return filepath;
+    return rv;
   }
 
   static
@@ -236,16 +251,22 @@ namespace l
         l::modify_ccb_flags(opts_.ccb_flags,ccc);
         l::modify_pre0_flags(opts_.pre0_flags,ccc);
 
-        if(opts_.output_path.empty())
-          filepath = l::generate_filepath(filepath_,ccc);
-        else
-          filepath = opts_.output_path;
+        filepath = l::generate_filepath(filepath_,
+                                        opts_.output_path,
+                                        ccc,
+                                        bitmap);
 
         if(opts_.write_plut == false)
           plut.clear();
         WriteFile::cel(filepath,ccc,pdat,plut);
 
-        fmt::print(" - {}\n",filepath);
+        std::error_code ec;
+        fmt::print(" - output file: {}\n"
+                   " - output file size: {}\n"
+                   ,
+                   filepath,
+                   fs::file_size(filepath,ec));
+
       }
   }
 

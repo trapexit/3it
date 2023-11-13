@@ -37,6 +37,13 @@ $ 3it to-cel --help
 All subcommands have their own help and arguments. Use `--help` or
 `--help-all` to see all available options.
 
+## Output Filename Templates
+
+Any command with an `--output-path` option supports templating to make
+scripting easier. It uses a currly brace notation such as
+`{foo}`. Below is a list of supported values per subcommand.
+
+### to-cel
 
 ## File Types
 

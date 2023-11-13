@@ -102,6 +102,7 @@ public:
   struct ToBanner
   {
     PathVec filepaths;
+    Path    output_path;
     bool    ignore_target_ext;
   };
 
@@ -122,6 +123,7 @@ public:
   struct ToImage
   {
     PathVec filepaths;
+    Path    output_path;
     bool    ignore_target_ext;
   };
 

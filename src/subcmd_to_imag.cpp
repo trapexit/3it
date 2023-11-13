@@ -21,11 +21,12 @@
 #include "bytevec.hpp"
 #include "convert.hpp"
 #include "convert_bitmap_to_imag.hpp"
+#include "filerw.hpp"
 #include "options.hpp"
 #include "read_file.hpp"
 #include "stbi.hpp"
+#include "template.hpp"
 #include "video_image.hpp"
-#include "filerw.hpp"
 
 #include "fmt.hpp"
 
@@ -39,36 +40,26 @@ namespace l
 {
   static
   fs::path
-  generate_filepath(const fs::path    orig_filepath_,
-                    const std::string ext_,
-                    const fs::path    output_filepath_)
+  generate_filepath(fs::path const  input_filepath_,
+                    fs::path const  output_filepath_,
+                    Bitmap const   &bitmap_)
   {
-    fs::path filepath;
-
-    if(output_filepath_.empty())
-      filepath = "{filepath}.{ext}";
-    else
-      filepath = output_filepath_;
-
-    try
+    fs::path rv;
+    std::unordered_map<std::string,std::string> extra =
       {
-        filepath = fmt::format(filepath.string(),
-                               fmt::arg("filepath",orig_filepath_),
-                               fmt::arg("stem",orig_filepath_.stem()),
-                               fmt::arg("filename",orig_filepath_.filename()),
-                               fmt::arg("parentpath",orig_filepath_.parent_path()),
-                               fmt::arg("ext",ext_));
-      }
-    catch(const std::runtime_error &e_)
-      {
-        std::string what{e_.what()};
+        {"w",fmt::format("{}",bitmap_.w)},
+        {"h",fmt::format("{}",bitmap_.h)},
+        {"rotation",fmt::format("{}",0)},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
 
-        if(what == "argument not found")
-          throw std::runtime_error("unknown output file template argument");
-        throw e_;
-      }
+    rv = resolve_template(input_filepath_,
+                          output_filepath_,
+                          ".imag",
+                          extra);
 
-    return filepath;
+    return rv;
   }
 
   static
@@ -88,7 +79,7 @@ namespace l
         FileRW f;
         fs::path output_filepath;
 
-        output_filepath = l::generate_filepath(filepath_,"imag",output_filepath_);
+        output_filepath = l::generate_filepath(filepath_,output_filepath_,bitmap);
 
         rv = f.open_write_trunc(output_filepath);
         if(rv < 0)
@@ -102,7 +93,12 @@ namespace l
         if((bitmap.w != 320) || (bitmap.h != 240))
           fmt::print(" - WARNING: 3DO SDK's LoadImage() really only supports 320x240.\n");
 
-        fmt::print(" - {}\n",output_filepath);
+        std::error_code ec;
+        fmt::print(" - output file: {}\n"
+                   " - output file size: {}\n"
+                   ,
+                   output_filepath,
+                   fs::file_size(output_filepath,ec));
       }
   }
 

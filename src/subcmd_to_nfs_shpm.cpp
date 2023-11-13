@@ -21,11 +21,12 @@
 #include "fmt.hpp"
 
 #include "bitmaps.hpp"
-#include "bytevec.hpp"
-#include "read_file.hpp"
-#include "convert.hpp"
 #include "byteswap.hpp"
-#include "file.hpp"
+#include "bytevec.hpp"
+#include "convert.hpp"
+#include "filerw.hpp"
+#include "read_file.hpp"
+#include "template.hpp"
 
 #define BPP_16   0x6
 #define PACKED   0x80
@@ -43,7 +44,7 @@ namespace l
              const bool        packed_,
              const fs::path   &output_path_)
   {
-    File f;
+    FileRW f;
     fs::path output_path;
     uint32_t length_of_file;
     uint32_t object_count;
@@ -54,14 +55,12 @@ namespace l
     for(const auto &pdat : pdats_)
       length_of_file += 16 + pdat.size();
 
-    f.open(output_path_,"wb+");
+    f.open_write_trunc(output_path_);
 
-    f.big_endian();
-
-    f.write("SHPM",4);
-    f.write(length_of_file);
-    f.write(object_count);
-    f.write("SPoT",4);
+    f.w("SHPM");
+    f.u32be(length_of_file);
+    f.u32be(object_count);
+    f.w("SPoT");
 
     uint32_t offset = (16 + (object_count * 8));
     for(size_t i = 0; i < object_count; i++)
@@ -70,8 +69,8 @@ namespace l
 
         name = bitmaps_[i].name_or_guess();
 
-        f.write(name.c_str(),4);
-        f.write(offset);
+        f.w(name);
+        f.u32be(offset);
         offset += 16 + pdats_[i].size();
       }
 
@@ -85,12 +84,12 @@ namespace l
         w = bitmaps_[i].w;
         h = bitmaps_[i].h;
 
-        f.write(type);
-        f.seek(3,SEEK_CUR);
-        f.write(w);
-        f.write(h);
-        f.seek(8,SEEK_CUR);
-        f.write(pdats_[i]);
+        f.u8(type);
+        f.skip(3);
+        f.u16be(w);
+        f.u16be(h);
+        f.skip(8);
+        f.w(pdats_[i]);
       }
 
     f.close();
@@ -118,12 +117,11 @@ SubCmd::to_nfs_shpm(const Options::ToNFSSHPM &opts_)
         convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap,pdats.back());
     }
 
-  output_path = opts_.output_path;
-  if(output_path.empty())
-    {
-      output_path  = opts_.filepaths[0];
-      output_path += ".3sh";
-    }
+
+  output_path = resolve_template(opts_.filepaths[0],
+                                 opts_.output_path,
+                                 ".3sh",
+                                 {});
 
   fmt::print("{}:\n",output_path);
   l::write_file(bitmaps,pdats,opts_.packed,output_path);
