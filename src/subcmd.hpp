@@ -30,6 +30,7 @@ namespace SubCmd
   void to_cel(const Options::ToCEL &opts);
   void to_banner(const Options::ToBanner &opts);
   void to_imag(const Options::ToIMAG &opts);
+  void to_lrform(const Options::ToLRFORM &opts);
   void to_stb_image(const Options::ToImage &opts,
                     const std::string      &type);
   void to_nfs_shpm(const Options::ToNFSSHPM &opts);
