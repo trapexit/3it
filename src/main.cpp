@@ -311,6 +311,33 @@ generate_to_imag_argparser(CLI::App        &app_,
 
 static
 void
+generate_to_lrform_argparser(CLI::App          &app_,
+                             Options::ToLRFORM &options_)
+{
+  CLI::App *subcmd;
+
+  subcmd = app_.add_subcommand("to-lrform","convert image to raw LRFORM");
+  subcmd->add_option("filepaths",options_.filepaths)
+    ->description("path to image")
+    ->type_name("PATH")
+    ->check(CLI::ExistingFile)
+    ->required();
+  subcmd->add_option("-o,--output-path",options_.output_path)
+    ->description("Path to output file")
+    ->type_name("PATH")
+    ->take_last();
+  subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
+    ->description("Ignore files with target extension")
+    ->default_val(false)
+    ->default_str("false")
+    ->take_last();
+
+  subcmd->callback(std::bind(SubCmd::to_lrform,
+                             std::cref(options_)));
+}
+
+static
+void
 generate_to_bmp_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
@@ -430,6 +457,7 @@ generate_argparser(CLI::App &app_,
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
   generate_to_imag_argparser(app_,options_.to_imag);
+  generate_to_lrform_argparser(app_,options_.to_lrform);  
   generate_to_bmp_argparser(app_,options_.to_image);
   generate_to_png_argparser(app_,options_.to_image);
   generate_to_jpg_argparser(app_,options_.to_image);

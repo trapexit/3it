@@ -112,6 +112,13 @@ public:
     bool    ignore_target_ext;
   };
 
+  struct ToLRFORM
+  {
+    PathVec filepaths;
+    Path    output_path;
+    bool    ignore_target_ext;
+  };
+
   struct ToImage
   {
     PathVec filepaths;
@@ -132,6 +139,7 @@ public:
   ToCEL      to_cel;
   ToBanner   to_banner;
   ToIMAG     to_imag;
+  ToLRFORM   to_lrform;
   ToImage    to_image;
   ToNFSSHPM  to_nfs_shpm;
 };
