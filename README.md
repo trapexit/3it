@@ -17,13 +17,14 @@ Options:
     --help-all
 
 Subcommands:
-  version                     print 3it version
+  version                     print 3it version and license
   docs                        print links to relevant documentation
   info                        prints info about the file
   list-chunks                 list 3DO file chunks
   to-cel                      convert image to 3DO CEL
   to-banner                   convert image to banner
   to-imag                     convert image to 3DO IMAG
+  to-lrform                   convert image to raw LRFORM
   to-bmp                      convert image to BMP
   to-png                      convert image to PNG
   to-jpg                      convert image to JPG
@@ -37,6 +38,34 @@ All subcommands have their own help and arguments. Use `--help` or
 `--help-all` to see all available options.
 
 
+## File Types
+
+### LRFORM
+
+It is common to use IMAG files as a background which is used to clear
+the screen between screen updates by leveraging SPORT VRAM -> VRAM
+copying. However, due to alignment requirements and needing to read
+data off of a CDROM the `LoadImage()` function utilizes more resources
+than needed. Especially given LoadImage were never expanded to support
+anything but 320x240 @ 16bpp LRFORM images.
+
+Having a raw LRFORM file allows the user to load it using
+LoadFile and saves on resources. See [LoadImage's
+code](https://github.com/trapexit/portfolio_os/blob/master/src/libs/lib3DO/DisplayUtils/LoadImage.c)
+for more details.
+
+
+```C
+int memflags;
+int filesize;
+char *image;
+char *filename = "image.lrform";
+
+memflags = (MEMTYPE_TRACKSIZE|MEMTYPE_STARTPAGE|MEMTYPE_VRAM);
+image    = LoadFile(filename,&filesize,memflags);
+```
+
+
 ## TODO
 
 * dump APPSCRN from ISO
@@ -47,12 +76,6 @@ All subcommands have their own help and arguments. Use `--help` or
 * figure out NFS HSPT chunk
 * ability to write NFS wwww files? May deserve its own tool.
 * Other game formats
-
-
-## Notes
-
-I wrote this over the course of a few months on and off. I was playing with some
-different ideas so the code is not entirely consistent. Will clean up as needed.
 
 
 ## Documentation
