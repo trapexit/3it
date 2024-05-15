@@ -67,14 +67,18 @@ WriteFile::cel(const std::filesystem::path &filepath_,
   // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgh
   if(ccc_.coded() && !plut_.empty())
     {
+      uint32_t size;
+
+      size = plut_.min_size(ccc_.bpp());
+
       f.u32be(CHUNK_PLUT);
       f.u32be(CHUNK_HDR_SIZE +
               CHUNK_PLUT_SIZE_SIZE +
-              (plut_.max_size() * CHUNK_PLUT_VAL_SIZE));
-      f.u32be(plut_.max_size());
+              (size * CHUNK_PLUT_VAL_SIZE));
+      f.u32be(size);
       for(auto p : plut_)
         f.u16be(p);
-      for(auto i = plut_.size(); i < plut_.max_size(); i++)
+      for(auto i = plut_.size(); i < size; i++)
         f.u16be(0);
     }
 

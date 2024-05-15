@@ -18,18 +18,38 @@
 
 #include "plut.hpp"
 
+#include "bpp.hpp"
 #include "byte_reader.hpp"
 #include "fmt.hpp"
 #include "pixel_converter.hpp"
 
 #include <stdexcept>
-#include <unordered_set>
 
 
 std::size_t
 PLUT::max_size() const
 {
   return 32;
+}
+
+std::size_t
+PLUT::min_size(const int bpp_) const
+{
+  switch(bpp_)
+    {
+    case BPP_1:
+      return 2;
+    case BPP_2:
+      return 4;
+    case BPP_4:
+      return 16;
+    case BPP_6:
+    case BPP_8:
+    case BPP_16:
+      return 32;
+    }
+
+  return max_size();
 }
 
 PLUT&
@@ -115,9 +135,9 @@ PLUT::lookup(const uint16_t  color_,
 }
 
 bool
-PLUT::has_color(std::uint16_t const c_)
+PLUT::has_color(std::uint16_t const c_) const
 {
-  for(auto c : *this)
+  for(const auto c : *this)
     {
       if(c == c_)
         return true;
@@ -152,4 +172,10 @@ PLUT::build(const Bitmap &bitmap_)
             throw std::runtime_error("too many colors for 3DO PLUT");
         }
     }
+
+  // This should only happen if the source is entirely transparent in
+  // which case add black (the 'transparent' value if NOBLK flag is
+  // set to 1).
+  if(empty())
+    push_back(0);
 }

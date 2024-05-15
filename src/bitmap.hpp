@@ -90,6 +90,40 @@ struct Bitmap
     set("rotation","0");
   }
 
+  bool
+  has_transparent() const
+  {
+    for(size_t y = 0; y < h; y++)
+      {
+        for(size_t x = 0; x < w; x++)
+          {
+            const RGBA8888 *c = xy(x,y);
+
+            if(c->a == 0)
+              return true;
+          }
+      }
+
+    return false;
+  }
+
+  bool
+  has_black() const
+  {
+    for(size_t y = 0; y < h; y++)
+      {
+        for(size_t x = 0; x < w; x++)
+          {
+            const RGBA8888 *c = xy(x,y);
+
+            if((c->r == 0) && (c->g == 0) && (c->b == 0) && (c->a > 0))
+              return true;
+          }
+      }
+
+    return false;
+  }
+
 public:
   std::size_t w;
   std::size_t h;
