@@ -112,18 +112,20 @@ generate_list_chunks(CLI::App            &app_,
 static
 void
 generate_dump_packed_instructions(CLI::App            &app_,
-                                  Options::ListChunks &opts_)
+                                  Options::DumpPacked &opts_)
 {
   CLI::App *subcmd;
 
-  subcmd = app_.add_subcommand("dump-packed-instructions","print out a packed CEL's instruction list");
-  subcmd->add_option("filepaths",opts_.filepaths)
-    ->description("path to images")
+  subcmd = app_.add_subcommand("dump-packed-instructions",
+                               "print out a packed CEL's instruction list");
+  subcmd->add_option("filepath",opts_.filepath)
+    ->description("path to packed CEL image")
     ->type_name("PATH")
     ->check(CLI::ExistingFile)
     ->required();
 
-  subcmd->callback(std::bind(SubCmd::dump_packed_instructions,std::cref(opts_)));
+  subcmd->callback(std::bind(SubCmd::dump_packed_instructions,
+                             std::cref(opts_)));
 }
 
 #define ADD_FLAG(NAME)                                          \
@@ -627,16 +629,16 @@ generate_argparser(CLI::App &app_,
   generate_version_argparser(app_);
   generate_docs_argparser(app_);
   generate_info_argparser(app_,options_.info);
-  generate_list_chunks(app_,options_.list_chunks);
-  //  generate_dump_packed_instructions(app_,options_.list_chunks);
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
   generate_to_imag_argparser(app_,options_.to_imag);
   generate_to_lrform_argparser(app_,options_.to_lrform);
+  generate_to_nfs_shpm(app_,options_.to_nfs_shpm);
   generate_to_bmp_argparser(app_,options_.to_image);
   generate_to_png_argparser(app_,options_.to_image);
   generate_to_jpg_argparser(app_,options_.to_image);
-  generate_to_nfs_shpm(app_,options_.to_nfs_shpm);
+  generate_list_chunks(app_,options_.list_chunks);
+  generate_dump_packed_instructions(app_,options_.dump_packed);
 }
 
 static

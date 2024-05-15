@@ -226,10 +226,24 @@ public:
   }
 
   void
+  zero_till_8bit_boundary()
+  {
+    if(_idx & 0x7)
+      write((0x8 - (_idx & 0x7)),0);
+  }
+
+  void
   skip_to_16bit_boundary()
   {
     if(_idx & 0x0F)
       skip(0x10 - (_idx & 0x0F));
+  }
+
+  void
+  zero_till_16bit_boundary()
+  {
+    if(_idx & 0x0F)
+      write((0x10 - (_idx & 0x0F)),0);
   }
 
   void
@@ -240,10 +254,24 @@ public:
   }
 
   void
+  zero_till_32bit_boundary()
+  {
+    if(_idx & 0x1F)
+      write((0x20 - (_idx & 0x1F)),0);
+  }
+
+  void
   skip_to_64bit_boundary()
   {
     if(_idx & 0x3F)
       skip(0x40 - (_idx & 0x3F));
+  }
+
+  void
+  zero_till_64bit_boundary()
+  {
+    if(_idx & 0x3F)
+      write((0x40 - (_idx & 0x3F)),0);
   }
 
   size_t

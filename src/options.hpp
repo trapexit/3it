@@ -83,6 +83,11 @@ public:
     PathVec filepaths;
   };
 
+  struct DumpPacked
+  {
+    Path filepath;
+  };
+
   struct ToCEL
   {
     PathVec     filepaths;
@@ -141,6 +146,7 @@ public:
 public:
   Info       info;
   ListChunks list_chunks;
+  DumpPacked dump_packed;
   ToCEL      to_cel;
   ToBanner   to_banner;
   ToIMAG     to_imag;

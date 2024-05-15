@@ -84,6 +84,12 @@ CelControlChunk::packed() const
 }
 
 bool
+CelControlChunk::unpacked() const
+{
+  return !packed();
+}
+
+bool
 CelControlChunk::lrform() const
 {
   return (ccb_PRE1 & PRE1_LRFORM);
@@ -397,9 +403,6 @@ CelControlChunk::type() const
 {
   return CEL_TYPE(coded(),packed(),lrform(),bpp());
 }
-
-
-
 
 void
 CelControlChunk::byteswap_if_little_endian()

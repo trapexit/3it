@@ -1,0 +1,9 @@
+#pragma once
+
+#define DATA_PACKET_DATA_TYPE_SIZE 2
+#define DATA_PACKET_PIXEL_COUNT_SIZE 6
+
+#define PACK_EOL          0x00000000
+#define PACK_LITERAL      0x00000001
+#define PACK_TRANSPARENT  0x00000002
+#define PACK_PACKED       0x00000003

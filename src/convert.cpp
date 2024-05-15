@@ -18,6 +18,7 @@
 
 #include "convert.hpp"
 
+#include "bits_and_bytes.hpp"
 #include "bitstream.hpp"
 #include "bpp.hpp"
 #include "byte_reader.hpp"
@@ -29,6 +30,7 @@
 #include "chunk_reader.hpp"
 #include "identify_file.hpp"
 #include "image_control_chunk.hpp"
+#include "packed.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_writer.hpp"
@@ -42,12 +44,6 @@
 #include <optional>
 
 namespace fs = std::filesystem;
-
-#define BITS_PER_BYTE  8
-#define BYTES_PER_WORD 4
-
-#define DATA_PACKET_DATA_TYPE_SIZE   2
-#define DATA_PACKET_PIXEL_COUNT_SIZE 6
 
 #define CODED    (1 << 7)
 #define UNCODED  (0 << 7)
@@ -985,7 +981,8 @@ uncoded_packed_linear_Xbpp_to_bitmap(cPDAT        pdat_,
   for(size_t y = 0; y < bitmap_.h; y++)
     {
       if((offset * BITS_PER_BYTE) >= bs.size())
-        throw fmt::exception("attempted out of bound read");
+        throw fmt::exception("attempted out of bound read - {} {}:{}",
+                             __FILE__,__FUNCTION__,__LINE__);
 
       bs.seek(offset * BITS_PER_BYTE);
       pw.move_y(y);
@@ -1029,7 +1026,9 @@ coded_packed_linear_to_bitmap(const uint32_t  bpp_,
   for(size_t y = 0; y < bitmap_.h; y++)
     {
       if((offset * BITS_PER_BYTE) >= bs.size())
-        throw fmt::exception("attempted out of bound read");
+        throw fmt::exception("attempted out of bound read - {} {}:{}",
+                             __FILE__,__FUNCTION__,__LINE__);
+
 
       bs.seek(offset * BITS_PER_BYTE);
       pw.move_y(y);

@@ -239,6 +239,7 @@ namespace l
     best_plut    = tmp_plut    = plut_;
     best_pdat    = tmp_pdat    = pdat_;
     best_bitmap  = tmp_bitmap  = bitmap_;
+
     for(const auto bpp : bpps)
       {
         for(const auto packed : packeds)
@@ -364,8 +365,7 @@ namespace l
     else if(opts_.find_smallest == "rotation")
       l::find_smallest_rotation(bitmap_,celtype,plut,pdat);
     else
-      throw std::runtime_error("");
-
+      throw std::runtime_error("Unknown request");
 
     if(pdat.empty())
       return;
@@ -508,18 +508,30 @@ namespace l
       }
   }
 
-  static
-  void
-  handle_dir(const fs::path       &dirpath_,
-             const Options::ToCEL &opts_)
+  std::vector<fs::path>
+  get_filepaths(const Options::PathVec &filepaths_)
   {
-    for(const fs::directory_entry &de : fs::recursive_directory_iterator(dirpath_))
-      {
-        if(!de.is_regular_file())
-          continue;
+    std::vector<fs::path> rv;
 
-        l::handle_file(de.path(),opts_);
+    for(const auto &filepath : filepaths_)
+      {
+        fs::directory_entry de(filepath);
+
+        if(de.is_regular_file())
+          rv.emplace_back(de.path());
+        else if(de.is_directory())
+          {
+            auto diriter = fs::recursive_directory_iterator(filepath);
+
+            for(const fs::directory_entry &de : diriter)
+              {
+                if(de.is_regular_file())
+                  rv.emplace_back(de.path());
+              }
+          }
       }
+
+    return rv;
   }
 }
 
@@ -528,14 +540,11 @@ namespace SubCmd
   void
   to_cel(const Options::ToCEL &opts_)
   {
-    for(const auto &filepath : opts_.filepaths)
-      {
-        fs::directory_entry de(filepath);
+    Options::PathVec filepaths;
 
-        if(de.is_regular_file())
-          l::handle_file(de.path(),opts_);
-        else if(de.is_directory())
-          l::handle_dir(de.path(),opts_);
-      }
+    filepaths = l::get_filepaths(opts_.filepaths);
+
+    for(const auto &filepath : filepaths)
+      l::handle_file(filepath,opts_);
   }
 }

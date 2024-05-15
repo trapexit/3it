@@ -44,6 +44,7 @@ public:
 public:
   bool     coded() const;
   bool     packed() const;
+  bool     unpacked() const;
   bool     lrform() const;
   int      bpp() const;
   bool     rep8() const;

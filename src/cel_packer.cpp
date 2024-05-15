@@ -40,30 +40,25 @@
   4. Split abstract packets with a counter greater than 64 into
   multiple packets of size 64 or less.
   5. Remove trailing transparent packets and replace with EOL.
+  6. Remove unnecessary EOLs
 */
 
 #include "cel_packer.hpp"
 
 #include "bitmap.hpp"
+#include "bits_and_bytes.hpp"
 #include "bitstream.hpp"
 #include "bpp.hpp"
 #include "byte_reader.hpp"
 #include "bytevec.hpp"
 #include "ccb_flags.hpp"
+#include "packed.hpp"
 #include "pixel_converter.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
-
-
-#define BITS_PER_BYTE 8
-#define BYTES_PER_WORD 4
-#define BITS_PER_WORD (BITS_PER_BYTE * BYTES_PER_WORD)
-#define DATA_PACKET_DATA_TYPE_SIZE 2
-#define DATA_PACKET_PIXEL_COUNT_SIZE 6
-
 
 struct PackedDataPacket
 {
@@ -74,17 +69,51 @@ struct PackedDataPacket
   bool is_literal() const { return type == PACK_LITERAL; };
   bool is_packed() const { return type == PACK_PACKED; };
   bool is_transparent() const { return type == PACK_TRANSPARENT; };
+  bool is_eol() const { return type == PACK_EOL; };
 
-  size_t size() const;
-  size_t raw_literal_size() const;
+  uint32_t size_in_bits() const;
+  uint32_t raw_literal_size() const;
 };
 
-typedef std::vector<PackedDataPacket>    PackedDataPacketVec;
-typedef std::vector<PackedDataPacketVec> AbstractPackedImage;
+struct PackedDataPacketVec : public std::vector<PackedDataPacket>
+{
+  uint32_t pixel_count() const;
+  uint32_t size_in_bits() const;
+};
+
+struct AbstractPackedImage : public std::vector<PackedDataPacketVec>
+{
+  uint32_t line_width;
+  uint32_t size_in_bits() const;
+};
 
 
-size_t
-PackedDataPacket::size() const
+uint32_t
+PackedDataPacketVec::pixel_count() const
+{
+  uint32_t c;
+
+  c = 0;
+  for(const auto &pdp : *this)
+    c += pdp.pixels.size();
+
+  return c;
+}
+
+uint32_t
+PackedDataPacketVec::size_in_bits() const
+{
+  uint32_t c;
+
+  c = 0;
+  for(const auto &pdp : *this)
+    c += pdp.size_in_bits();
+
+  return c;
+}
+
+uint32_t
+PackedDataPacket::size_in_bits() const
 {
   switch(type)
     {
@@ -106,7 +135,7 @@ PackedDataPacket::size() const
   return 0;
 }
 
-size_t
+uint32_t
 PackedDataPacket::raw_literal_size() const
 {
   switch(type)
@@ -122,12 +151,25 @@ PackedDataPacket::raw_literal_size() const
   return 0;
 }
 
+uint32_t
+AbstractPackedImage::size_in_bits() const
+{
+  uint32_t c;
+
+  c = 0;
+  for(const auto &pdpvec : *this)
+    c += pdpvec.size_in_bits();
+
+  return c;
+}
+
 static
 void
 pass0_build_api_from_bitmap(const Bitmap        &b_,
                             uint8_t              bpp_,
                             AbstractPackedImage &api_)
 {
+  api_.line_width = b_.w;
   api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
@@ -200,38 +242,12 @@ pass2_mark_transparents(AbstractPackedImage &api_)
 }
 
 static
-size_t
-api_row_size(std::vector<PackedDataPacket> const &pdp_list_)
-{
-  size_t rv;
-
-  rv = 0;
-  for(auto const &pdp : pdp_list_)
-    rv += pdp.size();
-
-  return rv;
-}
-
-static
-size_t
-api_size(AbstractPackedImage &api_)
-{
-  size_t rv;
-
-  rv = 0;
-  for(auto const &pdp_list : api_)
-    rv += api_row_size(pdp_list);
-
-  return rv;
-}
-
-static
 void
 pass3_compress_literal_and_packed(AbstractPackedImage &api_)
 {
   for(auto &pdpvec : api_)
     {
-      std::vector<PackedDataPacket> newpdpvec;
+      PackedDataPacketVec newpdpvec;
 
       newpdpvec.emplace_back(pdpvec.front());
 
@@ -249,7 +265,7 @@ pass3_compress_literal_and_packed(AbstractPackedImage &api_)
 
           if(newpdp.is_literal() && pdp.is_packed())
             {
-              if(pdp.size() >= pdp.raw_literal_size())
+              if(pdp.size_in_bits() >= pdp.raw_literal_size())
                 {
                   for(auto &p : pdp.pixels)
                     newpdp.pixels.emplace_back(p);
@@ -259,7 +275,7 @@ pass3_compress_literal_and_packed(AbstractPackedImage &api_)
 
           if(newpdp.is_packed() && pdp.is_literal())
             {
-              if(newpdp.size() >= newpdp.raw_literal_size())
+              if(newpdp.size_in_bits() >= newpdp.raw_literal_size())
                 {
                   newpdp.type = PACK_LITERAL;
                   for(auto &p : pdp.pixels)
@@ -284,9 +300,9 @@ pass3_combine(AbstractPackedImage &api_)
 
   do
     {
-      prev_size = api_size(api_);
+      prev_size = api_.size_in_bits();
       pass3_compress_literal_and_packed(api_);
-      comp_size = api_size(api_);
+      comp_size = api_.size_in_bits();
     }
   while(comp_size != prev_size);
 }
@@ -325,14 +341,30 @@ pass5_remove_trailing_transparents(AbstractPackedImage &api_)
 {
   for(auto &pdpvec : api_)
     {
-      for(auto i = pdpvec.rbegin(); i != pdpvec.rend(); ++i)
-        {
-          if(!i->is_transparent())
-            break;
+      size_t orig_size;
 
-          i->type = PACK_EOL;
-          i->pixels.clear();
+      orig_size = pdpvec.size();
+      while(!pdpvec.empty() && pdpvec.rbegin()->is_transparent())
+        pdpvec.pop_back();
+
+      if(orig_size != pdpvec.size())
+        {
+          pdpvec.emplace_back();
+          pdpvec.rbegin()->type = PACK_EOL;
         }
+    }
+}
+
+static void
+pass6_remove_trailing_eol(AbstractPackedImage &api_)
+{
+  for(auto &pdpvec : api_)
+    {
+      if(pdpvec.pixel_count() < api_.line_width)
+        continue;
+
+      while(!pdpvec.empty() && pdpvec.rbegin()->is_eol())
+        pdpvec.pop_back();
     }
 }
 
@@ -388,10 +420,8 @@ api_to_bytevec(const Bitmap              &b_,
   pdat_.resize(b_.w * b_.h * BYTES_PER_WORD);
   bs.reset(pdat_);
 
-  for(size_t i = 0; i < api_.size(); i++)
+  for(const auto &pdpvec : api_)
     {
-      const auto &pdpvec = api_[i];
-
       next_row_offset = bs.tell();
       bs.skip(offset_width);
       for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
@@ -420,15 +450,11 @@ api_to_bytevec(const Bitmap              &b_,
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
               break;
             case PACK_EOL:
-              // In case there are multiple EOLs due to trimming of
-              // transparent packets. Just ensure EOL ends the
-              // processing for the line.
-              i = pdpvec.end() - 1;
               break;
             }
         }
-      // The offset is minus 2 so need to be at least 2 words
-      bs.skip_to_64bit_boundary();
+
+      bs.zero_till_32bit_boundary();
 
       ::write_next_row_offset(bs,offset_width,next_row_offset);
     }
@@ -449,6 +475,7 @@ CelPacker::pack(const Bitmap            &b_,
   pass3_combine(api);
   pass4_split_large_packets(api);
   pass5_remove_trailing_transparents(api);
+  pass6_remove_trailing_eol(api);
 
   api_to_bytevec(b_,api,pc_,pdat_);
 };
