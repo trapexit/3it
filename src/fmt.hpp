@@ -20,6 +20,7 @@
 
 #define FMT_HEADER_ONLY
 #include "fmt/core.h"
+#include "fmt/args.h"
 #include "fmt/printf.h"
 
 #include <exception>

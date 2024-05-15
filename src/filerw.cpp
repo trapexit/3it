@@ -60,13 +60,17 @@ FileRW::close()
 bool
 FileRW::eof() const
 {
-  return feof(_file);
+  if(_file)
+    return feof(_file);
+  return true;
 }
 
 bool
 FileRW::error() const
 {
-  return ferror(_file);
+  if(_file)
+    return ferror(_file);
+  return true;
 }
 
 size_t

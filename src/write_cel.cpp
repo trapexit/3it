@@ -31,11 +31,14 @@ WriteFile::cel(const std::filesystem::path &filepath_,
                const ByteVec               &pdat_,
                const PLUT                  &plut_)
 {
+  int rv;
   FileRW f;
 
-  f.open_write_trunc(filepath_);
-  if(f.error())
-    throw std::system_error(errno,std::system_category(),"failed to open "+filepath_.string());
+  rv = f.open_write_trunc(filepath_);
+  if((rv < 0) || f.error())
+    throw std::system_error(-rv,
+                            std::system_category(),
+                            "failed to open "+filepath_.string());
 
   f.u32be(CHUNK_CCB);
   f.u32be(ccc_.chunk_size);

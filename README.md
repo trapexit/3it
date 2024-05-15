@@ -42,7 +42,7 @@ All subcommands have their own help and arguments. Use `--help` or
 
 ### LRFORM
 
-It is common to use IMAG files as a background which is used to clear
+It is common to use IMAG files as a background that is used to clear
 the screen between screen updates by leveraging SPORT VRAM -> VRAM
 copying. However, due to alignment requirements and needing to read
 data off of a CDROM the `LoadImage()` function utilizes more resources
@@ -64,6 +64,48 @@ char *filename = "image.lrform";
 memflags = (MEMTYPE_TRACKSIZE|MEMTYPE_STARTPAGE|MEMTYPE_VRAM);
 image    = LoadFile(filename,&filesize,memflags);
 ```
+
+## Output Filename Templates
+
+Any command with an `--output-path` option supports templating to make
+scripting easier. It uses a currly brace notation such as
+`{foo}`. Below is a list of supported values per subcommand.
+
+All support:
+
+* {filepath}: Full original input filepath.
+* {dirpath}: Parent path of {filepath} if it has one. "." otherwise.
+* {filename}: Just the filename without dirpath or extension.
+* {origext}: The original filepath's extension. Includes prefixed '.'.
+* {ext}: The standard extension for the target file.
+* {_name}: If supported by the input the internal name for the
+  image. Prefixed with "_". Otherwise "".
+* {index}: The index of the image if the input had multiple images.
+* {_index}: The index prefixed with "_" if input had multiple
+  images. Otherwise "".
+* {w}: Width of the output image.
+* {h}: Height of the output image.
+
+### to-cel
+
+* {coded}: "coded" if coded else "uncoded".
+* {packed}: "packed" if packed else "unpacked".
+* {lrform}: "lrform" if lrform else "linear".
+* {_lrform}: "_lrform" if lrform otherwise "".
+* {bpp}: The CEL bits per pixel.
+* {flags}: CCB flags in hex.
+* {pixc}: CCB PIXC/PPMPC in hex.
+* {rotation}: "0", "90", "180", or "270"
+
+
+### to-banner
+
+* {bpp}: Always 16.
+
+
+### Others
+
+No extras.
 
 
 ## TODO

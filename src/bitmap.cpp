@@ -31,7 +31,7 @@ void
 Bitmap::set(const std::string &key_,
             const std::string &val_)
 {
-  _metadata.try_emplace(key_,val_);
+  _metadata[key_] = val_;
 }
 
 std::string
@@ -118,5 +118,124 @@ Bitmap::replace_color(uint32_t const src_,
           if(*c == src)
             *c = dst;
         }
+    }
+}
+
+static
+void
+set_rotation_90_metadata(Bitmap &b_)
+{
+  std::string rotation;
+  rotation = b_.get("rotation","0");
+
+  if(rotation == "0")
+    rotation = "90";
+  else if(rotation == "90")
+    rotation = "180";
+  else if(rotation == "180")
+    rotation = "270";
+  else
+    rotation = "0";
+
+  b_.set("rotation",rotation);
+}
+
+void
+Bitmap::rotate_90()
+{
+  Bitmap n;
+
+  n.reset(h,w);
+
+  for(size_t x = 0; x < w; x++)
+    for(size_t y = 0; y < h; y++)
+      *n.xy((h-y-1),x) = *xy(x,y);
+
+  w = n.w;
+  h = n.h;
+  d = n.d;
+
+  set_rotation_90_metadata(*this);
+}
+
+void
+Bitmap::rotate_180()
+{
+  Bitmap n;
+
+  n.reset(w,h);
+
+  for(size_t x = 0; x < w; x++)
+    for(size_t y = 0; y < h; y++)
+      *n.xy((w-x-1),(h-y-1)) = *xy(x,y);
+
+  w = n.w;
+  h = n.h;
+  d = n.d;
+
+  set_rotation_90_metadata(*this);
+  set_rotation_90_metadata(*this);
+}
+
+void
+Bitmap::rotate_270()
+{
+  Bitmap n;
+
+  n.reset(h,w);
+
+  for(size_t x = 0; x < w; x++)
+    for(size_t y = 0; y < h; y++)
+      *n.xy(y,(w-x-1)) = *xy(x,y);
+
+  w = n.w;
+  h = n.h;
+  d = n.d;
+
+  set_rotation_90_metadata(*this);
+  set_rotation_90_metadata(*this);
+  set_rotation_90_metadata(*this);
+}
+
+void
+Bitmap::rotate_to(unsigned rotation_)
+{
+  int cur_rotation;
+  std::string cur_rotation_str;
+
+  cur_rotation_str = get("rotation","0");
+
+  sscanf(cur_rotation_str.c_str(),"%d",&cur_rotation);
+
+  rotation_ &= 0xFFFF;
+  switch((cur_rotation << 16) | rotation_)
+    {
+    default:
+    case ((  0 << 16) |   0):
+    case (( 90 << 16) |  90):
+    case ((180 << 16) | 180):
+    case ((270 << 16) | 270):
+      break;
+
+    case ((  0 << 16) |  90):
+    case (( 90 << 16) | 180):
+    case ((180 << 16) | 270):
+    case ((270 << 16) |   0):
+      rotate_90();
+      break;
+
+    case ((  0 << 16) | 180):
+    case (( 90 << 16) | 270):
+    case ((180 << 16) |   0):
+    case ((270 << 16) |  90):
+      rotate_180();
+      break;
+
+    case ((  0 << 16) | 270):
+    case (( 90 << 16) |   0):
+    case ((180 << 16) |  90):
+    case ((270 << 16) | 180):
+      rotate_270();
+      break;
     }
 }

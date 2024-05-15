@@ -20,10 +20,10 @@
 #include "byteswap.hpp"
 #include "bytevec.hpp"
 #include "convert.hpp"
+#include "filerw.hpp"
 #include "options.hpp"
 #include "read_file.hpp"
-#include "stbi.hpp"
-#include "filerw.hpp"
+#include "template.hpp"
 
 #include "fmt.hpp"
 
@@ -37,57 +37,58 @@ namespace l
 {
   static
   fs::path
-  generate_filepath(const fs::path    orig_filepath_,
-                    const std::string ext_,
-                    const fs::path    output_filepath_)
+  generate_filepath(const fs::path  src_filepath_,
+                    const fs::path  dst_filepath_,
+                    const Bitmap   &bitmap_)
   {
     fs::path filepath;
-
-    if(output_filepath_.empty())
-      filepath = "{filepath}.{ext}";
-    else
-      filepath = output_filepath_;
-
-    try
+    std::unordered_map<std::string,std::string> extra =
       {
-        filepath = fmt::format(filepath.string(),
-                               fmt::arg("filepath",orig_filepath_),
-                               fmt::arg("stem",orig_filepath_.stem()),
-                               fmt::arg("filename",orig_filepath_.filename()),
-                               fmt::arg("parentpath",orig_filepath_.parent_path()),
-                               fmt::arg("ext",ext_));
-      }
-    catch(const std::runtime_error &e_)
-      {
-        std::string what{e_.what()};
+        {"bpp","16"},
+        {"w",fmt::to_string(bitmap_.w)},
+        {"h",fmt::to_string(bitmap_.h)},
+        {"index",bitmap_.get("index","0")},
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+      };
 
-        if(what == "argument not found")
-          throw std::runtime_error("unknown output file template argument");
-        throw e_;
-      }
+    filepath = resolve_path_template(src_filepath_,
+                                     dst_filepath_,
+                                     ".lrform",
+                                     extra);
 
     return filepath;
   }
 
   static
   void
-  to_lrform(const fs::path &filepath_,
-            const fs::path &output_filepath_)
+  to_lrform(const fs::path          &input_filepath_,
+            const Options::ToLRFORM &opts_)
   {
     BitmapVec bitmaps;
 
-    convert::to_bitmap(filepath_,bitmaps);
+    convert::to_bitmap(input_filepath_,bitmaps);
     if(bitmaps.empty())
       throw fmt::exception("failed to convert");
 
-    for(auto const &bitmap : bitmaps)
+    for(auto &bitmap : bitmaps)
       {
         int rv;
         FileRW f;
         ByteVec pdat;
         fs::path output_filepath;
 
-        output_filepath = l::generate_filepath(filepath_,"lrform",output_filepath_);
+        if(bitmap.h & 0x1)
+          {
+            bitmap.h--;
+            fmt::print(" - WARNING - banners need to be an even number of vertical lines"
+                       ": truncating from {} to {} lines\n",
+                       bitmap.h + 1,
+                       bitmap.h);
+          }
+
+        output_filepath = l::generate_filepath(input_filepath_,
+                                               opts_.output_path,
+                                               bitmap);
 
         rv = f.open_write_trunc(output_filepath);
         if(rv < 0)
@@ -134,7 +135,7 @@ namespace l
 
     try
       {
-        l::to_lrform(filepath_,opts_.output_path);
+        l::to_lrform(filepath_,opts_);
       }
     catch(const std::system_error &e_)
       {
