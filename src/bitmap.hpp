@@ -14,6 +14,15 @@
 
 struct Bitmap
 {
+public:
+  enum Color
+    {
+      TRANSPARENT = 0x00000000,
+      BLACK       = 0x000000FF,
+      NOTBLACK    = 0x010000FF
+    };
+
+public:
   Bitmap()
     : w(0),
       h(0),
@@ -153,6 +162,7 @@ public:
   uint32_t color_count() const;
   void replace_color(uint32_t const src,
                      uint32_t const dst);
+  void make_transparent(const uint32_t color);
 
   void rotate_to(unsigned);
   void rotate_90();

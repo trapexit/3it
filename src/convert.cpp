@@ -18,6 +18,7 @@
 
 #include "convert.hpp"
 
+#include "bitmap.hpp"
 #include "bits_and_bytes.hpp"
 #include "bitstream.hpp"
 #include "bpp.hpp"
@@ -222,6 +223,11 @@ to_bitmap(CelControlChunk &ccc_,
                            ccc_.lrform(),
                            ccc_.bpp());
     }
+
+  if(!ccc_.bgnd())
+    b_.make_transparent(Bitmap::Color::BLACK);
+  else if(ccc_.noblk())
+    b_.replace_color(Bitmap::Color::BLACK,Bitmap::Color::NOTBLACK);
 }
 
 static
