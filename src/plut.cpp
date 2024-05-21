@@ -25,14 +25,16 @@
 
 #include <stdexcept>
 
+#include <stdint.h>
 
-std::size_t
+
+uint64_t
 PLUT::max_size() const
 {
   return 32;
 }
 
-std::size_t
+uint64_t
 PLUT::min_size(const int bpp_) const
 {
   switch(bpp_)
@@ -76,13 +78,13 @@ closest(const PLUT     &plut_,
         const uint16_t  color_)
 {
   float  closest     = 10000000;
-  size_t closest_idx = 0;
+  uint64_t closest_idx = 0;
 
   float r = ((color_ >>  0) & 0x001F);
   float g = ((color_ >>  5) & 0x001F);
   float b = ((color_ >> 10) & 0x001F);
 
-  for(size_t i = 0; i < plut_.size(); i++)
+  for(uint64_t i = 0; i < plut_.size(); i++)
     {
       float pr = ((plut_[i] >>  0) & 0x1F);
       float pg = ((plut_[i] >>  5) & 0x1F);
@@ -113,7 +115,7 @@ PLUT::lookup(const uint16_t  color_,
              bool const      allow_closest_,
              bool           *closest_) const
 {
-  for(size_t i = 0; i < size(); i++)
+  for(uint64_t i = 0; i < size(); i++)
     {
       if(operator[](i) == color_)
         return i;
@@ -152,9 +154,9 @@ PLUT::build(const Bitmap &bitmap_)
   uint16_t color;
 
   clear();
-  for(size_t y = 0; y < bitmap_.h; y++)
+  for(uint64_t y = 0; y < bitmap_.h; y++)
     {
-      for(size_t x = 0; x < bitmap_.w; x++)
+      for(uint64_t x = 0; x < bitmap_.w; x++)
         {
           const RGBA8888 *p = bitmap_.xy(x,y);
 

@@ -22,11 +22,12 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
 #include <string>
 #include <type_traits>
 #include <vector>
+
+#include <stdint.h>
 
 
 class DataRW
@@ -37,12 +38,12 @@ public:
 public:
   virtual bool   eof() const            = 0;
   virtual bool   error() const          = 0;
-  virtual size_t tell() const           = 0;
-  virtual void   seek(const size_t idx) = 0;
+  virtual uint64_t tell() const           = 0;
+  virtual void   seek(const uint64_t idx) = 0;
 
 protected:
-  virtual size_t _r(void *p, const size_t count)       = 0;
-  virtual size_t _w(const void *p, const size_t count) = 0;
+  virtual uint64_t _r(void *p, const uint64_t count)       = 0;
+  virtual uint64_t _w(const void *p, const uint64_t count) = 0;
 
 public:
   void
@@ -52,13 +53,13 @@ public:
   }
 
   void
-  rewind(const size_t bytes_)
+  rewind(const uint64_t bytes_)
   {
     return seek(tell() - bytes_);
   }
 
   void
-  skip(const size_t bytes_)
+  skip(const uint64_t bytes_)
   {
     return seek(tell() + bytes_);
   }
@@ -72,7 +73,7 @@ public:
   void
   skip_to_4byte_boundary()
   {
-    size_t offset;
+    uint64_t offset;
 
     offset = tell();
     if(offset & 0x3)
@@ -82,7 +83,7 @@ public:
   void
   skip_to_8byte_boundary()
   {
-    size_t offset;
+    uint64_t offset;
 
     offset = tell();
     if(offset & 0x7)
@@ -106,7 +107,7 @@ protected:
   }
 
   template<typename T>
-  size_t
+  uint64_t
   wpodbe(T v_)
   {
     static_assert(std::is_trivial<T>::value, "T must be POD/trivial");
@@ -117,7 +118,7 @@ protected:
   }
 
   template<typename T>
-  size_t
+  uint64_t
   wpodle(T v_)
   {
     static_assert(std::is_trivial<T>::value, "T must be POD/trivial");
@@ -128,27 +129,27 @@ protected:
   }
 
 public:
-  size_t
+  uint64_t
   w(const char *s_)
   {
     return _w(s_,strlen(s_));
   }
 
-  size_t
+  uint64_t
   w(std::string const &s_)
   {
     return _w(s_.c_str(),
               s_.size());
   }
 
-  size_t
+  uint64_t
   w(std::vector<char> const &vec_)
   {
     return _w(vec_.data(),
               vec_.size());
   }
 
-  size_t
+  uint64_t
   w(std::vector<uint8_t> const &vec_)
   {
     return _w(vec_.data(),
@@ -156,31 +157,31 @@ public:
   }
 
 public:
-  size_t
+  uint64_t
   u8(uint8_t v_)
   {
     return _w(&v_,sizeof(v_));
   }
 
-  size_t
+  uint64_t
   u16be(uint16_t v_)
   {
     return wpodbe<uint16_t>(v_);
   }
 
-  size_t
+  uint64_t
   u16le(uint16_t v_)
   {
     return wpodle<uint16_t>(v_);
   }
 
-  size_t
+  uint64_t
   i32be(int32_t v_)
   {
     return wpodbe<int32_t>(v_);
   }
 
-  size_t
+  uint64_t
   u32be(uint32_t v_)
   {
     return wpodbe<uint32_t>(v_);

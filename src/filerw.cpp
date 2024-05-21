@@ -1,5 +1,6 @@
 #include "filerw.hpp"
 
+#include <cstdint>
 #include <errno.h>
 
 
@@ -73,34 +74,34 @@ FileRW::error() const
   return true;
 }
 
-size_t
+uint64_t
 FileRW::tell() const
 {
   return ftell(_file);
 }
 
 void
-FileRW::seek(const size_t idx_)
+FileRW::seek(const uint64_t idx_)
 {
   fseek(_file,idx_,SEEK_SET);
 }
 
-size_t
+uint64_t
 FileRW::_r(void         *p_,
-           const size_t  count_)
+           const uint64_t  count_)
 {
-  size_t rv;
+  uint64_t rv;
 
   rv = fread((void*)p_,1,count_,_file);
 
   return rv;
 }
 
-size_t
+uint64_t
 FileRW::_w(const void   *p_,
-           const size_t  count_)
+           const uint64_t  count_)
 {
-  size_t rv;
+  uint64_t rv;
 
   rv = fwrite((const void*)p_,1,count_,_file);
 

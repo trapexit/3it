@@ -10,6 +10,8 @@
 #include <map>
 #include <memory>
 
+#include <stdint.h>
+
 struct Bitmap
 {
   Bitmap()
@@ -20,16 +22,16 @@ struct Bitmap
     set("rotation","0");
   }
 
-  Bitmap(const std::size_t w_,
-         const std::size_t h_)
+  Bitmap(const uint64_t w_,
+         const uint64_t h_)
   {
     reset(w_,h_);
     set("rotation","0");
   }
 
   void
-  reset(const std::size_t w_,
-        const std::size_t h_)
+  reset(const uint64_t w_,
+        const uint64_t h_)
   {
     w = w_;
     h = h_;
@@ -38,11 +40,11 @@ struct Bitmap
   }
 
   RGBA8888*
-  xy(const std::size_t x_,
-     const std::size_t y_)
+  xy(const uint64_t x_,
+     const uint64_t y_)
   {
     RGBA8888 *p;
-    std::size_t offset;
+    uint64_t offset;
 
     p = (RGBA8888*)d.get();
     offset = ((w * y_) + x_);
@@ -52,11 +54,11 @@ struct Bitmap
 
   const
   RGBA8888*
-  xy(const std::size_t x_,
-     const std::size_t y_) const
+  xy(const uint64_t x_,
+     const uint64_t y_) const
   {
     RGBA8888 *p;
-    std::size_t offset;
+    uint64_t offset;
 
     p = (RGBA8888*)d.get();
     offset = ((w * y_) + x_);
@@ -65,14 +67,14 @@ struct Bitmap
   }
 
   RGBA8888*
-  y(const std::size_t y_)
+  y(const uint64_t y_)
   {
     return xy(0,y_);
   }
 
   const
   RGBA8888*
-  y(std::size_t y_) const
+  y(uint64_t y_) const
   {
     return xy(0,y_);
   }
@@ -93,9 +95,9 @@ struct Bitmap
   bool
   has_transparent() const
   {
-    for(size_t y = 0; y < h; y++)
+    for(uint64_t y = 0; y < h; y++)
       {
-        for(size_t x = 0; x < w; x++)
+        for(uint64_t x = 0; x < w; x++)
           {
             const RGBA8888 *c = xy(x,y);
 
@@ -110,13 +112,16 @@ struct Bitmap
   bool
   has_black() const
   {
-    for(size_t y = 0; y < h; y++)
+    for(uint64_t y = 0; y < h; y++)
       {
-        for(size_t x = 0; x < w; x++)
+        for(uint64_t x = 0; x < w; x++)
           {
             const RGBA8888 *c = xy(x,y);
 
-            if((c->r == 0) && (c->g == 0) && (c->b == 0) && (c->a > 0))
+            if((c->r == 0) &&
+               (c->g == 0) &&
+               (c->b == 0) &&
+               (c->a > 0))
               return true;
           }
       }
@@ -125,8 +130,8 @@ struct Bitmap
   }
 
 public:
-  std::size_t w;
-  std::size_t h;
+  uint64_t w;
+  uint64_t h;
   std::shared_ptr<uint8_t[]> d;
 
 private:

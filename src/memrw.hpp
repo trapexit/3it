@@ -24,21 +24,21 @@
 class MemRW : public DataRW
 {
 private:
-  uint8_t *_data;
-  size_t   _size;
-  size_t   _idx;
+  uint8_t  *_data;
+  uint64_t  _size;
+  uint64_t  _idx;
 
 public:
-  void reset(uint8_t      *data,
-             const size_t  size);
+  void reset(uint8_t        *data,
+             const uint64_t  size);
 
 public:
   ~MemRW();
 
 public:
   bool eof() const;
-  size_t tell() const;
-  void seek(const size_t idx);
-  size_t read(uint8_t *p, const size_t count);
-  size_t write(uint8_t const * const p, const size_t count);
+  uint64_t tell() const;
+  void seek(const uint64_t idx);
+  uint64_t read(uint8_t *p, const uint64_t count);
+  uint64_t write(uint8_t const * const p, const uint64_t count);
 };

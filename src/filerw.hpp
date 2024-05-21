@@ -20,10 +20,13 @@
 
 #include "datarw.hpp"
 
-#include <cstdio>
+#include <cstdint>
+#include <stdio.h>
 
 #include <string>
 #include <filesystem>
+
+#include <stdint.h>
 
 
 class FileRW : public DataRW
@@ -38,12 +41,12 @@ public:
 public:
   bool eof() const;
   bool error() const;
-  size_t tell() const;
-  void seek(const size_t idx);
+  uint64_t tell() const;
+  void seek(const uint64_t idx);
 
 protected:
-  size_t _r(void *p, const size_t count);
-  size_t _w(const void *p, const size_t count);
+  uint64_t _r(void *p, const uint64_t count);
+  uint64_t _w(const void *p, const uint64_t count);
 
 public:
   int open(char const *filepath,
