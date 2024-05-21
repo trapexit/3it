@@ -387,22 +387,6 @@ calc_offset_width(const std::size_t bpp_)
   throw std::runtime_error("invalid bpp");
 }
 
-// offset = number of words to next row minus 2
-// Meaning a min of 8 bytes per row.
-static
-void
-write_next_row_offset(BitStreamWriter   &bs_,
-                      const std::size_t  offset_width_,
-                      const std::size_t  next_row_offset_)
-{
-  std::size_t next_row_in_words;
-
-  next_row_in_words = (((bs_.tell() - next_row_offset_) / BITS_PER_WORD) - 2);
-  bs_.write(next_row_offset_,
-            offset_width_,
-            next_row_in_words);
-}
-
 static
 void
 api_to_bytevec(const Bitmap              &b_,
@@ -423,10 +407,10 @@ api_to_bytevec(const Bitmap              &b_,
   for(const auto &pdpvec : api_)
     {
       next_row_offset = bs.tell();
-      bs.skip(offset_width);
+      bs.write(offset_width,0);
       for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
         {
-          auto const &pdp = *i;
+          const auto &pdp = *i;
 
           bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
@@ -454,9 +438,21 @@ api_to_bytevec(const Bitmap              &b_,
             }
         }
 
-      bs.zero_till_32bit_boundary();
+      {
+        std::int64_t next_row_in_words;
 
-      ::write_next_row_offset(bs,offset_width,next_row_offset);
+        bs.zero_till_32bit_boundary();
+
+        next_row_in_words  = ((bs.tell() - next_row_offset) / BITS_PER_WORD);
+        next_row_in_words -= 2;
+        if(next_row_in_words < 0)
+          next_row_in_words = 0;
+
+        bs.write(next_row_offset,
+                 offset_width,
+                 next_row_in_words);
+        bs.seek(next_row_offset + ((next_row_in_words + 2) * BITS_PER_WORD));
+      }
     }
 
   pdat_.resize(bs.tell() / BITS_PER_BYTE);
