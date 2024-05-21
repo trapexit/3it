@@ -204,7 +204,7 @@ generate_to_cel_argparser(CLI::App       &app_,
                           Options::ToCEL &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -323,7 +323,7 @@ generate_to_banner_argparser(CLI::App          &app_,
                              Options::ToBanner &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -368,7 +368,7 @@ generate_to_imag_argparser(CLI::App        &app_,
                            Options::ToIMAG &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -412,7 +412,7 @@ generate_to_lrform_argparser(CLI::App          &app_,
                              Options::ToLRFORM &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -456,7 +456,7 @@ generate_to_bmp_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -501,7 +501,7 @@ generate_to_png_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
@@ -546,7 +546,7 @@ generate_to_jpg_argparser(CLI::App         &app_,
                           Options::ToImage &options_)
 {
   CLI::App *subcmd;
-  fs::path default_output_path;
+  std::string default_output_path;
 
   default_output_path = "{filepath}{_index}{_name}{ext}";
 
