@@ -173,6 +173,18 @@ CelControlChunk::ccbpre() const
   return (ccb_Flags & CCB_CCBPRE);
 }
 
+bool
+CelControlChunk::bgnd() const
+{
+  return (ccb_Flags & CCB_BGND);
+}
+
+bool
+CelControlChunk::noblk() const
+{
+  return (ccb_Flags & CCB_NOBLK);
+}
+
 uint8_t
 CelControlChunk::pover() const
 {

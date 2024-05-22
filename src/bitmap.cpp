@@ -121,6 +121,12 @@ Bitmap::replace_color(uint32_t const src_,
     }
 }
 
+void
+Bitmap::make_transparent(const uint32_t color_)
+{
+  replace_color(color_,Bitmap::Color::TRANSPARENT);
+}
+
 static
 void
 set_rotation_90_metadata(Bitmap &b_)

@@ -52,6 +52,8 @@ public:
   uint32_t type() const;
   uint32_t pdv() const;
   bool     ccbpre() const;
+  bool     bgnd() const;
+  bool     noblk() const;
 
   uint8_t     pover() const;
   std::string pover_str() const;
