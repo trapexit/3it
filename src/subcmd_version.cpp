@@ -18,9 +18,7 @@
 
 #include "fmt.hpp"
 
-#define MAJOR 1
-#define MINOR 6
-#define PATCH 1
+#include "version.hpp"
 
 namespace SubCmd
 {
