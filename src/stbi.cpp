@@ -80,8 +80,8 @@ stbi_load(const fs::path &filepath_,
     return;
 
   b_.d.reset(d);
-  b_.w = (size_t)w;
-  b_.h = (size_t)h;
+  b_.w = (uint64_t)w;
+  b_.h = (uint64_t)h;
 }
 
 void
@@ -96,8 +96,8 @@ stbi_load(cPDAT   data_,
     return;
 
   b_.d.reset(d);
-  b_.w = (size_t)w;
-  b_.h = (size_t)h;
+  b_.w = (uint64_t)w;
+  b_.h = (uint64_t)h;
 }
 
 int

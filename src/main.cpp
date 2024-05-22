@@ -30,7 +30,6 @@
 
 namespace fs = std::filesystem;
 
-
 static
 std::string
 color2rgb_transform(std::string &s_)

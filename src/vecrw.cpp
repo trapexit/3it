@@ -25,30 +25,30 @@ VecRW::error() const
   return false;
 }
 
-size_t
+uint64_t
 VecRW::tell() const
 {
   return _idx;
 }
 
 void
-VecRW::seek(const size_t idx_)
+VecRW::seek(const uint64_t idx_)
 {
   _idx = idx_;
   if(_idx >= _vec->size())
     _vec->resize(_idx);
 }
 
-size_t
+uint64_t
 VecRW::_r(void         *p_,
-          const size_t  count_)
+          const uint64_t  count_)
 {
-  size_t rv;
+  uint64_t rv;
   uint8_t *p;
 
   rv = 0;
   p = (uint8_t*)p_;
-  for(size_t i = 0; i < count_ && !eof(); i++)
+  for(uint64_t i = 0; i < count_ && !eof(); i++)
     {
       *p++ = (*_vec)[_idx++];
       rv++;
@@ -57,18 +57,18 @@ VecRW::_r(void         *p_,
   return rv;
 }
 
-size_t
+uint64_t
 VecRW::_w(const void   *p_,
-          const size_t  count_)
+          const uint64_t  count_)
 {
-  std::size_t rv;
+  std::uint64_t rv;
   std::uint8_t const *p = (std::uint8_t const*)p_;
 
   if((_idx + count_) > _vec->size())
     _vec->resize(_vec->size() + count_);
 
   rv = 0;
-  for(size_t i = 0; i < count_; i++)
+  for(uint64_t i = 0; i < count_; i++)
     {
       (*_vec)[_idx++] = *p++;
       rv++;

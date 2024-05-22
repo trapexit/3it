@@ -10,8 +10,8 @@
 class PLUT : public std::vector<uint16_t>
 {
 public:
-  std::size_t max_size() const;
-  std::size_t min_size(int bpp) const;
+  uint64_t max_size() const;
+  uint64_t min_size(int bpp) const;
 
 public:
   PLUT& operator=(const Chunk &chunk);
