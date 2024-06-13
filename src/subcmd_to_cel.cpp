@@ -23,6 +23,7 @@
 #include "cel_packer.hpp"
 #include "cel_types.hpp"
 #include "chunk_ids.hpp"
+#include "clamp.hpp"
 #include "convert.hpp"
 #include "fp12_20.hpp"
 #include "fp16_16.hpp"
@@ -141,9 +142,13 @@ namespace l
     ccc_.bpp(celtype_.bpp);
     if(!celtype_.coded)
       ccc_.ccb_PRE0 |= PRE0_UNCODED;
-    ccc_.ccb_PRE0 |= ((h_ - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
 
-    ccc_.ccb_PRE1  = ((w_ - PRE1_TLHPCNT_PREFETCH) & PRE1_TLHPCNT_MASK);
+    if(celtype_.lrform)
+      ccc_.ccb_PRE0 |= (((h_/2) - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+    else
+      ccc_.ccb_PRE0 |= ((h_ - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+
+    ccc_.ccb_PRE1 = ((w_ - PRE1_TLHPCNT_PREFETCH) & PRE1_TLHPCNT_MASK);
     if(celtype_.lrform)
       ccc_.ccb_PRE1 |= PRE1_LRFORM;
     ccc_.ccb_PRE1 |= PRE1_TLLSB_PDC0;
@@ -154,11 +159,23 @@ namespace l
       case 2:
       case 4:
       case 6:
-        ccc_.ccb_PRE1 |= (((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET8_SHIFT);
+        {
+          int tmp;
+
+          tmp = ((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH);
+          tmp = clamp_int_to_zero(tmp);
+          ccc_.ccb_PRE1 |= (tmp << PRE1_WOFFSET8_SHIFT);
+        }
         break;
       case 8:
       case 16:
-        ccc_.ccb_PRE1 |= (((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);
+        {
+          int tmp;
+
+          tmp = ((round_up(w_ * celtype_.bpp,32) / 32) - PRE1_WOFFSET_PREFETCH);
+          tmp = clamp_int_to_zero(tmp);
+          ccc_.ccb_PRE1 |= (tmp << PRE1_WOFFSET10_SHIFT);
+        }
         break;
       }
 
