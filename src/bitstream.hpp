@@ -122,6 +122,18 @@ public:
     return _idx;
   }
 
+  u64
+  tell_bits() const
+  {
+    return tell();
+  }
+
+  u64
+  tell_bytes() const
+  {
+    return ((_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);
+  }
+
 public:
   u64
   read(const u64 idx_,
@@ -326,6 +338,18 @@ public:
   tell() const
   {
     return _idx;
+  }
+
+  u64
+  tell_bits() const
+  {
+    return tell();
+  }
+
+  u64
+  tell_bytes() const
+  {
+    return ((_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);
   }
 
 public:

@@ -18,12 +18,77 @@
 
 #include "write_cel.hpp"
 
-#include "filerw.hpp"
-#include "chunk_sizes.hpp"
+#include "bytevec.hpp"
+#include "cel_control_chunk.hpp"
 #include "chunk_ids.hpp"
+#include "chunk_sizes.hpp"
+#include "filerw.hpp"
 
-#include "fmt.hpp"
 
+static
+void
+write_ccc(FileRW                &f_,
+          const CelControlChunk &ccc_)
+{
+  f_.u32be(CHUNK_CCB);
+  f_.u32be(ccc_.chunk_size);
+  f_.u32be(ccc_.ccb_version);
+  f_.u32be(ccc_.ccb_Flags);
+  f_.u32be(ccc_.ccb_NextPtr);
+  f_.u32be(ccc_.ccb_CelData);
+  f_.u32be(ccc_.ccb_PLUTPtr);
+  f_.i32be(ccc_.ccb_X);
+  f_.i32be(ccc_.ccb_Y);
+  f_.i32be(ccc_.ccb_hdx);
+  f_.i32be(ccc_.ccb_hdy);
+  f_.i32be(ccc_.ccb_vdx);
+  f_.i32be(ccc_.ccb_vdy);
+  f_.i32be(ccc_.ccb_ddx);
+  f_.i32be(ccc_.ccb_ddy);
+  f_.u32be(ccc_.ccb_PPMPC);
+  f_.u32be(ccc_.ccb_PRE0);
+  f_.u32be(ccc_.ccb_PRE1);
+  f_.i32be(ccc_.ccb_Width);
+  f_.i32be(ccc_.ccb_Height);
+}
+
+static
+void
+write_pdat(FileRW        &f_,
+           const ByteVec &pdat_)
+{
+  f_.u32be(CHUNK_PDAT);
+  f_.u32be(CHUNK_HDR_SIZE + pdat_.size());
+  f_.w(pdat_);
+}
+
+static
+void
+write_plut(FileRW                &f_,
+           const CelControlChunk &ccc_,
+           const PLUT            &plut_)
+{
+  // While the file format has a PLUT size/len value it is not used by
+  // LoadCel/ParseCel. As a result it can lead to issues if the PLUT
+  // data is not at least equal to the data to be loaded.
+  // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgh
+  if(ccc_.coded() && !plut_.empty())
+    {
+      uint32_t size;
+
+      size = plut_.min_size(ccc_.bpp());
+
+      f_.u32be(CHUNK_PLUT);
+      f_.u32be(CHUNK_HDR_SIZE +
+              CHUNK_PLUT_SIZE_SIZE +
+              (size * CHUNK_PLUT_VAL_SIZE));
+      f_.u32be(size);
+      for(auto p : plut_)
+        f_.u16be(p);
+      for(auto i = plut_.size(); i < size; i++)
+        f_.u16be(0);
+    }
+}
 
 void
 WriteFile::cel(const std::filesystem::path &filepath_,
@@ -40,51 +105,9 @@ WriteFile::cel(const std::filesystem::path &filepath_,
                             std::system_category(),
                             "failed to open "+filepath_.string());
 
-  f.u32be(CHUNK_CCB);
-  f.u32be(ccc_.chunk_size);
-  f.u32be(ccc_.ccb_version);
-  f.u32be(ccc_.ccb_Flags);
-  f.u32be(ccc_.ccb_NextPtr);
-  f.u32be(ccc_.ccb_CelData);
-  f.u32be(ccc_.ccb_PLUTPtr);
-  f.i32be(ccc_.ccb_X);
-  f.i32be(ccc_.ccb_Y);
-  f.i32be(ccc_.ccb_hdx);
-  f.i32be(ccc_.ccb_hdy);
-  f.i32be(ccc_.ccb_vdx);
-  f.i32be(ccc_.ccb_vdy);
-  f.i32be(ccc_.ccb_ddx);
-  f.i32be(ccc_.ccb_ddy);
-  f.u32be(ccc_.ccb_PPMPC);
-  f.u32be(ccc_.ccb_PRE0);
-  f.u32be(ccc_.ccb_PRE1);
-  f.i32be(ccc_.ccb_Width);
-  f.i32be(ccc_.ccb_Height);
-
-  // While the file format has a PLUT size/len value it is not used by
-  // LoadCel/ParseCel. As a result it can lead to issues if the PLUT
-  // data is not at least equal to the data to be loaded.
-  // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpgh
-  if(ccc_.coded() && !plut_.empty())
-    {
-      uint32_t size;
-
-      size = plut_.min_size(ccc_.bpp());
-
-      f.u32be(CHUNK_PLUT);
-      f.u32be(CHUNK_HDR_SIZE +
-              CHUNK_PLUT_SIZE_SIZE +
-              (size * CHUNK_PLUT_VAL_SIZE));
-      f.u32be(size);
-      for(auto p : plut_)
-        f.u16be(p);
-      for(auto i = plut_.size(); i < size; i++)
-        f.u16be(0);
-    }
-
-  f.u32be(CHUNK_PDAT);
-  f.u32be(CHUNK_HDR_SIZE + pdat_.size());
-  f.w(pdat_);
+  write_ccc(f,ccc_);
+  write_pdat(f,pdat_);
+  write_plut(f,ccc_,plut_);
 
   if(f.error())
     throw std::system_error(errno,std::system_category(),"failed to write "+filepath_.string());

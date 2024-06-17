@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include "types_ints.h"
+
+
 static
 inline
 int
@@ -36,6 +39,16 @@ static
 inline
 int
 clamp_int_to_zero(const int v_)
+{
+  if(v_ < 0)
+    return 0;
+  return v_;
+}
+
+static
+inline
+s64
+clamp_s64_to_zero(const s64 v_)
 {
   if(v_ < 0)
     return 0;
