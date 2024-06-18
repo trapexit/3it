@@ -60,6 +60,7 @@
 #include <stdexcept>
 #include <vector>
 
+
 struct PackedDataPacket
 {
   uint8_t type;
@@ -396,8 +397,8 @@ api_to_bytevec(const Bitmap              &b_,
 {
 
   BitStreamWriter bs;
-  std::size_t offset_width;
-  std::size_t next_row_offset;
+  u64 offset_width;
+  u64 next_row_offset;
 
   offset_width = ::calc_offset_width(pc_.bpp());
 
@@ -439,24 +440,25 @@ api_to_bytevec(const Bitmap              &b_,
             }
         }
 
+      // Like unpacked CELs the pipelining of the CEL engine requires
+      // minus 2 words for the length / offset meaning a minimum of 2
+      // words in the CEL data.
       {
-        std::int64_t next_row_in_words;
+        s64 next_row_in_words;
 
         bs.zero_till_32bit_boundary();
+        if((bs.tell() - next_row_offset) < (2 * BITS_PER_WORD))
+          bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
 
-        next_row_in_words  = ((bs.tell() - next_row_offset) / BITS_PER_WORD);
-        next_row_in_words -= 2;
-        if(next_row_in_words < 0)
-          next_row_in_words = 0;
+        next_row_in_words = (((bs.tell() - next_row_offset) / BITS_PER_WORD) - 2);
 
         bs.write(next_row_offset,
                  offset_width,
                  next_row_in_words);
-        bs.seek(next_row_offset + ((next_row_in_words + 2) * BITS_PER_WORD));
       }
     }
 
-  pdat_.resize(bs.tell() / BITS_PER_BYTE);
+  pdat_.resize(bs.tell_bytes());
 }
 
 void

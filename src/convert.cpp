@@ -655,6 +655,9 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
 
   for(size_t y = 0; y < bitmap_.h; y++)
     {
+      u64 start;
+
+      start = bs.tell();
       for(size_t x = 0; x < bitmap_.w; x++)
         {
           uint16_t color;
@@ -667,6 +670,12 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
         }
 
       bs.skip_to_32bit_boundary();
+      // Due to pipelining of the CEL engine the WOFFSET value is
+      // words in a row minus 2. So we must pad a row if less than 8
+      // bytes (2 words.)
+      // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/5gpge#the_woffset_value
+      if((bs.tell() - start) < (2 * BITS_PER_WORD))
+        bs.write(((2 * BITS_PER_WORD) - (bs.tell() - start)),0);
     }
 }
 
