@@ -117,6 +117,7 @@ generate_dump_packed_instructions(CLI::App            &app_,
 
   subcmd = app_.add_subcommand("dump-packed-instructions",
                                "print out a packed CEL's instruction list");
+  subcmd->alias("dpi");
   subcmd->add_option("filepath",opts_.filepath)
     ->description("path to packed CEL image")
     ->type_name("PATH")
