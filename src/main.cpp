@@ -622,7 +622,8 @@ void
 generate_argparser(CLI::App &app_,
                    Options  &options_)
 {
-  app_.set_help_all_flag("--help-all");
+  app_.set_help_all_flag("--help-all",
+                         "Print help all help messages and exit");
   app_.require_subcommand();
 
   generate_version_argparser(app_);

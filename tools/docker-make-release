@@ -9,4 +9,4 @@ apk add \
     s6
 
 cd /src
-s6-applyuidgid -u "${PUID}" -g "${PGID}" make release
+s6-applyuidgid -u "${PUID}" -g "${PGID}" make release-base
