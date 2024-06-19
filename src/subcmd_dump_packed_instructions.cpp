@@ -155,6 +155,8 @@ namespace l
         if(chunk.id() == CHUNK_CCB)
           {
             ccc = chunk;
+            if(ccc.unpacked())
+              throw std::runtime_error("CEL not packed");
             continue;
           }
 
