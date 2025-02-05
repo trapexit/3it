@@ -1,0 +1,14 @@
+FROM alpine:edge
+
+ARG USERID 1000
+WORKDIR /src
+RUN apk update
+RUN apk add \
+        make \
+        g++ \
+        mingw-w64-gcc \
+        i686-mingw-w64-gcc \
+        llvm \
+        zig
+RUN adduser -u ${USERID} -D user_${USERID}
+ENTRYPOINT ["/src/buildtools/entrypoint"]

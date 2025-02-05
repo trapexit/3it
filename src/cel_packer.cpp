@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2025, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -21,26 +21,36 @@
 // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpga
 
 /*
-  This code is not optimal wrt speed or space but it really doesn't
-  need to be and makes the code easier to understand. It is broken
-  down into multiple, order dependant passes.
+  This code is purposefully inefficient. It was written to be easy to
+  maintain, experiment with, and read. Since this is all out of band
+  the performance and space considerations are secondary to output and
+  maintainability. The code is broken down into numerous passes.
 
   0. Convert the raw bitmap into an abstract form. Absolutely worse
   'packed' form with every pixel being an individual literal
-  packet. Sets alpha == 0 pixels to be RGBA == 0000 to make further
-  logic easier.
+  packet. Does color conversion as well to ensure proper packing
+  later. (Previous release packed then converted which led to poor
+  packing.)
   1. Walk over rows and turn contiguous lists of pixels of the same
-  color into packed packets.
-  2. Go over all packets and change those with alpha set to 0 as
-  transparent packets.
+  color into packed packets. Ignores 64 length limit.
+  2. Go over all packets and change those with alpha as transparent
+  packets.
   3. Find instances of literal packets followed by packed, packed
   followed by literal, or literal after literal and check if it would
   take less space if combined and do so. This will be run till the
   size stops reducing.
-  4. Split abstract packets with a counter greater than 64 into
-  multiple packets of size 64 or less.
+  4. Split abstract packets with a count greater than 64 into multiple
+  packets of size 64 or less.
   5. Remove trailing transparent packets and replace with EOL.
-  6. Remove unnecessary EOLs
+  6. Remove unnecessary EOLs.
+  7. Convert the AbstractPackedImage to a vector of 3DO packed data
+  bitstreams. This is necessary to compare end of row 1 with
+  beginning of row 2. This is valid output but more can be done.
+  8. For each sequential pair of rows compare the end of row 1 with
+  beginning of row 2. If they overlap remove the overlap from row 1.
+  9. Pad the row bitstreams to ensure they are >= 2 words and padded
+  to a multiple of 4 byte word.
+  10. Convert the row of bitstreams to a byte vector for writing to disk.
 */
 
 #include "cel_packer.hpp"
@@ -55,44 +65,49 @@
 #include "packed.hpp"
 #include "pixel_converter.hpp"
 
+#include "fmt.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
 
+typedef std::vector<BitStream> BitStreamVec;
 
 struct PackedDataPacket
 {
   uint8_t type;
   uint8_t bpp;
-  std::vector<RGBA8888> pixels;
+  std::vector<u32> pixels;
 
   bool is_literal() const { return type == PACK_LITERAL; };
   bool is_packed() const { return type == PACK_PACKED; };
   bool is_transparent() const { return type == PACK_TRANSPARENT; };
   bool is_eol() const { return type == PACK_EOL; };
 
-  uint32_t size_in_bits() const;
-  uint32_t raw_literal_size() const;
+  u32 size_in_bits() const;
+  u32 raw_literal_size() const;
 };
 
 struct PackedDataPacketVec : public std::vector<PackedDataPacket>
 {
-  uint32_t pixel_count() const;
-  uint32_t size_in_bits() const;
+  u32 pixel_count() const;
+  u32 size_in_bits() const;
 };
 
 struct AbstractPackedImage : public std::vector<PackedDataPacketVec>
 {
-  uint32_t line_width;
-  uint32_t size_in_bits() const;
+  u32 bpp;
+  u32 line_width;
+  u32 offset_width;
+  u32 size_in_bits() const;
 };
 
 
-uint32_t
+u32
 PackedDataPacketVec::pixel_count() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdp : *this)
@@ -101,10 +116,10 @@ PackedDataPacketVec::pixel_count() const
   return c;
 }
 
-uint32_t
+u32
 PackedDataPacketVec::size_in_bits() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdp : *this)
@@ -113,7 +128,7 @@ PackedDataPacketVec::size_in_bits() const
   return c;
 }
 
-uint32_t
+u32
 PackedDataPacket::size_in_bits() const
 {
   switch(type)
@@ -136,7 +151,7 @@ PackedDataPacket::size_in_bits() const
   return 0;
 }
 
-uint32_t
+u32
 PackedDataPacket::raw_literal_size() const
 {
   switch(type)
@@ -152,10 +167,10 @@ PackedDataPacket::raw_literal_size() const
   return 0;
 }
 
-uint32_t
+u32
 AbstractPackedImage::size_in_bits() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdpvec : *this)
@@ -165,12 +180,35 @@ AbstractPackedImage::size_in_bits() const
 }
 
 static
-void
-pass0_build_api_from_bitmap(const Bitmap        &b_,
-                            uint8_t              bpp_,
-                            AbstractPackedImage &api_)
+std::size_t
+calc_offset_width(const std::size_t bpp_)
 {
+  switch(bpp_)
+    {
+    case BPP_1:
+    case BPP_2:
+    case BPP_4:
+    case BPP_6:
+      return 8;
+    case BPP_8:
+    case BPP_16:
+      return 16;
+    }
+
+  throw std::runtime_error("invalid bpp");
+}
+
+#define ALPHA 0xFFFFFFFF
+
+static
+void
+pass0_build_api_from_bitmap(const Bitmap            &b_,
+                            const RGBA8888Converter &pc_,
+                            AbstractPackedImage     &api_)
+{
+  api_.bpp = pc_.bpp();
   api_.line_width = b_.w;
+  api_.offset_width = ::calc_offset_width(pc_.bpp());
   api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
@@ -180,16 +218,20 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
         {
           RGBA8888 p;
           PackedDataPacket pdp;
+          u32 c;
 
           // If alpha is 0 then zero out the color to make packing
           // easier later
           p = *b_.xy(x,y);
+
           if(p.a == 0)
-            p = RGBA8888(0);
+            c = ALPHA;
+          else
+            c = pc_.convert(&p);
 
           pdp.type = PACK_LITERAL;
-          pdp.bpp  = bpp_;
-          pdp.pixels.emplace_back(p);
+          pdp.bpp  = pc_.bpp();
+          pdp.pixels.emplace_back(c);
 
           pdpvec.emplace_back(pdp);
         }
@@ -234,7 +276,7 @@ pass2_mark_transparents(AbstractPackedImage &api_)
     {
       for(auto &pdp : pdpvec)
         {
-          if(pdp.pixels[0].a != 0)
+          if(pdp.pixels[0] != ALPHA)
             continue;
 
           pdp.type = PACK_TRANSPARENT;
@@ -356,7 +398,8 @@ pass5_remove_trailing_transparents(AbstractPackedImage &api_)
     }
 }
 
-static void
+static
+void
 pass6_remove_trailing_eol(AbstractPackedImage &api_)
 {
   for(auto &pdpvec : api_)
@@ -370,95 +413,121 @@ pass6_remove_trailing_eol(AbstractPackedImage &api_)
 }
 
 static
-std::size_t
-calc_offset_width(const std::size_t bpp_)
-{
-  switch(bpp_)
-    {
-    case BPP_1:
-    case BPP_2:
-    case BPP_4:
-    case BPP_6:
-      return 8;
-    case BPP_8:
-    case BPP_16:
-      return 16;
-    }
-
-  throw std::runtime_error("invalid bpp");
-}
-
-static
 void
-api_to_bytevec(const Bitmap              &b_,
-               const AbstractPackedImage &api_,
-               const RGBA8888Converter   &pc_,
-               ByteVec                   &pdat_)
+pass7_api_to_bitstreams(const AbstractPackedImage &api_,
+                        BitStreamVec              &rows_)
 {
-
-  BitStreamWriter bs;
-  u64 offset_width;
-  u64 next_row_offset;
-
-  offset_width = ::calc_offset_width(pc_.bpp());
-
-  // BitStreamWriter will resize as needed
-  pdat_.resize(b_.w * b_.h * BYTES_PER_WORD);
-  bs.reset(pdat_);
-
-  for(const auto &pdpvec : api_)
+  rows_.clear();
+  rows_.resize(api_.size());
+  for(size_t i = 0; i < api_.size(); i++)
     {
-      next_row_offset = bs.tell();
-      bs.write(offset_width,0);
-      for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
-        {
-          const auto &pdp = *i;
+      const auto &pdpvec = api_[i];
+      auto       &row    = rows_[i];
 
-          bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
+      // Reserve space for the offset
+      row.write(api_.offset_width,0);
+      for(const auto &pdp : pdpvec)
+        {
+          row.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
             case PACK_PACKED:
-              uint32_t c;
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
-              c = pc_.convert(&pdp.pixels[0].r);
-              bs.write(pc_.bpp(),c);
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
+              row.write(api_.bpp,
+                        pdp.pixels[0]);
               break;
             case PACK_LITERAL:
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
-              for(const auto &pixel : pdp.pixels)
-                {
-                  uint32_t c;
-                  c = pc_.convert(&pixel.r);
-                  bs.write(pc_.bpp(),c);
-                }
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
+              for(const auto pixel : pdp.pixels)
+                row.write(api_.bpp,pixel);
               break;
             case PACK_TRANSPARENT:
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
               break;
             case PACK_EOL:
               break;
             }
         }
 
-      // Like unpacked CELs the pipelining of the CEL engine requires
-      // minus 2 words for the length / offset meaning a minimum of 2
-      // words in the CEL data.
+      // Needs to be done in prep for overlap pass
       {
-        s64 next_row_in_words;
+        int word_offset;
 
-        bs.zero_till_32bit_boundary();
-        if((bs.tell() - next_row_offset) < (2 * BITS_PER_WORD))
-          bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
-
-        next_row_in_words = (((bs.tell() - next_row_offset) / BITS_PER_WORD) - 2);
-
-        bs.write(next_row_offset,
-                 offset_width,
-                 next_row_in_words);
+        word_offset = std::max((uint64_t)2,
+                               row.tell_32bits_round_up());
+        row.write(0,
+                  api_.offset_width,
+                  (word_offset - 2));
       }
     }
+}
 
-  pdat_.resize(bs.tell_bytes());
+// The overlap in theory could be from word 3 to the end of the
+// row but in practice this is extremely unlikely. For the moment just
+// checking the trailing bits % 32bit word.
+static
+void
+pass8_trim_overlap(const AbstractPackedImage &api_,
+                   BitStreamVec              &rows_)
+{
+  for(size_t i = 0; i < (rows_.size() - 1); i++)
+    {
+      if(rows_[i].tell_32bits_round_up() <= 2)
+        continue;
+
+      bool overlap;
+      int trailing_bits;
+      BitStream &a = rows_[i+0];
+      BitStream &b = rows_[i+1];
+
+      trailing_bits = (a.tell_bits() & 31);
+      if(trailing_bits == 0)
+        trailing_bits = 32;
+
+      overlap = a.cmp(a.tell_bits() - trailing_bits,
+                      b,0,
+                      trailing_bits);
+      if(!overlap)
+        continue;
+
+      a.rewind(trailing_bits);
+      a.shrink_to_idx();
+      a.write(0,
+              api_.offset_width,
+              (a.tell_32bits_round_up() - 2));
+    }
+}
+
+static
+void
+pass9_pad_rows(BitStreamVec &rows_)
+{
+  for(auto &row : rows_)
+    {
+      if(row.tell_bits() < (2 * BITS_PER_WORD))
+        row.zero_till_64bit_boundary();
+      else
+        row.zero_till_32bit_boundary();
+    }
+}
+
+static
+void
+pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
+                        ByteVec            &pdat_)
+{
+  pdat_.clear();
+  for(const auto &row : rows_)
+    {
+      assert(row.tell_bits() >= (2 * BITS_PER_WORD));
+      assert((row.tell_bits() & 31) == 0);
+      pdat_.insert(pdat_.end(),
+                   row.begin(),
+                   row.idx_end());
+    }
 }
 
 void
@@ -467,14 +536,17 @@ CelPacker::pack(const Bitmap            &b_,
                 ByteVec                 &pdat_)
 {
   AbstractPackedImage api;
+  BitStreamVec rows;
 
-  pass0_build_api_from_bitmap(b_,pc_.bpp(),api);
+  pass0_build_api_from_bitmap(b_,pc_,api);
   pass1_pack_packed(api);
   pass2_mark_transparents(api);
   pass3_combine(api);
   pass4_split_large_packets(api);
   pass5_remove_trailing_transparents(api);
   pass6_remove_trailing_eol(api);
-
-  api_to_bytevec(b_,api,pc_,pdat_);
+  pass7_api_to_bitstreams(api,rows);
+  pass8_trim_overlap(api,rows);
+  pass9_pad_rows(rows);
+  pass10_bsvec_to_bytevec(rows,pdat_);
 };

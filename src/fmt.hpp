@@ -18,8 +18,10 @@
 
 #pragma once
 
-#define FMT_HEADER_ONLY
+//#define FMT_HEADER_ONLY
+
 #include "fmt/core.h"
+#include "fmt/format.h"
 #include "fmt/args.h"
 #include "fmt/printf.h"
 
@@ -30,9 +32,10 @@ template<>
 struct fmt::formatter<std::filesystem::path> : formatter<std::string>
 {
   template <typename FormatContext>
+  inline
   auto
   format(const std::filesystem::path &path_,
-         FormatContext               &ctx_)
+         FormatContext               &ctx_) const
   {
     return formatter<std::string>::format(path_.string(),ctx_);
   }

@@ -1,5 +1,5 @@
 COMPILER_PREFIX =
-PLATFORM = unix
+PLATFORM = native
 EXE = 3it
 
 include Makefile.base
