@@ -73,9 +73,10 @@ namespace l
     do
       {
         uint32_t size;
+        bool on_32bit_boundary;
 
         size = DATA_PACKET_DATA_TYPE_SIZE;
-
+        on_32bit_boundary = bs_.on_32bit_boundary();
         type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
         switch(type)
           {
@@ -117,8 +118,10 @@ namespace l
             break;
           case PACK_EOL:
             line_size += size;
-            fmt::print("e: size={};\n",
-                       DATA_PACKET_DATA_TYPE_SIZE);
+            fmt::print("e: size={}; aligned={};\n",
+                       DATA_PACKET_DATA_TYPE_SIZE,
+                       on_32bit_boundary);
+
             break;
           }
       } while(type != PACK_EOL && pixels_read < width);

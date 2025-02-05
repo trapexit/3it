@@ -82,6 +82,30 @@ public:
     seek(_idx + bits_);
   }
 
+  bool
+  on_32bit_boundary() const
+  {
+    return !(_idx & 0x1F);
+  }
+
+  u8
+  bits_to_32bit_boundary() const
+  {
+    return (0x20 - (_idx & 0x1F));
+  }
+
+  bool
+  on_64bit_boundary() const
+  {
+    return !(_idx & 0x3F);
+  }
+
+  u8
+  bits_to_64bit_boundary() const
+  {
+    return (0x40 - (_idx & 0x3F));
+  }
+  
   void
   skip_to_8bit_boundary()
   {
