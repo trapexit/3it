@@ -482,7 +482,7 @@ CelPacker::pack(const Bitmap            &b_,
 {
   AbstractPackedImage api;
 
-  pass0_build_api_from_bitmap(b_,pc_.bpp(),api);
+  pass0_build_api_from_bitmap(b_,pc_,api);
   pass1_pack_packed(api);
   pass2_mark_transparents(api);
   pass3_combine(api);
