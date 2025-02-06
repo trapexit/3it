@@ -189,6 +189,8 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           if(p.a == 0)
             p = RGBA8888(0);
 
+          fmt::print("{}\n",p.r);
+
           pdp.type = PACK_LITERAL;
           pdp.bpp  = pc_.bpp();
           pdp.pixels.emplace_back(p);
