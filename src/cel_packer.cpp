@@ -188,8 +188,9 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           p = *b_.xy(x,y);
           if(p.a == 0)
             p = RGBA8888(0);
-            
-          p = (uint32_t)0x1234;
+
+          uint32_t c;
+          c = pc_.convert(&p);
 
           pdp.type = PACK_LITERAL;
           pdp.bpp  = pc_.bpp();
