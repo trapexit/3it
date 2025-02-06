@@ -182,14 +182,15 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
         {
           RGBA8888 p;
           PackedDataPacket pdp;
-
+          uint32_t c;
+          
           // If alpha is 0 then zero out the color to make packing
           // easier later
           p = *b_.xy(x,y);
           if(p.a == 0)
             p = RGBA8888(0);
 
-          uint32_t c;
+
           c = pc_.convert(&p);
 
           pdp.type = PACK_LITERAL;
