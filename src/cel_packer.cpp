@@ -248,6 +248,7 @@ static
 void
 pass3_compress_literal_and_packed(AbstractPackedImage &api_)
 {
+  return;
   for(auto &pdpvec : api_)
     {
       PackedDataPacketVec newpdpvec;
