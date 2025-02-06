@@ -191,7 +191,7 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           p = *b_.xy(x,y);
 
           if(p.a == 0)
-            c = 0xFFFFFFFF;
+            c = ALPHA;
           else
             c = pc_.convert(&p);
 
