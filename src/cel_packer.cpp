@@ -434,9 +434,7 @@ api_to_bytevec(const Bitmap              &b_,
               fmt::print("literal: {} ",pdp.pixels.size());
               for(const auto pixel : pdp.pixels)
                 {
-                  uint32_t c;
-                  c = pc_.convert(&pixel.r);
-                  bs.write(pc_.bpp(),c);
+                  bs.write(pc_.bpp(),pixel);
                   fmt::print("{} ",c);
                 }
               fmt::print("\n");
