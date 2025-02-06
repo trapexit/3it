@@ -55,6 +55,8 @@
 #include "packed.hpp"
 #include "pixel_converter.hpp"
 
+#include "fmt.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
