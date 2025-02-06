@@ -314,7 +314,6 @@ static
 void
 pass4_split_large_packets(AbstractPackedImage &api_)
 {
-  return;
   for(auto &pdpvec : api_)
     {
       PackedDataPacketVec newpdpvec;
