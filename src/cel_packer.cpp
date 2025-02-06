@@ -67,7 +67,7 @@ struct PackedDataPacket
 {
   uint8_t type;
   uint8_t bpp;
-  std::vector<RGBA8888> pixels;
+  std::vector<uint32_t> pixels;
 
   bool is_literal() const { return type == PACK_LITERAL; };
   bool is_packed() const { return type == PACK_PACKED; };
