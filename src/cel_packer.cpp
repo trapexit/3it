@@ -188,7 +188,10 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           // easier later
           p = *b_.xy(x,y);
 
-          c = pc_.convert(&p);
+          if(p.a == 0)
+            c = 0xFFFFFFFF;
+          else
+            c = pc_.convert(&p);
 
           pdp.type = PACK_LITERAL;
           pdp.bpp  = pc_.bpp();
