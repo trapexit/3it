@@ -194,7 +194,7 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
 
           pdp.type = PACK_LITERAL;
           pdp.bpp  = pc_.bpp();
-          pdp.pixels.emplace_back(p);
+          pdp.pixels.emplace_back(c);
 
           pdpvec.emplace_back(pdp);
         }
