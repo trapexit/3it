@@ -249,7 +249,7 @@ pass2_mark_transparents(AbstractPackedImage &api_)
     {
       for(auto &pdp : pdpvec)
         {
-          if(!is_alpha_0(pdp.pixels[0]))
+          if(pdp.pixels[0] == ALPHA)
             continue;
 
           pdp.type = PACK_TRANSPARENT;
