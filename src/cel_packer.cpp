@@ -455,7 +455,6 @@ api_to_bytevec(const Bitmap              &b_,
         bs.write(next_row_offset,
                  offset_width,
                  next_row_in_words);
-        printf("%zd\n",next_row_in_words);
       }
     }
 
