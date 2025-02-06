@@ -187,8 +187,6 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           // If alpha is 0 then zero out the color to make packing
           // easier later
           p = *b_.xy(x,y);
-          if(p.a == 0)
-            p = RGBA8888(0);
 
           c = pc_.convert(&p);
 
