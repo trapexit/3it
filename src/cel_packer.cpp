@@ -434,6 +434,7 @@ api_to_bytevec(const Bitmap              &b_,
                   uint32_t c;
                   c = pc_.convert(&pixel.r);
                   bs.write(pc_.bpp(),c);
+                  fmt::print("{} ",c);
                 }
               break;
             case PACK_TRANSPARENT:
