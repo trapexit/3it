@@ -235,7 +235,7 @@ static
 bool
 is_alpha_0(uint32_t p_)
 {
-  return ((p_ & 0xFF) == 0x00);
+  return ((p_ & 0x000000FF) == 0x00);
 }
 
 static
