@@ -435,7 +435,7 @@ api_to_bytevec(const Bitmap              &b_,
               for(const auto pixel : pdp.pixels)
                 {
                   bs.write(pc_.bpp(),pixel);
-                  fmt::print("{} ",c);
+                  fmt::print("{} ",pixel);
                 }
               fmt::print("\n");
               break;
