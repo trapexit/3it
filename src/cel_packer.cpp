@@ -192,9 +192,6 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
           uint32_t c;
           c = pc_.convert(&p);
 
-          if(c)
-          fmt::print("{}\n",c);
-
           pdp.type = PACK_LITERAL;
           pdp.bpp  = pc_.bpp();
           pdp.pixels.emplace_back(p);
