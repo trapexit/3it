@@ -166,6 +166,8 @@ AbstractPackedImage::size_in_bits() const
   return c;
 }
 
+#define ALPHA 0xFFFFFFFF
+
 static
 void
 pass0_build_api_from_bitmap(const Bitmap        &b_,
