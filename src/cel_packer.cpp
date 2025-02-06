@@ -202,6 +202,7 @@ static
 void
 pass1_pack_packed(AbstractPackedImage &api_)
 {
+  return;
   for(auto &pdpvec : api_)
     {
       PackedDataPacketVec newpdpvec;
