@@ -423,12 +423,12 @@ api_to_bytevec(const Bitmap              &b_,
               c = pc_.convert(&pdp.pixels[0].r);
               bs.write(pc_.bpp(),c);
               fmt::print("packed: {} {}\n",
-                         pdp.pixels.size()-1,
+                         pdp.pixels.size(),
                          c);
               break;
             case PACK_LITERAL:
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
-              fmt::print("literal: {} ",pdp.pixels.size()-1);
+              fmt::print("literal: {} ",pdp.pixels.size());
               for(const auto &pixel : pdp.pixels)
                 {
                   uint32_t c;
