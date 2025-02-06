@@ -169,7 +169,7 @@ AbstractPackedImage::size_in_bits() const
 static
 void
 pass0_build_api_from_bitmap(const Bitmap        &b_,
-                            uint8_t              bpp_,
+                            RGBA8888Converter   &pc_,
                             AbstractPackedImage &api_)
 {
   api_.line_width = b_.w;
