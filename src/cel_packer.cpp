@@ -440,6 +440,9 @@ api_to_bytevec(const Bitmap              &b_,
               break;
             case PACK_TRANSPARENT:
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,pdp.pixels.size()-1);
+              fmt::print("transparent: {}\n",
+                         pdp.pixels.size());
+              
               break;
             case PACK_EOL:
               break;
