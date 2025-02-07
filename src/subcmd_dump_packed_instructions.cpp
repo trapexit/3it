@@ -183,6 +183,7 @@ namespace l
             fmt::print("row={} start; row_offset={}; "
                        "pdat_offset={}; next_row_offset={};\n",
                        row,
+                       row_offset,
                        offset,
                        next_offset);
             unpack_row(row,bs,ccc);
