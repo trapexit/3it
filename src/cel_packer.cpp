@@ -566,10 +566,6 @@ api_to_bytevec2(const Bitmap              &b_,
       pdat.emplace_back(row_pdat);
       has_eol.push_back(eol);
       trailing_zeros.push_back(excess_bits);
-      fmt::print("row_pdat size={}; eol={}; excess_0_bits={}\n",
-                 row_pdat.size(),
-                 eol,
-                 excess_bits);
       {
         int offset;
 
@@ -578,6 +574,11 @@ api_to_bytevec2(const Bitmap              &b_,
         bs.write(0,
                  offset_width,
                  offset);
+        fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
+                   row_pdat.size(),
+                   eol,
+                   __builtin_clz(offset),
+                   excess_bits);
       }
     }
 
