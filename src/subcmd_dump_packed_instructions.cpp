@@ -65,11 +65,13 @@ namespace l
     uint32_t pixels_read;
     uint32_t width;
     uint32_t line_size;
+    uint32_t start_offset;
 
     pixels_read = 0;
     line_size = 0;
     bpp = ccc_.bpp();
     width = ccc_.ccb_Width;
+    start_offset = bs_.tell_bytes();
     do
       {
         uint32_t size;
@@ -130,6 +132,7 @@ namespace l
                row_,
                line_size,
                pixels_read);
+    
   }
 
   void
