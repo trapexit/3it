@@ -554,6 +554,11 @@ api_to_bytevec2(const Bitmap              &b_,
       // Like unpacked CELs the pipelining of the CEL engine requires
       // minus 2 words for the length / offset meaning a minimum of 2
       // words in the CEL data.
+      int excess_bits;
+
+      excess_bits = bs.tell_bits() & (BITS_PER_WORD-1);
+      
+      
       bs.zero_till_32bit_boundary();
       if(bs.tell_u32() < 2)
         bs.write(BITS_PER_WORD,0);
