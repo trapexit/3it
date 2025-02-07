@@ -589,8 +589,8 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(auto i = pdat.begin(), ei = pdat.end(); i != ei; ++i)
     {
-      
-
+      if(std::next(i) == ei)
+        continue;
     }
   
   //  pdat_.resize(bs.tell_bytes());
