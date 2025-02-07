@@ -563,7 +563,6 @@ api_to_bytevec2(const Bitmap              &b_,
       if(bs.tell_u32() < 2)
         bs.write(BITS_PER_WORD,0);
 
-      pdat.emplace_back(row_pdat);
       has_eol.push_back(eol);
       trailing_zeros.push_back(excess_bits);
       {
@@ -584,8 +583,12 @@ api_to_bytevec2(const Bitmap              &b_,
                     __builtin_clz(first_word)),
                    excess_bits);
       }
+
+      pdat.emplace_back(row_pdat);
     }
 
+  for(auto i = 
+  
   //  pdat_.resize(bs.tell_bytes());
 }
 
