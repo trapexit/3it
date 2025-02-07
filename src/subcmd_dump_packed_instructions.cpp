@@ -71,7 +71,6 @@ namespace l
     line_size = 0;
     bpp = ccc_.bpp();
     width = ccc_.ccb_Width;
-    start_offset = bs_.tell_bytes();
     do
       {
         uint32_t size;
@@ -133,6 +132,7 @@ namespace l
                line_size,
                pixels_read);
     
+    for
   }
 
   void
