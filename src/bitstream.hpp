@@ -413,7 +413,8 @@ public:
   write(const std::vector<u8> &v_)
   {
     for(const u8 byte : v_)
-      write(
+      write(8,byte);
+    
   }
 
 public:
