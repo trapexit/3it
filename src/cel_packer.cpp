@@ -558,7 +558,9 @@ api_to_bytevec2(const Bitmap              &b_,
         bs.write(BITS_PER_WORD,0);
 
       pdat.emplace_back(row_pdat);
-      fmt::print("row_pdat size={}\n",row_pdat.size());
+      fmt::print("row_pdat size={}; eol={};\n",
+                 row_pdat.size(),
+                 eol);
     }
 
   pdat_.resize(bs.tell_bytes());
