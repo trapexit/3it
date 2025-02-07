@@ -516,30 +516,30 @@ api_to_bytevec2(const Bitmap              &b_,
                        pdp.pixels.size()-1);
               bs.write(pc_.bpp(),
                        pdp.pixels[0]);
-              fmt::print("packed: {} {}\n",
-                         pdp.pixels.size(),
-                         pdp.pixels[0]);
+              // fmt::print("packed: {} {}\n",
+              //            pdp.pixels.size(),
+              //            pdp.pixels[0]);
               break;
             case PACK_LITERAL:
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                        pdp.pixels.size()-1);
-              fmt::print("literal: {} ",pdp.pixels.size());
+              // fmt::print("literal: {} ",pdp.pixels.size());
               for(const auto pixel : pdp.pixels)
                 {
                   bs.write(pc_.bpp(),pixel);
-                  fmt::print("{} ",pixel);
+                  // fmt::print("{} ",pixel);
                 }
-              fmt::print("\n");
+              // fmt::print("\n");
               break;
             case PACK_TRANSPARENT:
               bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                        pdp.pixels.size()-1);
-              fmt::print("transparent: {}\n",
-                         pdp.pixels.size());
+              // fmt::print("transparent: {}\n",
+              //            pdp.pixels.size());
               
               break;
             case PACK_EOL:
-              fmt::print("eol:\n");
+              // fmt::print("eol:\n");
               break;
             }
         }
