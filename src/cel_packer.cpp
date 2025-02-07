@@ -551,7 +551,7 @@ api_to_bytevec2(const Bitmap              &b_,
         s64 next_row_in_words;
 
         bs.zero_till_32bit_boundary();
-        if((bs.tell() - next_row_offset) < (2 * BITS_PER_WORD))
+        if(bs.tell_u32() < 2)
           bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
       }
 
