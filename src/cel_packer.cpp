@@ -570,9 +570,15 @@ api_to_bytevec2(const Bitmap              &b_,
                  row_pdat.size(),
                  eol,
                  excess_bits);
-      bs.write(0,
-               offset_width,
-               ((row_pdat.size() / BYTES_PER_WORD)-2));
+      {
+        int offset;
+
+        offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
+
+        bs.write(0,
+                 offset_width,
+                 offset);
+      }
     }
 
   //  pdat_.resize(bs.tell_bytes());
