@@ -178,6 +178,8 @@ namespace l
             uint32_t next_offset;
 
             bs.seek(offset * BITS_PER_BYTE);
+            row_offset = bs.read(offset_width) + 2;
+            
             next_offset = offset + ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
             fmt::print("row={} start; offset={}; next_offset={};\n",
                        row,
