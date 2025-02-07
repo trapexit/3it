@@ -398,6 +398,95 @@ calc_offset_width(const std::size_t bpp_)
 
 static
 void
+api_to_bytevec2(const Bitmap              &b_,
+               const AbstractPackedImage &api_,
+               const RGBA8888Converter   &pc_,
+               ByteVec                   &pdat_)
+{
+
+  BitStreamWriter bs;
+  u64 offset_width;
+  u64 next_row_offset;
+
+  offset_width = ::calc_offset_width(pc_.bpp());
+
+  // BitStreamWriter will resize as needed
+  pdat_.resize(b_.w * b_.h * BYTES_PER_WORD);
+  bs.reset(pdat_);
+
+  for(const auto &pdpvec : api_)
+    {
+      next_row_offset = bs.tell();
+      bs.write(offset_width,0);
+      for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
+        {
+          const auto &pdp = *i;
+
+          bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
+          switch(pdp.type)
+            {
+            case PACK_PACKED:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              bs.write(pc_.bpp(),
+                       pdp.pixels[0]);
+              fmt::print("packed: {} {}\n",
+                         pdp.pixels.size(),
+                         pdp.pixels[0]);
+              break;
+            case PACK_LITERAL:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              fmt::print("literal: {} ",pdp.pixels.size());
+              for(const auto pixel : pdp.pixels)
+                {
+                  bs.write(pc_.bpp(),pixel);
+                  fmt::print("{} ",pixel);
+                }
+              fmt::print("\n");
+              break;
+            case PACK_TRANSPARENT:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              fmt::print("transparent: {}\n",
+                         pdp.pixels.size());
+              
+              break;
+            case PACK_EOL:
+              fmt::print("eol:\n");
+              break;
+            }
+        }
+
+      // Like unpacked CELs the pipelining of the CEL engine requires
+      // minus 2 words for the length / offset meaning a minimum of 2
+      // words in the CEL data.
+      {
+        s64 next_row_in_words;
+
+        bs.zero_till_32bit_boundary();
+        if((bs.tell() - next_row_offset) < (2 * BITS_PER_WORD))
+          bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
+
+        next_row_in_words = (((bs.tell() - next_row_offset) / BITS_PER_WORD) - 2);
+
+        if(next_row_in_words > 0)
+          {
+            if(bs.read(bs.tell() - 32,32) == 0)
+              fmt::print("ending in 0\n");
+          }
+
+        bs.write(next_row_offset,
+                 offset_width,
+                 next_row_in_words);
+      }
+    }
+
+  pdat_.resize(bs.tell_bytes());
+}
+
+static
+void
 api_to_bytevec(const Bitmap              &b_,
                const AbstractPackedImage &api_,
                const RGBA8888Converter   &pc_,
