@@ -494,6 +494,8 @@ api_to_bytevec2(const Bitmap              &b_,
 {
   ByteVec row_pdat;  
   std::vector<ByteVec> pdat;
+  std::vector<bool> has_eol;
+  std::vector<int> trailing_zeros;
   BitStreamWriter bs;
   u64 offset_width;
 
