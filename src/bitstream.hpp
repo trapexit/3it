@@ -378,6 +378,9 @@ public:
 
   u64
   tell_u32() const
+  {
+    return ((tell_bytes() + 3) / 4);
+  }
 
 public:
   void
