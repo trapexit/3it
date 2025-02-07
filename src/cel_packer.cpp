@@ -505,6 +505,10 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(const auto &pdpvec : api_)
     {
+      ByteVec row_pdat;
+
+      bs.reset(row_pdat);
+      
       next_row_offset = bs.tell();
       bs.write(offset_width,0);
       for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
