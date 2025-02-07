@@ -492,7 +492,7 @@ api_to_bytevec2(const Bitmap              &b_,
                 const RGBA8888Converter   &pc_,
                 ByteVec                   &pdat_)
 {
-
+  std::vector<ByteVec> pdat;
   BitStreamWriter bs;
   u64 offset_width;
   u64 next_row_offset;
