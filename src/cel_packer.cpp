@@ -398,7 +398,7 @@ calc_offset_width(const std::size_t bpp_)
 
 static
 void
-api_to_bytevec2(const Bitmap              &b_,
+api_to_bytevec(const Bitmap              &b_,
                const AbstractPackedImage &api_,
                const RGBA8888Converter   &pc_,
                ByteVec                   &pdat_)
@@ -487,10 +487,10 @@ api_to_bytevec2(const Bitmap              &b_,
 
 static
 void
-api_to_bytevec(const Bitmap              &b_,
-               const AbstractPackedImage &api_,
-               const RGBA8888Converter   &pc_,
-               ByteVec                   &pdat_)
+api_to_bytevec2(const Bitmap              &b_,
+                const AbstractPackedImage &api_,
+                const RGBA8888Converter   &pc_,
+                ByteVec                   &pdat_)
 {
 
   BitStreamWriter bs;
