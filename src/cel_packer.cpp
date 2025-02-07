@@ -569,6 +569,8 @@ api_to_bytevec2(const Bitmap              &b_,
                  offset_width,
                  next_row_in_words);
       }
+
+      pdat.emplace_back(row_pdat);
     }
 
   pdat_.resize(bs.tell_bytes());
