@@ -499,10 +499,6 @@ api_to_bytevec2(const Bitmap              &b_,
 
   offset_width = ::calc_offset_width(pc_.bpp());
 
-  // BitStreamWriter will resize as needed
-  pdat_.resize(b_.w * b_.h * BYTES_PER_WORD);
-  bs.reset(pdat_);
-
   for(const auto &pdpvec : api_)
     {
       ByteVec row_pdat;
