@@ -591,11 +591,14 @@ api_to_bytevec2(const Bitmap              &b_,
   for(size_t i = 0; i < pdat.size(); i++)
     {
       u32 first_word;
+      u32 leading_zeros;
+      u32 trailing_zeros;
       if(i + 1 == pdat.size())
         continue;
 
       bs.reset(&pdat[i]);
       first_word = bs.read(0,BITS_PER_WORD);
+      
     }
   
   //  pdat_.resize(bs.tell_bytes());
