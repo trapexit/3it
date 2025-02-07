@@ -88,6 +88,7 @@ namespace l
 
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
               size += (count * bpp);
+              line_size += size;
 
               fmt::print("l: count={}; size={}; colors=",count,size);
               for(size_t i = 0; i < count; i++)
@@ -103,6 +104,7 @@ namespace l
               count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
               pixels_read += count;
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
+              line_size += size;              
               fmt::print("t: count={}; size={};\n",count,size);
             }
             break;
