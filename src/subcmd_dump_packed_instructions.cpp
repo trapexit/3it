@@ -183,7 +183,8 @@ namespace l
                        offset,
                        next_offset);
             unpack_row(row,bs,ccc);
-            for(u64 i = offset; i < next_offset; i += 4)
+
+            for(u64 i = offset * BITS_PER_BYTE; i < next_offset; i += BITS_PER_BYTE * 4)
               {
                 u32 x = bs.read(i,BITS_PER_BYTE * 4);
                 fmt::print("{:08X} ",x);
