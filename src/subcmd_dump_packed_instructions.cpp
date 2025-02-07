@@ -138,6 +138,7 @@ namespace l
   {
     uint32_t type;
     uint32_t offset;
+    u32 row_offset;
     ByteVec data;
     ChunkVec chunks;
     CelControlChunk ccc;
