@@ -401,4 +401,17 @@ public:
     write(_idx,bits_,val_);
     _idx += bits_;
   }
+
+public:
+  u64
+  read(const u64 idx_,
+       const u64 bits_)
+  {
+    u64 val = 0;
+
+    for(u64 i = idx_; i < (idx_ + bits_); i++)
+        val = ((val << 1) | ((_data[i >> 3] >> (7 - (i & 7))) & 1));
+
+    return val;
+  }
 };
