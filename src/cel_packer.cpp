@@ -547,13 +547,9 @@ api_to_bytevec2(const Bitmap              &b_,
       // Like unpacked CELs the pipelining of the CEL engine requires
       // minus 2 words for the length / offset meaning a minimum of 2
       // words in the CEL data.
-      {
-        s64 next_row_in_words;
-
-        bs.zero_till_32bit_boundary();
-        if(bs.tell_u32() < 2)
-          bs.write(BITS_PER_WORD,0);
-      }
+      bs.zero_till_32bit_boundary();
+      if(bs.tell_u32() < 2)
+        bs.write(BITS_PER_WORD,0);
 
       pdat.emplace_back(row_pdat);
       fmt::print("row_pdat size={}\n",row_pdat.size());
