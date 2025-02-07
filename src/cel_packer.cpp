@@ -52,6 +52,7 @@
 #include "byte_reader.hpp"
 #include "bytevec.hpp"
 #include "ccb_flags.hpp"
+#include "fmt/format-inl.h"
 #include "packed.hpp"
 #include "pixel_converter.hpp"
 
@@ -549,7 +550,6 @@ api_to_bytevec2(const Bitmap              &b_,
             }
         }
 
-      has_eol.push_back(eol);
       // Like unpacked CELs the pipelining of the CEL engine requires
       // minus 2 words for the length / offset meaning a minimum of 2
       // words in the CEL data.
@@ -564,6 +564,8 @@ api_to_bytevec2(const Bitmap              &b_,
         bs.write(BITS_PER_WORD,0);
 
       pdat.emplace_back(row_pdat);
+      has_eol.push_back(eol);
+      trailing_zeros.push_backs(excess_bits);
       fmt::print("row_pdat size={}; eol={}; excess_0_bits={}\n",
                  row_pdat.size(),
                  eol,
