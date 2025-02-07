@@ -185,7 +185,7 @@ namespace l
             unpack_row(row,bs,ccc);
             for(u64 i = offset; i < next_offset; i += 1)
               {
-                u32 x = bs.read(offset,BITS_PER_BYTE * 4);
+                u32 x = bs.read(offset,BITS_PER_BYTE);
                 fmt::print("{:08X} ",x);
               }
             fmt::print("\n");
