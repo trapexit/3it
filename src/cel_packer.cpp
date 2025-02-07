@@ -551,18 +551,8 @@ api_to_bytevec2(const Bitmap              &b_,
         s64 next_row_in_words;
 
         bs.zero_till_32bit_boundary();
-        if((bs.tell() - next_row_offset) < (2 * BITS_PER_WORD))
-          bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
 
-        next_row_in_words = (((bs.tell() - next_row_offset) / BITS_PER_WORD) - 2);
-
-        if(next_row_in_words > 0)
-          {
-            if(bs.read(bs.tell() - 32,32) == 0)
-              fmt::print("ending in 0\n");
-          }
-
-        bs.write(next_row_offset,
+        bs.write(0,
                  offset_width,
                  next_row_in_words);
       }
