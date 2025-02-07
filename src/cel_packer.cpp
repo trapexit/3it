@@ -503,6 +503,8 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(const auto &pdpvec : api_)
     {
+      bool eol = false;
+        
       row_pdat.clear();
       bs.reset(row_pdat);
 
@@ -541,11 +543,13 @@ api_to_bytevec2(const Bitmap              &b_,
               
               break;
             case PACK_EOL:
+              eol = true;
               // fmt::print("eol:\n");
               break;
             }
         }
 
+      has_eol = eol;
       // Like unpacked CELs the pipelining of the CEL engine requires
       // minus 2 words for the length / offset meaning a minimum of 2
       // words in the CEL data.
