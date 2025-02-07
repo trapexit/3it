@@ -409,6 +409,13 @@ public:
     _idx += bits_;
   }
 
+  void
+  write(const std::vector<u8> &v_)
+  {
+    for(const u8 byte : v_)
+      write(
+  }
+
 public:
   u64
   read(const u64 idx_,
