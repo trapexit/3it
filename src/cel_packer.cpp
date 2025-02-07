@@ -587,9 +587,9 @@ api_to_bytevec2(const Bitmap              &b_,
       pdat.emplace_back(row_pdat);
     }
 
-  for(auto i = pdat.begin(), ei = pdat.end(); i != ei; ++i)
+  for(size_t i = 0; i < pdat.size(); i++)
     {
-      if(std::next(i) == ei)
+      if(i + 1 == pdat.size())
         continue;
     }
   
