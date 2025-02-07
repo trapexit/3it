@@ -551,10 +551,6 @@ api_to_bytevec2(const Bitmap              &b_,
         s64 next_row_in_words;
 
         bs.zero_till_32bit_boundary();
-
-        bs.write(0,
-                 offset_width,
-                 next_row_in_words);
       }
 
       pdat.emplace_back(row_pdat);
