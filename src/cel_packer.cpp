@@ -557,7 +557,8 @@ api_to_bytevec2(const Bitmap              &b_,
       int excess_bits;
 
       excess_bits = bs.tell_bits() & (BITS_PER_WORD-1);
-      
+      if(bs.read(bs.tell_bits() - excess_bits,excess_bits) != 0)
+        excess_bits = 0;
       
       bs.zero_till_32bit_boundary();
       if(bs.tell_u32() < 2)
