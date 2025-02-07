@@ -507,10 +507,7 @@ api_to_bytevec2(const Bitmap              &b_,
       // Reserve space for the offset
       bs.write(offset_width,0);
       for(const auto &pdp : pdpvec)
-        //      for(auto i = pdpvec.begin(), ei = pdpvec.end(); i != ei; ++i)
         {
-          //          const auto &pdp = *i;
-
           bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
