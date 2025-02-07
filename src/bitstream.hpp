@@ -233,6 +233,8 @@ public:
   void
   seek(const u64 idx_)
   {
+    _maybe_resize(idx_);
+    
     _idx = idx_;
   }
 
