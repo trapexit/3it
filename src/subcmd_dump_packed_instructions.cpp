@@ -131,8 +131,6 @@ namespace l
                row_,
                line_size,
                pixels_read);
-    
-    for
   }
 
   void
