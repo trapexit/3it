@@ -376,6 +376,9 @@ public:
     return ((_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);
   }
 
+  u64
+  tell_u32() const
+
 public:
   void
   write(u64 idx_,
