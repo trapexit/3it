@@ -592,13 +592,13 @@ api_to_bytevec2(const Bitmap              &b_,
     {
       u32 first_word;
       u32 leading_zeros;
-      u32 trailing_zeros;
       if(i + 1 == pdat.size())
         continue;
 
       bs.reset(&pdat[i]);
       first_word = bs.read(0,BITS_PER_WORD);
-      
+      leading_zeros = __builtin_clz(first_word);
+      trailing_zeros[i];
     }
   
   //  pdat_.resize(bs.tell_bytes());
