@@ -503,7 +503,6 @@ api_to_bytevec2(const Bitmap              &b_,
   for(const auto &pdpvec : api_)
     {
       row_pdat.clear();
-
       bs.reset(row_pdat);
       
       next_row_offset = bs.tell();
