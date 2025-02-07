@@ -198,7 +198,7 @@ public:
   }
 
   BitStreamWriter(std::vector<u8> &data_,
-                  const u64          idx_ = 0)
+                  const u64        idx_ = 0)
   {
     reset(data_,idx_);
   }
