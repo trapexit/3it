@@ -568,12 +568,14 @@ api_to_bytevec2(const Bitmap              &b_,
       trailing_zeros.push_back(excess_bits);
       {
         int offset;
+        int first_word;
 
         offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
 
         bs.write(0,
                  offset_width,
                  offset);
+        first_word = bs.read(0,BITS_PER_WORD);
         fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
                    row_pdat.size(),
                    eol,
