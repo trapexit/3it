@@ -575,7 +575,7 @@ api_to_bytevec2(const Bitmap              &b_,
                ((row_pdat.size() / BYTES_PER_WORD)-2));
     }
 
-  pdat_.resize(bs.tell_bytes());
+  //  pdat_.resize(bs.tell_bytes());
 }
 
 void
