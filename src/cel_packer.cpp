@@ -552,7 +552,7 @@ api_to_bytevec2(const Bitmap              &b_,
 
         bs.zero_till_32bit_boundary();
         if(bs.tell_u32() < 2)
-          bs.write(((2 * BITS_PER_WORD) - (bs.tell() - next_row_offset)),0);
+          bs.write(BITS_PER_WORD);
       }
 
       pdat.emplace_back(row_pdat);
