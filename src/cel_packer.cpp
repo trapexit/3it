@@ -470,7 +470,7 @@ api_to_bytevec(const Bitmap              &b_,
 
         next_row_in_words = (((bs.tell() - next_row_offset) / BITS_PER_WORD) - 2);
 
-        if(next_row_in_words > 2)
+        if(next_row_in_words > 0)
           {
             if(bs.read(bs.tell() - 32,32) == 0)
               fmt::print("ending in 0\n");
