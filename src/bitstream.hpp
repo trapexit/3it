@@ -206,7 +206,7 @@ public:
 public:
   void
   reset(std::vector<u8> &data_,
-        const u64          idx_ = 0)
+        const u64        idx_ = 0)
   {
     _data = &data_;
     _idx  = idx_;
