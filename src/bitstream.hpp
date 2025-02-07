@@ -378,8 +378,8 @@ public:
 
 public:
   void
-  write(u64   idx_,
-        u64   bits_,
+  write(u64 idx_,
+        u64 bits_,
         u64 val_)
   {
     _maybe_resize(idx_ + bits_);
