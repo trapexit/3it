@@ -58,6 +58,7 @@
 
 #include "fmt.hpp"
 
+#include <bits/floatn-common.h>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -589,8 +590,14 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(size_t i = 0; i < pdat.size(); i++)
     {
+      u32 first_word;
       if(i + 1 == pdat.size())
         continue;
+
+      bs.reset(&pdat[i]);
+      first_word = bs.read(
+      first_word = __builtin_clz(
+      if(
     }
   
   //  pdat_.resize(bs.tell_bytes());
