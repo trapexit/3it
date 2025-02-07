@@ -496,7 +496,6 @@ api_to_bytevec2(const Bitmap              &b_,
   std::vector<ByteVec> pdat;
   BitStreamWriter bs;
   u64 offset_width;
-  u64 next_row_offset;
 
   offset_width = ::calc_offset_width(pc_.bpp());
 
