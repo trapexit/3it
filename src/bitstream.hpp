@@ -414,7 +414,6 @@ public:
   {
     for(const u8 byte : v_)
       write(8,byte);
-    
   }
 
 public:
