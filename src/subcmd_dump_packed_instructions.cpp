@@ -186,7 +186,7 @@ namespace l
             for(u64 i = offset; i < next_offset; i += 4)
               {
                 u32 x = bs.read(i,BITS_PER_BYTE * 4);
-                fmt::print("{:01X} ",x);
+                fmt::print("{:08X} ",x);
               }
             fmt::print("\n");
             
