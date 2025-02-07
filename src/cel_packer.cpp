@@ -549,7 +549,7 @@ api_to_bytevec2(const Bitmap              &b_,
             }
         }
 
-      has_eol = eol;
+      has_eol.push_back(eol);
       // Like unpacked CELs the pipelining of the CEL engine requires
       // minus 2 words for the length / offset meaning a minimum of 2
       // words in the CEL data.
