@@ -504,7 +504,6 @@ api_to_bytevec2(const Bitmap              &b_,
   for(const auto &pdpvec : api_)
     {
       bool eol = false;
-      int trailing_zeros = 32;
         
       row_pdat.clear();
       bs.reset(row_pdat);
