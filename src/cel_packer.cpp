@@ -639,8 +639,8 @@ api_to_bytevec3(const Bitmap              &b_,
   for(size_t i = 0; i < api_.size(); i++)
   for(const auto &pdpvec : api_)
     {
-      const auto &pdpvec = api_[i];
-      auto &row_pdat = rows_pdat[i];
+      const auto &pdpvec   = api_[i];
+      auto       &row_pdat = rows_pdat[i];
       
       bool eol = false;
         
