@@ -169,8 +169,8 @@ AbstractPackedImage::size_in_bits() const
 }
 
 bool
-matched_bits(char *a_,
-             char *b_)
+matched_bits(const u32 *a_,
+             const u32 *b_)
 {
   
 
