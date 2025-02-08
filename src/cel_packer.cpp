@@ -594,7 +594,6 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(size_t i = 0; i < pdat.size(); i++)
     {
-#if 1
       u32 first_word;
       if(i + 1 == pdat.size())
         continue;
@@ -607,7 +606,6 @@ api_to_bytevec2(const Bitmap              &b_,
           fmt::print("row {} can save a word\n",i);
           pdat[i].resize(pdat[i].size() - BYTES_PER_WORD);
         }
-#endif
     }
 
   for(const auto &pdat : pdat)
