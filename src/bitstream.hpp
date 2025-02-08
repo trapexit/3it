@@ -725,7 +725,7 @@ public:
   u64
   read_bit(const u64 idx_)
   {
-    return ((_data[idx_ >> 3] >> (7 - (i & 7))) & 1);    
+    return ((_data[idx_ >> 3] >> (7 - (idx_ & 7))) & 1);    
   }
   
   u64
