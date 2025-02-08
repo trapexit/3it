@@ -41,7 +41,7 @@ public:
   void
   reset(const u8  *data_,
         const u64  size_,
-        const u64   idx_ = 0)
+        const u64  idx_ = 0)
   {
     _data = data_;
     _size = size_ * BITS_PER_BYTE;
@@ -50,7 +50,7 @@ public:
 
   void
   reset(cspan<u8> &data_,
-        const u64    idx_ = 0)
+        const u64  idx_ = 0)
   {
     reset(data_.data(),
           data_.size(),
