@@ -597,6 +597,8 @@ api_to_bytevec2(const Bitmap              &b_,
       u32 first_word;
       if(i + 1 == pdat.size())
         continue;
+      if(trailing_zeros[i] == 0)
+        continue;
 
       fmt::print("{} {}\n",trailing_zeros[i],leading_zeros[i+1]);
       if(trailing_zeros[i+0] <= leading_zeros[i+1])
