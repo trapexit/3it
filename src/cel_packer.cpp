@@ -173,6 +173,8 @@ matched_bits(char *a_,
              char *b_)
 {
   
+
+  return false;
 }
 
 #define ALPHA 0xFFFFFFFF
