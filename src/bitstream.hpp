@@ -661,7 +661,7 @@ public:
   u64
   read(const u64 bits_)
   {
-    u32 v;
+    u64 v;
 
     v = read(_idx,bits_);
     _idx += bits_;
