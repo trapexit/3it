@@ -634,6 +634,13 @@ public:
   {
     return _max_idx;
   }
+
+  u64
+  size_bytes() const
+  {
+    return ((size_bits() + 7) / 8);
+  }
+  
   
 
 public:
