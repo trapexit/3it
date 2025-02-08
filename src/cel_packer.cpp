@@ -610,8 +610,8 @@ api_to_bytevec2(const Bitmap              &b_,
 
   for(const auto &pdat : pdat_vec)
     pdat_.insert(pdat_.end(),
-                 pdat[i].begin(),
-                 pdat[i].end());
+                 pdat.begin(),
+                 pdat.end());
   
   //  pdat_.resize(bs.tell_bytes());
 }
