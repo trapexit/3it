@@ -170,7 +170,9 @@ AbstractPackedImage::size_in_bits() const
 
 bool
 matched_bits(const u32 *a_,
-             const u32 *b_)
+             const u64  a_len_,
+             const u32 *b_,
+             const u64  b_len_)
 {
   BitStreamReader bsa;
   BitStreamReader bsb;
