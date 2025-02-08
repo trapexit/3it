@@ -711,13 +711,13 @@ api_to_bytevec3(const Bitmap              &b_,
                  offset_width,
                  offset);
         first_word = row_pdat.read(0,BITS_PER_WORD);
-        fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
-                   row_pdat.size_bytes(),
-                   eol,
-                   ((offset == 0) ?
-                    offset_width :
-                    __builtin_clz(first_word)),
-                   excess_bits);
+        // fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
+        //            row_pdat.size_bytes(),
+        //            eol,
+        //            ((offset == 0) ?
+        //             offset_width :
+        //             __builtin_clz(first_word)),
+        //            excess_bits);
         leading_zeros.push_back(((offset == 0) ?
                                  offset_width :
                                  __builtin_clz(first_word)));
