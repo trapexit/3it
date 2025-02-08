@@ -616,7 +616,7 @@ public:
 
     for(u64 i = 0; i < bits_; i++)
       {
-        u8 &d = (*_data)[idx_ >> 3];
+        u8 &d = _data[idx_ >> 3];
         const int shift = (7 - (idx_ & 7));
 
         d = ((d & ~(1UL << shift)) | (((val_ >> (bits_ - i - 1)) & 1) << shift));
