@@ -168,6 +168,13 @@ AbstractPackedImage::size_in_bits() const
   return c;
 }
 
+bool
+matched_bits(char *a_,
+             char *b_)
+{
+  
+}
+
 #define ALPHA 0xFFFFFFFF
 
 static
