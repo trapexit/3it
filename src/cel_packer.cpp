@@ -626,7 +626,6 @@ api_to_bytevec3(const Bitmap              &b_,
                 const RGBA8888Converter   &pc_,
                 ByteVec                   &pdat_)
 {
-  ByteVec row_pdat;
   std::vector<BitStream> rows_pdat;
   std::vector<bool> has_eol;
   std::vector<u8> leading_zeros;
