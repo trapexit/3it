@@ -629,6 +629,14 @@ public:
   }
 
 public:
+  u64
+  size_bits() const
+  {
+    return _max_idx;
+  }
+  
+
+public:
   void
   write(u64 idx_,
         u64 bits_,
