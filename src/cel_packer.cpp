@@ -684,10 +684,22 @@ api_to_bytevec3(const Bitmap              &b_,
         }
     }
 
+  {
+    int offset;
+    int first_word;
+    
+    offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
+    
+    bs.write(0,
+             offset_width,
+             offset);
+    first_word = bs.read(0,BITS_PER_WORD);
+  }
+  
   BitStream &a = rows_pdat[0];
   BitStream &b = rows_pdat[1];
 
-  
+  if(
   
   
   for(auto &row_pdat : rows_pdat)
