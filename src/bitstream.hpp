@@ -673,7 +673,7 @@ public:
       BitStream &bs_,
       u64        bs_idx_)
   {
-    
+    return 0;
   }
   
 public:
