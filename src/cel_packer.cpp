@@ -721,29 +721,14 @@ api_to_bytevec3(const Bitmap              &b_,
       }
     }
 
-  for(size_t i = 0; i < rows_pdat.size(); i++)
+  
+  for(const auto &row_pdat : rows_pdat)
     {
-      u32 first_word;
-      if(i + 1 == rows_pdat.size())
-        continue;
-      if(trailing_zeros[i] == 0)
-        continue;
-
-      fmt::print("{} {}\n",trailing_zeros[i],leading_zeros[i+1]);
-      if(trailing_zeros[i+0] <= leading_zeros[i+1])
-        {
-          fmt::print("row {} can save a word\n",i);
-          pdat_vec[i].resize(pdat_vec[i].size() - BYTES_PER_WORD);
-          row_pdat.reset(&pdat_vec[i]);
-          int offset = row_pdat.read(0,offset_width);
-          row_pdat.write(0,offset_width,offset-1);
-        }
+      row_pdat.shrink();
+      pdat_.insert(pdat_.end(),
+                   pdat.data().begin(),
+                   pdat.data().end());
     }
-
-  for(const auto &pdat : pdat_vec)
-    pdat_.insert(pdat_.end(),
-                 pdat.begin(),
-                 pdat.end());
 }
 
 void
