@@ -495,7 +495,7 @@ api_to_bytevec2(const Bitmap              &b_,
                 ByteVec                   &pdat_)
 {
   ByteVec row_pdat;  
-  std::vector<ByteVec> pdat;
+  std::vector<ByteVec> pdat_vec;
   std::vector<bool> has_eol;
   std::vector<u8> leading_zeros;
   std::vector<u8> trailing_zeros;
@@ -608,10 +608,13 @@ api_to_bytevec2(const Bitmap              &b_,
           pdat[i].resize(pdat[i].size() - BYTES_PER_WORD);
         }
 #endif
+    }
+
+  for(const auto &pdat : pdat)
       pdat_.insert(pdat_.end(),
                    pdat[i].begin(),
                    pdat[i].end());
-    }
+    }  
   
   //  pdat_.resize(bs.tell_bytes());
 }
