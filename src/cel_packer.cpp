@@ -607,6 +607,7 @@ api_to_bytevec2(const Bitmap              &b_,
           pdat_vec[i].resize(pdat_vec[i].size() - BYTES_PER_WORD);
           bs.reset(&pdat_vec[i]);
           int offset = bs.read(0,offset_width);
+          bs.write(0,offset_width,offset-1);
         }
     }
 
