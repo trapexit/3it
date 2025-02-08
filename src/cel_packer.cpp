@@ -695,9 +695,15 @@ api_to_bytevec3(const Bitmap              &b_,
              offset);
     first_word = bs.read(0,BITS_PER_WORD);
   }
-  
-  BitStream &a = rows_pdat[0];
-  BitStream &b = rows_pdat[1];
+
+  {
+    BitStream &a = rows_pdat[0];
+    BitStream &b = rows_pdat[1];
+    int trailing_bits;
+
+    trailing_bits = a.size_bits() & 31;
+    
+  }
   
   for(auto &row_pdat : rows_pdat)
     {
