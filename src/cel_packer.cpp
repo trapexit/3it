@@ -689,7 +689,8 @@ api_to_bytevec3(const Bitmap              &b_,
       int excess_bits;
 
       excess_bits = row_pdat.tell_bits() & (BITS_PER_WORD-1);
-      fmt::print("excess_bits = {}\n",excess_bits);
+      fmt::print("excess_bits = {}, {}\n",
+                 excess_bits);
       if(row_pdat.read(row_pdat.tell_bits() - excess_bits,excess_bits) != 0)
         excess_bits = 0;
       
