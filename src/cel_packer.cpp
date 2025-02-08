@@ -627,7 +627,7 @@ api_to_bytevec3(const Bitmap              &b_,
                 ByteVec                   &pdat_)
 {
   ByteVec row_pdat;
-  std::vector<BitStream>
+  std::vector<BitStream> rows_pdat;
   std::vector<ByteVec> pdat_vec;
   std::vector<bool> has_eol;
   std::vector<u8> leading_zeros;
