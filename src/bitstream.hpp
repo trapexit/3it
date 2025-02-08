@@ -663,8 +663,7 @@ public:
   set_length(u64 len_)
   {
     _max_idx = len_;
-    if(_idx > _max_idx)
-      _idx = _max_idx;
+    _idx = std::min(_idx,_max_idx);
     _maybe_resize(_max_idx);
   }
 
