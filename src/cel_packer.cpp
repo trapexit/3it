@@ -589,7 +589,7 @@ api_to_bytevec2(const Bitmap              &b_,
                                  __builtin_clz(first_word)));
       }
 
-      pdat.emplace_back(row_pdat);
+      pdat_vec.emplace_back(row_pdat);
     }
 
   for(size_t i = 0; i < pdat.size(); i++)
