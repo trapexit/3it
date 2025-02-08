@@ -605,6 +605,8 @@ api_to_bytevec2(const Bitmap              &b_,
         {
           fmt::print("row {} can save a word\n",i);
           pdat_vec[i].resize(pdat_vec[i].size() - BYTES_PER_WORD);
+          bs.reset(&pdat_vec[i]);
+          
         }
     }
 
