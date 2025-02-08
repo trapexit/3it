@@ -467,6 +467,8 @@ public:
   {
     _maybe_resize(idx_);
     _idx = idx_;
+    _max_idx = std::max(_idx,_max_idx);
+    
   }
 
   void
