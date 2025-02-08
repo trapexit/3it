@@ -168,33 +168,6 @@ AbstractPackedImage::size_in_bits() const
   return c;
 }
 
-static
-inline
-int
-get_bit(const unsigned char *buf,
-        unsigned int i)
-{
-  return (buf[i / 8] >> (7 - (i % 8))) & 1;
-}
-
-bool
-matched_bits(const u32 *a_,
-             const u64  a_len_,
-             const u32 *b_,
-             const u64  b_len_,
-             const u64  bits_)
-{
-  BitStreamReader bsa;
-  BitStreamReader bsb;
-
-  bsa.reset((const u8*)a_,a_len_ * BYTES_PER_WORD);
-  bsb.reset((const u8*)b_,b_len_ * BYTES_PER_WORD);
-
-  
-  
-  return false;
-}
-
 #define ALPHA 0xFFFFFFFF
 
 static
