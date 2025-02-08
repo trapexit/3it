@@ -724,7 +724,7 @@ api_to_bytevec3(const Bitmap              &b_,
   for(size_t i = 0; i < rows_pdat.size(); i++)
     {
       u32 first_word;
-      if(i + 1 == pdat_vec.size())
+      if(i + 1 == rows_pdat.size())
         continue;
       if(trailing_zeros[i] == 0)
         continue;
