@@ -700,9 +700,15 @@ api_to_bytevec3(const Bitmap              &b_,
     BitStream &a = rows_pdat[0];
     BitStream &b = rows_pdat[1];
     int trailing_bits;
+    int overlap;
 
+    overlap = 0;
     trailing_bits = a.size_bits() & 31;
-    
+
+    a.cmp(a.size_bits() - trailing_bits,
+          b,
+          0,
+          trailing_bits);
   }
   
   for(auto &row_pdat : rows_pdat)
