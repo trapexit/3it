@@ -621,7 +621,7 @@ api_to_bytevec2(const Bitmap              &b_,
 
 static
 void
-api_to_bytevec2(const Bitmap              &b_,
+api_to_bytevec3(const Bitmap              &b_,
                 const AbstractPackedImage &api_,
                 const RGBA8888Converter   &pc_,
                 ByteVec                   &pdat_)
