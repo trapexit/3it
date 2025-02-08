@@ -640,8 +640,6 @@ public:
   {
     return ((_max_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);    
   }
-  
-  
 
 public:
   void
