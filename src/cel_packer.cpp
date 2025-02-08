@@ -651,16 +651,16 @@ api_to_bytevec3(const Bitmap              &b_,
             {
             case PACK_PACKED:
               row_pdat.write(DATA_PACKET_PIXEL_COUNT_SIZE,
-                       pdp.pixels.size()-1);
+                             pdp.pixels.size()-1);
               row_pdat.write(pc_.bpp(),
-                       pdp.pixels[0]);
+                             pdp.pixels[0]);
               // fmt::print("packed: {} {}\n",
               //            pdp.pixels.size(),
               //            pdp.pixels[0]);
               break;
             case PACK_LITERAL:
               row_pdat.write(DATA_PACKET_PIXEL_COUNT_SIZE,
-                       pdp.pixels.size()-1);
+                             pdp.pixels.size()-1);
               // fmt::print("literal: {} ",pdp.pixels.size());
               for(const auto pixel : pdp.pixels)
                 {
