@@ -453,6 +453,7 @@ private:
   }
 
 public:
+  const
   std::vector<u8>&
   data()
   {
