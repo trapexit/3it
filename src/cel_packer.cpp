@@ -692,15 +692,13 @@ api_to_bytevec3(const Bitmap              &b_,
       fmt::print("excess_bits = {}\n",
                  excess_bits);
 
+      if(row_pdat.read(row_pdat.tell_bits() - excess_bits,excess_bits) != 0)
+        excess_bits = 0;
+      
       row_pdat.zero_till_32bit_boundary();
       if(row_pdat.tell_u32() < 2)
         row_pdat.write(BITS_PER_WORD,0);      
       
-      if(row_pdat.read(row_pdat.tell_bits() - excess_bits,excess_bits) != 0)
-        excess_bits = 0;
-      
-
-
       has_eol.push_back(eol);
       trailing_zeros.push_back(excess_bits);
       {
