@@ -709,7 +709,7 @@ api_to_bytevec3(const Bitmap              &b_,
                  offset);
         first_word = row_pdat.read(0,BITS_PER_WORD);
         fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
-                   row_pdat.size(),
+                   row_pdat.size_u32(),
                    eol,
                    ((offset == 0) ?
                     offset_width :
