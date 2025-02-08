@@ -638,14 +638,13 @@ public:
   u64
   size_bytes() const
   {
-    return ((_max_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);
+    return ((_max_idx + 7) / 8);
   }
 
   u64
   size_u32() const
   {
     return ((_max_idx + 31) / 32);
-    
   }
 
 public:
