@@ -175,8 +175,9 @@ matched_bits(const u32 *a_,
   BitStreamReader bsa;
   BitStreamReader bsb;
 
+  bsa.reset((const u8*)a_);
+  bsb.reset((const u8*)b_);  
   
-
   return false;
 }
 
