@@ -454,8 +454,6 @@ private:
   void
   _maybe_resize(const u64 size_in_bits_)
   {
-    assert(_data != NULL);
-
     if(size_in_bits_ > (_data->size() * BITS_PER_BYTE))
       _data->resize((size_in_bits_ + BITS_PER_BYTE - 1) / BITS_PER_BYTE);
   }
