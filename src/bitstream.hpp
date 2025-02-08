@@ -638,7 +638,7 @@ public:
   u64
   size_bytes() const
   {
-    return ((size_bits() + 7) / 8);
+    return ((_max_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);    
   }
   
   
