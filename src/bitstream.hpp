@@ -712,6 +712,12 @@ public:
 
 public:
   u64
+  read_bit(const u64 idx_)
+  {
+    return ((_data[i >> 3] >> (7 - (i & 7))) & 1);    
+  }
+  
+  u64
   read(const u64 idx_,
        const u64 bits_)
   {
