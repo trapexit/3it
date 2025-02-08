@@ -722,6 +722,8 @@ api_to_bytevec3(const Bitmap              &b_,
     }
 
   
+
+  
   for(auto &row_pdat : rows_pdat)
     {
       row_pdat.shrink();
