@@ -684,8 +684,9 @@ api_to_bytevec3(const Bitmap              &b_,
         }
     }
 
+  BitStream &a = rows_pdat[0];
+  BitStream &b = rows_pdat[1];  
   
-
   
   for(auto &row_pdat : rows_pdat)
     {
