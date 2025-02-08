@@ -688,7 +688,7 @@ api_to_bytevec3(const Bitmap              &b_,
     int offset;
     int first_word;
     
-    offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
+    offset = (row_pdat.size_u32() - 2);
     
     bs.write(0,
              offset_width,
