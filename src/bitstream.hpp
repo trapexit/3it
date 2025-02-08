@@ -657,4 +657,15 @@ public:
 
     return val;
   }
+
+  u64
+  read(const u64 bits_)
+  {
+    u32 v;
+
+    v = read(_idx,bits_);
+    _idx += bits_;
+
+    return v;
+  }  
 };
