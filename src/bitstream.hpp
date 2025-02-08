@@ -671,8 +671,12 @@ public:
   u64
   cmp(u64        this_idx_,
       BitStream &bs_,
-      u64        bs_idx_)
+      u64        bs_idx_,
+      u64        length_)
   {
+    
+
+    
     return 0;
   }
   
