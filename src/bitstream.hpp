@@ -438,7 +438,7 @@ private:
   std::vector<u8> *_data;
 
 public:
-  BitStreamWriter()
+  BitStream()
     : _idx(0),
       _data(NULL)
   {
