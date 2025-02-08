@@ -444,12 +444,6 @@ public:
   {
   }
 
-  BitStream(std::vector<u8> &data_,
-            const u64        idx_ = 0)
-  {
-    reset(data_,idx_);
-  }
-
 private:
   void
   _maybe_resize(const u64 size_in_bits_)
