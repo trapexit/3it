@@ -644,7 +644,7 @@ api_to_bytevec3(const Bitmap              &b_,
       bool eol = false;
         
       // Reserve space for the offset
-      row_pdata.write(offset_width,0);
+      row_pdat.write(offset_width,0);
       for(const auto &pdp : pdpvec)
         {
           row_pdat.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
