@@ -435,7 +435,7 @@ class BitStream
 {
 private:
   u64 _idx;
-  std::vector<u8> _data;
+  std::vector<u8> *_data;
 
 public:
   BitStream()
