@@ -105,7 +105,7 @@ public:
   {
     return (0x40 - (_idx & 0x3F));
   }
-  
+
   void
   skip_to_8bit_boundary()
   {
@@ -260,7 +260,7 @@ public:
   {
     return !(_idx & 0x7);
   }
-  
+
   u8
   bits_to_8bit_boundary() const
   {
@@ -302,7 +302,7 @@ public:
   {
     return (0x40 - (_idx & 0x3F));
   }
-  
+
   void
   skip_to_8bit_boundary()
   {
@@ -460,7 +460,7 @@ public:
   {
     return _data;
   }
-  
+
 public:
   void
   seek(const u64 idx_)
@@ -493,7 +493,7 @@ public:
   {
     return !(_idx & 0x7);
   }
-  
+
   u8
   bits_to_8bit_boundary() const
   {
@@ -535,7 +535,7 @@ public:
   {
     return (0x40 - (_idx & 0x3F));
   }
-  
+
   void
   skip_to_8bit_boundary()
   {
@@ -638,7 +638,13 @@ public:
   u64
   size_bytes() const
   {
-    return ((_max_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);    
+    return ((_max_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE);
+  }
+
+  u64
+  size_u32() const
+  {
+    return ((_max_idx + (((BITS_PER_BYTE * sizeof(u32)) - 1))) / BITS_PER_BYTE);
   }
 
 public:
@@ -697,5 +703,5 @@ public:
     _idx += bits_;
 
     return v;
-  }  
+  }
 };
