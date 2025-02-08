@@ -682,46 +682,6 @@ api_to_bytevec3(const Bitmap              &b_,
               break;
             }
         }
-
-      // Like unpacked CELs the pipelining of the CEL engine requires
-      // minus 2 words for the length / offset meaning a minimum of 2
-      // words in the CEL data.
-      int excess_bits;
-
-      excess_bits = row_pdat.tell_bits() & (BITS_PER_WORD-1);
-      fmt::print("excess_bits = {}\n",
-                 excess_bits);
-
-      if(row_pdat.read(row_pdat.tell_bits() - excess_bits,excess_bits) != 0)
-        excess_bits = 0;
-      
-      row_pdat.zero_till_32bit_boundary();
-      if(row_pdat.tell_u32() < 2)
-        row_pdat.write(BITS_PER_WORD,0);      
-      
-      has_eol.push_back(eol);
-      trailing_zeros.push_back(excess_bits);
-      {
-        int offset;
-        int first_word;
-
-        offset = (row_pdat.size_u32() - 2);
-
-        row_pdat.write(0,
-                 offset_width,
-                 offset);
-        first_word = row_pdat.read(0,BITS_PER_WORD);
-        // fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
-        //            row_pdat.size_bytes(),
-        //            eol,
-        //            ((offset == 0) ?
-        //             offset_width :
-        //             __builtin_clz(first_word)),
-        //            excess_bits);
-        leading_zeros.push_back(((offset == 0) ?
-                                 offset_width :
-                                 __builtin_clz(first_word)));
-      }
     }
 
   
