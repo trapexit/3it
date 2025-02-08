@@ -450,22 +450,6 @@ public:
     reset(data_,idx_);
   }
 
-public:
-  void
-  reset(std::vector<u8> &data_,
-        const u64        idx_ = 0)
-  {
-    _data = &data_;
-    _idx  = idx_;
-  }
-
-  void
-  reset(std::vector<u8> *data_,
-        const u64        idx_ = 0)
-  {
-    reset(*data_,idx_);
-  }
-
 private:
   void
   _maybe_resize(const u64 size_in_bits_)
