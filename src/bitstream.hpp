@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CLI11.hpp"
 #include "bits_and_bytes.hpp"
 #include "span.hpp"
 
@@ -647,6 +648,13 @@ public:
     return ((_max_idx + 31) / 32);
   }
 
+public:
+  void
+  shrink()
+  {
+    
+  }
+  
 public:
   void
   write(u64 idx_,
