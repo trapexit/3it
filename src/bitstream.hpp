@@ -440,7 +440,7 @@ private:
 public:
   BitStream()
     : _idx(0),
-      _data(NULL)
+      _data()
   {
   }
 
