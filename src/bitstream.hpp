@@ -680,9 +680,10 @@ public:
         if(read_bit(this_idx_) != bs_.read_bit(bs_idx_))
           return false;
 
+        
       }
     
-    return 0;
+    return true;
   }
   
 public:
