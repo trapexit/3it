@@ -169,7 +169,8 @@ AbstractPackedImage::size_in_bits() const
 }
 
 static
-inline int
+inline
+int
 get_bit(const unsigned char *buf,
         unsigned int i)
 {
