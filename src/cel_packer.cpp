@@ -636,8 +636,11 @@ api_to_bytevec3(const Bitmap              &b_,
   offset_width = ::calc_offset_width(pc_.bpp());
 
   rows_pdat.resize(api_.size());
+  for(size_t i = 0; i < api_.size(); i++)
   for(const auto &pdpvec : api_)
     {
+      const auto &pdpvec = api_[i];
+      
       bool eol = false;
         
       // Reserve space for the offset
