@@ -453,6 +453,15 @@ private:
   }
 
 public:
+  std::vector<u8>&
+  data()
+  {
+    return _data;
+    
+  }
+  
+  
+public:
   void
   seek(const u64 idx_)
   {
