@@ -619,6 +619,138 @@ api_to_bytevec2(const Bitmap              &b_,
   //  pdat_.resize(bs.tell_bytes());
 }
 
+static
+void
+api_to_bytevec2(const Bitmap              &b_,
+                const AbstractPackedImage &api_,
+                const RGBA8888Converter   &pc_,
+                ByteVec                   &pdat_)
+{
+  ByteVec row_pdat;  
+  std::vector<ByteVec> pdat_vec;
+  std::vector<bool> has_eol;
+  std::vector<u8> leading_zeros;
+  std::vector<u8> trailing_zeros;
+  BitStreamWriter bs;
+  u64 offset_width;
+
+  offset_width = ::calc_offset_width(pc_.bpp());
+
+  for(const auto &pdpvec : api_)
+    {
+      bool eol = false;
+        
+      row_pdat.clear();
+      bs.reset(row_pdat);
+
+      // Reserve space for the offset
+      bs.write(offset_width,0);
+      for(const auto &pdp : pdpvec)
+        {
+          bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
+          switch(pdp.type)
+            {
+            case PACK_PACKED:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              bs.write(pc_.bpp(),
+                       pdp.pixels[0]);
+              // fmt::print("packed: {} {}\n",
+              //            pdp.pixels.size(),
+              //            pdp.pixels[0]);
+              break;
+            case PACK_LITERAL:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              // fmt::print("literal: {} ",pdp.pixels.size());
+              for(const auto pixel : pdp.pixels)
+                {
+                  bs.write(pc_.bpp(),pixel);
+                  // fmt::print("{} ",pixel);
+                }
+              // fmt::print("\n");
+              break;
+            case PACK_TRANSPARENT:
+              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                       pdp.pixels.size()-1);
+              // fmt::print("transparent: {}\n",
+              //            pdp.pixels.size());
+              
+              break;
+            case PACK_EOL:
+              eol = true;
+              // fmt::print("eol:\n");
+              break;
+            }
+        }
+
+      // Like unpacked CELs the pipelining of the CEL engine requires
+      // minus 2 words for the length / offset meaning a minimum of 2
+      // words in the CEL data.
+      int excess_bits;
+
+      excess_bits = bs.tell_bits() & (BITS_PER_WORD-1);
+      if(bs.read(bs.tell_bits() - excess_bits,excess_bits) != 0)
+        excess_bits = 0;
+      
+      bs.zero_till_32bit_boundary();
+      if(bs.tell_u32() < 2)
+        bs.write(BITS_PER_WORD,0);
+
+      has_eol.push_back(eol);
+      trailing_zeros.push_back(excess_bits);
+      {
+        int offset;
+        int first_word;
+
+        offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
+
+        bs.write(0,
+                 offset_width,
+                 offset);
+        first_word = bs.read(0,BITS_PER_WORD);
+        fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
+                   row_pdat.size(),
+                   eol,
+                   ((offset == 0) ?
+                    offset_width :
+                    __builtin_clz(first_word)),
+                   excess_bits);
+        leading_zeros.push_back(((offset == 0) ?
+                                 offset_width :
+                                 __builtin_clz(first_word)));
+      }
+
+      pdat_vec.emplace_back(row_pdat);
+    }
+
+  for(size_t i = 0; i < pdat_vec.size(); i++)
+    {
+      u32 first_word;
+      if(i + 1 == pdat_vec.size())
+        continue;
+      if(trailing_zeros[i] == 0)
+        continue;
+
+      fmt::print("{} {}\n",trailing_zeros[i],leading_zeros[i+1]);
+      if(trailing_zeros[i+0] <= leading_zeros[i+1])
+        {
+          fmt::print("row {} can save a word\n",i);
+          pdat_vec[i].resize(pdat_vec[i].size() - BYTES_PER_WORD);
+          bs.reset(&pdat_vec[i]);
+          int offset = bs.read(0,offset_width);
+          bs.write(0,offset_width,offset-1);
+        }
+    }
+
+  for(const auto &pdat : pdat_vec)
+    pdat_.insert(pdat_.end(),
+                 pdat.begin(),
+                 pdat.end());
+  
+  //  pdat_.resize(bs.tell_bytes());
+}
+
 void
 CelPacker::pack(const Bitmap            &b_,
                 const RGBA8888Converter &pc_,
