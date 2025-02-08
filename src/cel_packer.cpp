@@ -584,6 +584,7 @@ api_to_bytevec2(const Bitmap              &b_,
                     offset_width :
                     __builtin_clz(first_word)),
                    excess_bits);
+        leading_zeros.push_back(((offset == 0) ? offset_width : __builtin_clz(first_word));
       }
 
       pdat.emplace_back(row_pdat);
