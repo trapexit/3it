@@ -722,12 +722,12 @@ api_to_bytevec3(const Bitmap              &b_,
     }
 
   
-  for(const auto &row_pdat : rows_pdat)
+  for(auto &row_pdat : rows_pdat)
     {
       row_pdat.shrink();
       pdat_.insert(pdat_.end(),
-                   pdat.data().begin(),
-                   pdat.data().end());
+                   row_pdat.data().begin(),
+                   row_pdat.data().end());
     }
 }
 
