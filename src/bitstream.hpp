@@ -750,11 +750,5 @@ public:
 
     return v;
   }
-
-  u64
-  read_bit(const u64 idx_)
-  {
-    
-  }
   
 };
