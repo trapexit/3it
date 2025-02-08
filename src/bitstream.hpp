@@ -652,6 +652,8 @@ public:
   {
     write(_idx,bits_,val_);
     _idx += bits_;
+    _max_idx = std::max(_idx,_max_idx);
+    
   }
 
   void
