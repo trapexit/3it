@@ -613,7 +613,13 @@ public:
   u64
   tell_u32() const
   {
-    return (tell_bytes() / 4);
+    return (tell_bytes() / sizeof(u32));
+  }
+
+  u64
+  tell_u64() const
+  {
+    return (tell_bytes() / sizeof(u64));
   }
 
 public:
