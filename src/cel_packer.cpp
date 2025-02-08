@@ -599,10 +599,9 @@ api_to_bytevec2(const Bitmap              &b_,
       if(i + 1 == pdat.size())
         continue;
 
-      bs.reset(&pdat[i]);
-      first_word = bs.read(0,BITS_PER_WORD);
-      leading_zeros = __builtin_clz(first_word);
-      trailing_zeros[i];
+      if(trailing_zeros[i+0] <= leading_zeros[i+1])
+        fmt::print("row {} can save a word\n",
+                   i);
     }
   
   //  pdat_.resize(bs.tell_bytes());
