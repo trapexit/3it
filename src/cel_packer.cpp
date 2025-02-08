@@ -592,7 +592,7 @@ api_to_bytevec2(const Bitmap              &b_,
       pdat_vec.emplace_back(row_pdat);
     }
 
-  for(size_t i = 0; i < pdat.size(); i++)
+  for(size_t i = 0; i < pdat_vec.size(); i++)
     {
       u32 first_word;
       if(i + 1 == pdat.size())
