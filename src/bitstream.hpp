@@ -655,7 +655,7 @@ public:
     u64 len_in_bytes;
 
     len_in_bytes = ((_max_idx + 7) / 8);
-  
+    
   }
   
 public:
