@@ -647,7 +647,7 @@ public:
     u64 val = 0;
 
     for(u64 i = idx_; i < (idx_ + bits_); i++)
-      val = ((val << 1) | (((_data)[i >> 3] >> (7 - (i & 7))) & 1));
+      val = ((val << 1) | ((_data[i >> 3] >> (7 - (i & 7))) & 1));
 
     return val;
   }
