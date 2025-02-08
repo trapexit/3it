@@ -647,31 +647,31 @@ api_to_bytevec3(const Bitmap              &b_,
       row_pdata.write(offset_width,0);
       for(const auto &pdp : pdpvec)
         {
-          bs.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
+          row_pdat.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
             case PACK_PACKED:
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+              row_pdat.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                        pdp.pixels.size()-1);
-              bs.write(pc_.bpp(),
+              row_pdat.write(pc_.bpp(),
                        pdp.pixels[0]);
               // fmt::print("packed: {} {}\n",
               //            pdp.pixels.size(),
               //            pdp.pixels[0]);
               break;
             case PACK_LITERAL:
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+              row_pdat.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                        pdp.pixels.size()-1);
               // fmt::print("literal: {} ",pdp.pixels.size());
               for(const auto pixel : pdp.pixels)
                 {
-                  bs.write(pc_.bpp(),pixel);
+                  row_pdat.write(pc_.bpp(),pixel);
                   // fmt::print("{} ",pixel);
                 }
               // fmt::print("\n");
               break;
             case PACK_TRANSPARENT:
-              bs.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+              row_pdat.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                        pdp.pixels.size()-1);
               // fmt::print("transparent: {}\n",
               //            pdp.pixels.size());
@@ -689,13 +689,13 @@ api_to_bytevec3(const Bitmap              &b_,
       // words in the CEL data.
       int excess_bits;
 
-      excess_bits = bs.tell_bits() & (BITS_PER_WORD-1);
-      if(bs.read(bs.tell_bits() - excess_bits,excess_bits) != 0)
+      excess_bits = row_pdat.tell_bits() & (BITS_PER_WORD-1);
+      if(row_pdat.read(row_pdat.tell_bits() - excess_bits,excess_bits) != 0)
         excess_bits = 0;
       
-      bs.zero_till_32bit_boundary();
-      if(bs.tell_u32() < 2)
-        bs.write(BITS_PER_WORD,0);
+      row_pdat.zero_till_32bit_boundary();
+      if(row_pdat.tell_u32() < 2)
+        row_pdat.write(BITS_PER_WORD,0);
 
       has_eol.push_back(eol);
       trailing_zeros.push_back(excess_bits);
@@ -705,10 +705,10 @@ api_to_bytevec3(const Bitmap              &b_,
 
         offset = ((row_pdat.size() / BYTES_PER_WORD) - 2);
 
-        bs.write(0,
+        row_pdat.write(0,
                  offset_width,
                  offset);
-        first_word = bs.read(0,BITS_PER_WORD);
+        first_word = row_pdat.read(0,BITS_PER_WORD);
         fmt::print("row_pdat size={}; eol={}; beginning_0_bits={}; excess_0_bits={}\n",
                    row_pdat.size(),
                    eol,
@@ -737,9 +737,9 @@ api_to_bytevec3(const Bitmap              &b_,
         {
           fmt::print("row {} can save a word\n",i);
           pdat_vec[i].resize(pdat_vec[i].size() - BYTES_PER_WORD);
-          bs.reset(&pdat_vec[i]);
-          int offset = bs.read(0,offset_width);
-          bs.write(0,offset_width,offset-1);
+          row_pdat.reset(&pdat_vec[i]);
+          int offset = row_pdat.read(0,offset_width);
+          row_pdat.write(0,offset_width,offset-1);
         }
     }
 
@@ -747,8 +747,6 @@ api_to_bytevec3(const Bitmap              &b_,
     pdat_.insert(pdat_.end(),
                  pdat.begin(),
                  pdat.end());
-  
-  //  pdat_.resize(bs.tell_bytes());
 }
 
 void
