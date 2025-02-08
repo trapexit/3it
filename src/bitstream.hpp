@@ -659,12 +659,22 @@ public:
     _data.resize(len_in_bytes);
   }
 
+  void
+  set_length(u64 len_)
+  {
+    _max_idx = len_;
+    if(_idx > _max_idx)
+      _idx = _max_idx;
+  }
+
 public:
   u64
   cmp(u64        this_idx_,
       BitStream &bs_,
       u64        bs_idx_)
-  
+  {
+    
+  }
   
 public:
   void
