@@ -665,6 +665,7 @@ public:
     _max_idx = len_;
     if(_idx > _max_idx)
       _idx = _max_idx;
+    _maybe_resize(_max_idx);
   }
 
 public:
