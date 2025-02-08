@@ -713,6 +713,8 @@ api_to_bytevec3(const Bitmap              &b_,
   for(auto &row_pdat : rows_pdat)
     {
       row_pdat.shrink();
+      if(row_pdat.size_u32() < 2)
+        row_pdat.zero_till_64bit_boundary();
       pdat_.insert(pdat_.end(),
                    row_pdat.data().begin(),
                    row_pdat.data().end());
