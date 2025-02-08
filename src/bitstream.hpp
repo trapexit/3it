@@ -668,14 +668,19 @@ public:
   }
 
 public:
-  u64
+  bool
   cmp(u64        this_idx_,
       BitStream &bs_,
       u64        bs_idx_,
       u64        length_)
   {
-    
 
+    for(u64 i = 0; i < length_; i++)
+      {
+        if(read_bit(this_idx_) != bs_.read_bit(bs_idx_))
+          return false;
+
+      }
     
     return 0;
   }
