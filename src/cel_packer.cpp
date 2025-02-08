@@ -172,7 +172,8 @@ bool
 matched_bits(const u32 *a_,
              const u32 *b_)
 {
-  
+  BitStreamReader bsa;
+  BitStreamReader bsb;
 
   return false;
 }
