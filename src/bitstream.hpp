@@ -39,8 +39,8 @@ public:
 
 public:
   void
-  reset(const u8 *data_,
-        const u64   size_,
+  reset(const u8  *data_,
+        const u64  size_,
         const u64   idx_ = 0)
   {
     _data = data_;
