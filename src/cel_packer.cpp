@@ -685,6 +685,9 @@ api_to_bytevec3(const Bitmap              &b_,
 
       {
         int offset;
+
+        if(row_pdat.size_u32() < 2)
+          row_pdat.zero_till_64bit_boundary();        
     
         offset = (row_pdat.size_u32() - 2);
     
