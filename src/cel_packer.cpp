@@ -168,6 +168,14 @@ AbstractPackedImage::size_in_bits() const
   return c;
 }
 
+static
+inline int
+get_bit(const unsigned char *buf,
+        unsigned int i)
+{
+  return (buf[i / 8] >> (7 - (i % 8))) & 1;
+}
+
 bool
 matched_bits(const u32 *a_,
              const u64  a_len_,
