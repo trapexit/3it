@@ -644,7 +644,8 @@ public:
   u64
   size_u32() const
   {
-    return ((_max_idx + (((BITS_PER_BYTE * sizeof(u32)) - 1))) / BITS_PER_BYTE);
+    return ((_max_idx + 31) / 32);
+    
   }
 
 public:
