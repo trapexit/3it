@@ -660,7 +660,7 @@ public:
   }
 
   void
-  set_length(u64 len_)
+  set_size(u64 size_)
   {
     _size = len_;
     _idx = std::min(_idx,_size);
