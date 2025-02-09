@@ -803,6 +803,10 @@ pass8_trim_overlap(BitStreamVec &rows_)
       BitStream &b = rows_[i+1];
 
       trailing_bits = (a.size_bits() & (BITS_PER_WORD -1));
+      if(trailing_bits == 0)
+        continue;
+
+      
     }
 }
 
