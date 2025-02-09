@@ -712,14 +712,15 @@ api_to_bytevec3(const Bitmap              &b_,
 
     if(trailing_bits == 0)
       continue;
-    
+
+    overlap = a.cmp(a.size_bits() - trailing_bits,
+                    b,
+                    0,
+                    trailing_bits);
     fmt::print("row {},{} = {} {}\n",
                i,i+1,
                trailing_bits,
-               a.cmp(a.size_bits() - trailing_bits,
-                     b,
-                     0,
-                     trailing_bits));
+               overlap);
   }
 
   for(auto &row_pdat : rows_pdat)
