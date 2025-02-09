@@ -675,7 +675,9 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       // minimum of 2 words in the CEL data.
       if(row.size_u32() < 2)
         row.zero_till_64bit_boundary();        
-    
+
+      // The same pipelining / DMA mentioned above means the offset
+      // must be minus 2 the actual distance.
       row.write(0,
                 api_.offset_width,
                 (row.size_u32() - 2));
