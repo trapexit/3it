@@ -697,7 +697,11 @@ api_to_bytevec3(const Bitmap              &b_,
       }
     }
 
+  for(size_t i = 0; i < rows_pdat.size() - 1; i++)
   {
+
+
+    
     BitStream &a = rows_pdat[0];
     BitStream &b = rows_pdat[1];
     int trailing_bits;
