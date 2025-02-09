@@ -710,6 +710,8 @@ api_to_bytevec3(const Bitmap              &b_,
     overlap = 0;
     trailing_bits = a.size_bits() & 31;
 
+    if(trailing_bits == 0)
+      continue;
     
     fmt::print("row {},{} = {} {}\n",
                i,i+1,
