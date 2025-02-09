@@ -791,7 +791,8 @@ api_to_bytevec3(const Bitmap              &b_,
 
 static
 void
-pass8_trim_overlap(BitStreamVec &rows_)
+pass8_trim_overlap(const AbstractPackedImage &api_,
+                   BitStreamVec              &rows_)
 {
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
