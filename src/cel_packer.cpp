@@ -807,7 +807,11 @@ pass8_trim_overlap(BitStreamVec &rows_)
       if(trailing_bits == 0)
         continue;
 
-      
+      overlapped = a.cmp(a.size_bits() - trailing_bits,
+                         b,0,
+                         trailing_bits);
+      if(!overlapped)
+        continue;
     }
 }
 
