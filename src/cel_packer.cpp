@@ -814,6 +814,9 @@ pass8_trim_overlap(BitStreamVec &rows_)
         continue;
 
       a.set_size(a.size_bits() - trailing_bits);
+      a.write(0,
+              api_.offset_width,
+              (a.read(0,offset_width) - 1));
     }
 }
 
