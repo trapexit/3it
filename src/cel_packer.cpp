@@ -808,10 +808,10 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       if(trailing_bits == 0)
         continue;
 
-      overlapped = a.cmp(a.size_bits() - trailing_bits,
-                         b,0,
-                         trailing_bits);
-      if(!overlapped)
+      overlaped = a.cmp(a.size_bits() - trailing_bits,
+                        b,0,
+                        trailing_bits);
+      if(!overlaped)
         continue;
 
       a.set_size(a.size_bits() - trailing_bits);
