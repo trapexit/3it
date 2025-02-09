@@ -669,7 +669,7 @@ public:
 
 public:
   bool
-  cmp(u64        this_idx_,
+  cmp(u64        idx_,
       BitStream &bs_,
       u64        bs_idx_,
       u64        length_)
