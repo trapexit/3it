@@ -676,10 +676,10 @@ public:
   {
     for(u64 i = 0; i < length_; i++)
       {
-        if(read_bit(this_idx_) != bs_.read_bit(bs_idx_))
+        if(read_bit(idx_) != bs_.read_bit(bs_idx_))
           return false;
         
-        this_idx_++;
+        idx_++;
         bs_idx_++;
       }
     
