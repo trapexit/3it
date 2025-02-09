@@ -837,7 +837,7 @@ CelPacker::pack(const Bitmap            &b_,
   pass5_remove_trailing_transparents(api);
   pass6_remove_trailing_eol(api);
   pass7_api_to_bitstreams(api,rows);
-  pass8_trim_overlap(rows);
+  pass8_trim_overlap(api,rows);
 
   //api_to_bytevec(b_,api,pc_,pdat_);
   //api_to_bytevec2(b_,api,pc_,pdat_);
