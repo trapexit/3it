@@ -64,6 +64,7 @@
 #include <stdexcept>
 #include <vector>
 
+typedef std::vector<BitStream> BitStreamVec;
 
 struct PackedDataPacket
 {
