@@ -69,34 +69,36 @@ struct PackedDataPacket
 {
   uint8_t type;
   uint8_t bpp;
-  std::vector<uint32_t> pixels;
+  std::vector<u32> pixels;
 
   bool is_literal() const { return type == PACK_LITERAL; };
   bool is_packed() const { return type == PACK_PACKED; };
   bool is_transparent() const { return type == PACK_TRANSPARENT; };
   bool is_eol() const { return type == PACK_EOL; };
 
-  uint32_t size_in_bits() const;
-  uint32_t raw_literal_size() const;
+  u32 size_in_bits() const;
+  u32 raw_literal_size() const;
 };
 
 struct PackedDataPacketVec : public std::vector<PackedDataPacket>
 {
-  uint32_t pixel_count() const;
-  uint32_t size_in_bits() const;
+  u32 pixel_count() const;
+  u32 size_in_bits() const;
 };
 
 struct AbstractPackedImage : public std::vector<PackedDataPacketVec>
 {
-  uint32_t line_width;
-  uint32_t size_in_bits() const;
+  u32 bpp;
+  u32 line_width;
+  u32 offset_width;
+  u32 size_in_bits() const;
 };
 
 
-uint32_t
+u32
 PackedDataPacketVec::pixel_count() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdp : *this)
@@ -105,10 +107,10 @@ PackedDataPacketVec::pixel_count() const
   return c;
 }
 
-uint32_t
+u32
 PackedDataPacketVec::size_in_bits() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdp : *this)
@@ -117,7 +119,7 @@ PackedDataPacketVec::size_in_bits() const
   return c;
 }
 
-uint32_t
+u32
 PackedDataPacket::size_in_bits() const
 {
   switch(type)
@@ -140,7 +142,7 @@ PackedDataPacket::size_in_bits() const
   return 0;
 }
 
-uint32_t
+u32
 PackedDataPacket::raw_literal_size() const
 {
   switch(type)
@@ -156,10 +158,10 @@ PackedDataPacket::raw_literal_size() const
   return 0;
 }
 
-uint32_t
+u32
 AbstractPackedImage::size_in_bits() const
 {
-  uint32_t c;
+  u32 c;
 
   c = 0;
   for(const auto &pdpvec : *this)
@@ -168,15 +170,36 @@ AbstractPackedImage::size_in_bits() const
   return c;
 }
 
+static
+std::size_t
+calc_offset_width(const std::size_t bpp_)
+{
+  switch(bpp_)
+    {
+    case BPP_1:
+    case BPP_2:
+    case BPP_4:
+    case BPP_6:
+      return 8;
+    case BPP_8:
+    case BPP_16:
+      return 16;
+    }
+
+  throw std::runtime_error("invalid bpp");
+}
+
 #define ALPHA 0xFFFFFFFF
 
 static
 void
-pass0_build_api_from_bitmap(const Bitmap        &b_,
-                            const RGBA8888Converter   &pc_,
-                            AbstractPackedImage &api_)
+pass0_build_api_from_bitmap(const Bitmap            &b_,
+                            const RGBA8888Converter &pc_,
+                            AbstractPackedImage     &api_)
 {
+  api_.bpp = pc_.bpp();
   api_.line_width = b_.w;
+  api_.offset_width = ::calc_offset_width(b_.bpp());
   api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
@@ -186,7 +209,7 @@ pass0_build_api_from_bitmap(const Bitmap        &b_,
         {
           RGBA8888 p;
           PackedDataPacket pdp;
-          uint32_t c;
+          u32 c;
           
           // If alpha is 0 then zero out the color to make packing
           // easier later
@@ -377,25 +400,6 @@ pass6_remove_trailing_eol(AbstractPackedImage &api_)
       while(!pdpvec.empty() && pdpvec.rbegin()->is_eol())
         pdpvec.pop_back();
     }
-}
-
-static
-std::size_t
-calc_offset_width(const std::size_t bpp_)
-{
-  switch(bpp_)
-    {
-    case BPP_1:
-    case BPP_2:
-    case BPP_4:
-    case BPP_6:
-      return 8;
-    case BPP_8:
-    case BPP_16:
-      return 16;
-    }
-
-  throw std::runtime_error("invalid bpp");
 }
 
 static
@@ -618,6 +622,67 @@ api_to_bytevec2(const Bitmap              &b_,
   
   //  pdat_.resize(bs.tell_bytes());
 }
+
+static
+void
+pass7_api_to_bitstreams(const AbstractPackedImage &api_,
+                        BitStreamVec              &rows_)
+{
+  rows_.clear();
+  rows_.resize(api_.size());
+  for(size_t i = 0; i < api_.size(); i++)
+    {
+      const auto &pdpvec = api_[i];
+      auto       &row    = rows_[i];
+
+      // Reserve space for the offset
+      row.write(api_.offset_width,0);
+      for(const auto &pdp : pdpvec)
+        {
+          row.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
+          switch(pdp.type)
+            {
+            case PACK_PACKED:
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
+              row.write(api_.bpp,
+                        pdp.pixels[0]);
+              break;
+            case PACK_LITERAL:
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
+              for(const auto pixel : pdp.pixels)
+                row.write(api_.bpp,pixel);
+              // fmt::print("\n");
+              break;
+            case PACK_TRANSPARENT:
+              row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
+                        pdp.pixels.size()-1);
+              // fmt::print("transparent: {}\n",
+              //            pdp.pixels.size());
+              
+              break;
+            case PACK_EOL:
+              eol = true;
+              // fmt::print("eol:\n");
+              break;
+            }
+        }
+
+      // Like unpacked CELs the pipelining/DMA of the CEL engine
+      // requires minus 2 words for the length / offset meaning a
+      // minimum of 2 words in the CEL data.
+      if(row.size_u32() < 2)
+        row.zero_till_64bit_boundary();        
+    
+      offset = (row.size_u32() - 2);
+    
+      row.write(0,
+                api_.offset_width,
+                (row.size_u32() - 2));
+    }
+}
+                        
 
 static
 void
