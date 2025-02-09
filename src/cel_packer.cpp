@@ -824,6 +824,15 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 void
 pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
                        ByteVec            &pdat_)
+{
+  pdat_.clear();
+  for(const auto &row : rows_)
+    {
+      pdat_.insert(pdat_.end(),
+                   row.data().begin(),
+                   row.data().end());
+    }
+}
 
 void
 CelPacker::pack(const Bitmap            &b_,
