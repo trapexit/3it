@@ -812,6 +812,8 @@ pass8_trim_overlap(BitStreamVec &rows_)
                          trailing_bits);
       if(!overlapped)
         continue;
+
+      a.set_size(a.size_bits() - trailing_bits);
     }
 }
 
