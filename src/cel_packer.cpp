@@ -637,7 +637,7 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       auto       &row    = rows_[i];
 
       // Reserve space for the offset
-      row.skip(api_.offset_width);
+      row.seek(api_.offset_width);
       //      row.write(api_.offset_width,0);
       for(const auto &pdp : pdpvec)
         {
