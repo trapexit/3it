@@ -822,6 +822,10 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 }
 
 void
+pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
+                       ByteVec            &pdat_)
+
+void
 CelPacker::pack(const Bitmap            &b_,
                 const RGBA8888Converter &pc_,
                 ByteVec                 &pdat_)
