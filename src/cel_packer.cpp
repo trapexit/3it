@@ -789,6 +789,23 @@ api_to_bytevec3(const Bitmap              &b_,
     }
 }
 
+static
+void
+pass8_trim_overlap(BitStreamVec &rows_)
+{
+  for(size_t i = 0; i < (rows_.size() - 1); i++)
+    {
+      if(rows_[i].size_u32() == 2)
+        continue;
+
+      int trailing_bits;
+      BitStream &a = rows_[i+0];
+      BitStream &b = rows_[i+1];
+
+      trailing_bits = (a.size_bits() & (BITS_PER_WORD -1));
+    }
+}
+
 void
 CelPacker::pack(const Bitmap            &b_,
                 const RGBA8888Converter &pc_,
