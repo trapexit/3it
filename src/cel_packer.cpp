@@ -712,6 +712,8 @@ api_to_bytevec3(const Bitmap              &b_,
                      0,
                      trailing_bits));
   }
+
+  return;
   
   for(auto &row_pdat : rows_pdat)
     {
