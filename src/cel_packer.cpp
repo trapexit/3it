@@ -799,6 +799,7 @@ pass8_trim_overlap(BitStreamVec &rows_)
         continue;
 
       int trailing_bits;
+      bool overlaped;
       BitStream &a = rows_[i+0];
       BitStream &b = rows_[i+1];
 
