@@ -737,7 +737,7 @@ CelPacker::pack(const Bitmap            &b_,
   pass5_remove_trailing_transparents(api);
   pass6_remove_trailing_eol(api);
 
-  api_to_bytevec(b_,api,pc_,pdat_);
-  //api_to_bytevec2(b_,api,pc_,pdat_);
+  //api_to_bytevec(b_,api,pc_,pdat_);
+  api_to_bytevec2(b_,api,pc_,pdat_);
   //api_to_bytevec3(b_,api,pc_,pdat_);  
 };
