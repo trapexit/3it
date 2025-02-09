@@ -200,7 +200,7 @@ pass0_build_api_from_bitmap(const Bitmap            &b_,
 {
   api_.bpp = pc_.bpp();
   api_.line_width = b_.w;
-  api_.offset_width = ::calc_offset_width(b_.bpp());
+  api_.offset_width = ::calc_offset_width(pc_.bpp());
   api_.resize(b_.h);
   for(size_t y = 0; y < b_.h; y++)
     {
