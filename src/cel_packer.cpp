@@ -801,6 +801,7 @@ CelPacker::pack(const Bitmap            &b_,
                 ByteVec                 &pdat_)
 {
   AbstractPackedImage api;
+  BitStreamVec rows;
 
   pass0_build_api_from_bitmap(b_,pc_,api);
   pass1_pack_packed(api);
@@ -809,6 +810,7 @@ CelPacker::pack(const Bitmap            &b_,
   pass4_split_large_packets(api);
   pass5_remove_trailing_transparents(api);
   pass6_remove_trailing_eol(api);
+  pass7_api_to_bitstreams(api,rows);
 
   //api_to_bytevec(b_,api,pc_,pdat_);
   //api_to_bytevec2(b_,api,pc_,pdat_);
