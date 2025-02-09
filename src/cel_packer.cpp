@@ -629,7 +629,6 @@ api_to_bytevec3(const Bitmap              &b_,
   u64 offset_width;  
   std::vector<BitStream> rows_pdat;
 
-
   offset_width = ::calc_offset_width(pc_.bpp());
 
   rows_pdat.resize(api_.size());
