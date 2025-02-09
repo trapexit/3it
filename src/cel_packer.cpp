@@ -654,18 +654,12 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
                         pdp.pixels.size()-1);
               for(const auto pixel : pdp.pixels)
                 row.write(api_.bpp,pixel);
-              // fmt::print("\n");
               break;
             case PACK_TRANSPARENT:
               row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
                         pdp.pixels.size()-1);
-              // fmt::print("transparent: {}\n",
-              //            pdp.pixels.size());
-              
               break;
             case PACK_EOL:
-              eol = true;
-              // fmt::print("eol:\n");
               break;
             }
         }
