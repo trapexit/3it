@@ -662,7 +662,7 @@ public:
   void
   set_size(u64 size_)
   {
-    _size = len_;
+    _size = size_;
     _idx = std::min(_idx,_size);
     _maybe_resize(_size);
   }
