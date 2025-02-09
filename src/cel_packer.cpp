@@ -627,9 +627,6 @@ api_to_bytevec3(const Bitmap              &b_,
                 ByteVec                   &pdat_)
 {
   std::vector<BitStream> rows_pdat;
-  std::vector<bool> has_eol;
-  std::vector<u8> leading_zeros;
-  std::vector<u8> trailing_zeros;
   u64 offset_width;
 
   offset_width = ::calc_offset_width(pc_.bpp());
