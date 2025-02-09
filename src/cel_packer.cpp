@@ -676,8 +676,6 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       if(row.size_u32() < 2)
         row.zero_till_64bit_boundary();        
     
-      offset = (row.size_u32() - 2);
-    
       row.write(0,
                 api_.offset_width,
                 (row.size_u32() - 2));
