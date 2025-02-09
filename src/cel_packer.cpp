@@ -739,5 +739,5 @@ CelPacker::pack(const Bitmap            &b_,
 
   //api_to_bytevec(b_,api,pc_,pdat_);
   //api_to_bytevec2(b_,api,pc_,pdat_);
-  //api_to_bytevec3(b_,api,pc_,pdat_);  
+  api_to_bytevec3(b_,api,pc_,pdat_);  
 };
