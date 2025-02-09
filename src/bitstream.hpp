@@ -436,7 +436,7 @@ class BitStream
 {
 private:
   u64 _idx;
-  u64 _max_idx;
+  u64 _size;
   std::vector<u8> _data;
 
 public:
@@ -468,7 +468,7 @@ public:
   {
     _maybe_resize(idx_);
     _idx = idx_;
-    _max_idx = std::max(_idx,_max_idx);
+    _size = std::max(_idx,_size);
   }
 
   void
@@ -633,19 +633,19 @@ public:
   u64
   size_bits() const
   {
-    return _max_idx;
+    return _size;
   }
 
   u64
   size_bytes() const
   {
-    return ((_max_idx + 7) / 8);
+    return ((_size + 7) / 8);
   }
 
   u64
   size_u32() const
   {
-    return ((_max_idx + 31) / 32);
+    return ((_size + 31) / 32);
   }
 
 public:
@@ -654,7 +654,7 @@ public:
   {
     u64 len_in_bytes;
 
-    len_in_bytes = ((_max_idx + 7) / 8);
+    len_in_bytes = ((_size + 7) / 8);
 
     _data.resize(len_in_bytes);
   }
@@ -662,9 +662,9 @@ public:
   void
   set_length(u64 len_)
   {
-    _max_idx = len_;
-    _idx = std::min(_idx,_max_idx);
-    _maybe_resize(_max_idx);
+    _size = len_;
+    _idx = std::min(_idx,_size);
+    _maybe_resize(_size);
   }
 
 public:
@@ -710,7 +710,7 @@ public:
   {
     write(_idx,bits_,val_);
     _idx += bits_;
-    _max_idx = std::max(_idx,_max_idx);
+    _size = std::max(_idx,_size);
   }
 
   void
