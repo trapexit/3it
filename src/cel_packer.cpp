@@ -707,7 +707,9 @@ api_to_bytevec3(const Bitmap              &b_,
     overlap = 0;
     trailing_bits = a.size_bits() & 31;
 
-    fmt::print("{}\n",
+    
+    fmt::print("row {},{} = {}\n",
+               i,i+1,
                a.cmp(a.size_bits() - trailing_bits,
                      b,
                      0,
