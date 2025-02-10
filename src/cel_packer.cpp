@@ -831,6 +831,20 @@ pass9_bsvec_to_bytevec(AbstractPackedImage &api_,
 }
 
 void
+pass10_bsvec_to_bytevec(AbstractPackedImage &api_,
+                        const BitStreamVec        &rows_,
+                        ByteVec             &pdat_)
+{
+  pdat_.clear();
+  for(const auto &row : rows_)
+    {
+      pdat_.insert(pdat_.end(),
+                   row.data().begin(),
+                   row.data().end());
+    }
+}
+
+void
 CelPacker::pack(const Bitmap            &b_,
                 const RGBA8888Converter &pc_,
                 ByteVec                 &pdat_)
