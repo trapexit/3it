@@ -785,13 +785,6 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       if(rows_[i].size_bits() <= (2 * BITS_PER_WORD))
         continue;
       
-      rows_[i].zero_till_32bit_boundary();
-      rows_[i].write(0,
-                     api_.offset_width,
-                     (rows_[i].size_u32() - 2));
-
-      return;
-
       bool overlap;
       int trailing_bits;
       BitStream &a = rows_[i+0];
