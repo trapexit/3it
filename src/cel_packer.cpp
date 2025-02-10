@@ -824,9 +824,6 @@ pass9_bsvec_to_bytevec(AbstractPackedImage &api_,
       // requires minus 2 words for the length / offset meaning a
       // minimum of 2 words in the CEL data.      
       row.write(0,api_.offset_width,(row.size_u32()-2));
-      pdat_.insert(pdat_.end(),
-                   row.data().begin(),
-                   row.data().end());
     }
 }
 
