@@ -793,7 +793,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
           continue;
         }
 
-      bool overlaped;      
+      bool overlap;      
       int trailing_bits;
       BitStream &a = rows_[i+0];
       BitStream &b = rows_[i+1];
@@ -803,10 +803,10 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       if(trailing_bits == 0)
         continue;
 
-      overlaped = a.cmp(a.size_bits() - trailing_bits,
+      overlap = a.cmp(a.size_bits() - trailing_bits,
                         b,0,
                         trailing_bits);
-      fmt::print("overlap: {}\n",overlape);
+      fmt::print("overlap: {}\n",overlap);
       if(!overlaped)
         continue;
 
