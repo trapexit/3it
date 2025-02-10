@@ -823,7 +823,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       // must be minus 2 the actual distance.
       a.write(0,
               api_.offset_width,
-              (row.size_u32() - 2));
+              (a.size_u32() - 2));
     }
 }
 
