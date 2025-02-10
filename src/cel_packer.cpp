@@ -821,7 +821,9 @@ pass9_(const int     offset_width_,
       // Like unpacked CELs the pipelining/DMA of the CEL engine
       // requires minus 2 words for the length / offset meaning a
       // minimum of 2 words in the CEL data.      
-      row.write(0,api_.offset_width,(row.size_u32()-2));
+      row.write(0,
+                offset_width_,
+                (row.size_u32()-2));
     }
 }
 
