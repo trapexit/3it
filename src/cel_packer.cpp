@@ -791,9 +791,9 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       BitStream &b = rows_[i+1];
 
       trailing_bits = (a.size_bits() & (BITS_PER_WORD -1));
-      fmt::print("trailing bits: {}\n",trailing_bits);
       if(trailing_bits == 0)
         continue;
+      fmt::print("trailing bits: {}\n",trailing_bits);
 
       overlap = a.cmp(a.size_bits() - trailing_bits,
                         b,0,
