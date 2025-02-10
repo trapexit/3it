@@ -741,29 +741,29 @@ api_to_bytevec3(const Bitmap              &b_,
     }
 
   for(size_t i = 0; i < rows_pdat.size() - 1; i++)
-  {
-    if(rows_pdat[i].size_u32() == 2)
-      continue;
+    {
+      if(rows_pdat[i].size_u32() == 2)
+        continue;
 
-    BitStream &a = rows_pdat[i+0];
-    BitStream &b = rows_pdat[i+1];
-    int trailing_bits;
-    bool overlap;
+      BitStream &a = rows_pdat[i+0];
+      BitStream &b = rows_pdat[i+1];
+      int trailing_bits;
+      bool overlap;
 
-    trailing_bits = a.size_bits() & 31;
+      trailing_bits = a.size_bits() & 31;
 
-    if(trailing_bits == 0)
-      continue;
+      if(trailing_bits == 0)
+        continue;
 
-    overlap = a.cmp(a.size_bits() - trailing_bits,
-                    b,
-                    0,
-                    trailing_bits);
-    fmt::print("row {},{} = {} {}\n",
-               i,i+1,
-               trailing_bits,
-               overlap);
-  }
+      overlap = a.cmp(a.size_bits() - trailing_bits,
+                      b,
+                      0,
+                      trailing_bits);
+      fmt::print("row {},{} = {} {}\n",
+                 i,i+1,
+                 trailing_bits,
+                 overlap);
+    }
 
   for(auto &row_pdat : rows_pdat)
     {
@@ -795,8 +795,8 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
         continue;
 
       overlap = a.cmp(a.size_bits() - trailing_bits,
-                        b,0,
-                        trailing_bits);
+                      b,0,
+                      trailing_bits);
       if(!overlap)
         continue;
 
