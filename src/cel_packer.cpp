@@ -812,7 +812,7 @@ pass9_bsvec_to_bytevec(BitStreamVec &rows_,
                        ByteVec      &pdat_)
 {
   pdat_.clear();
-  for(const auto &row : rows_)
+  for(auto &row : rows_)
     {
       // Needs to be word aligned and min 2 words.
       if(row.size_bits() < (2 * BITS_PER_WORD))
