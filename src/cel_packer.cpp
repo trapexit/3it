@@ -851,6 +851,7 @@ pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
   pdat_.clear();
   for(const auto &row : rows_)
     {
+      // Needs to be word aligned.      
       row.zero_till_32bit_boundary();
       // The same pipelining / DMA mentioned above means the offset
       // must be minus 2 the actual distance.      
