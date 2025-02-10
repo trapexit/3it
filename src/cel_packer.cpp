@@ -821,7 +821,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
       // The same pipelining / DMA mentioned above means the offset
       // must be minus 2 the actual distance.
-      row.write(0,
+      a.write(0,
                 api_.offset_width,
                 (row.size_u32() - 2));
     }
