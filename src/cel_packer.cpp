@@ -722,7 +722,6 @@ api_to_bytevec3(const Bitmap              &b_,
               break;
             case PACK_EOL:
               eol = true;
-              // fmt::print("eol:\n");
               break;
             }
         }
