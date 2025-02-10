@@ -831,9 +831,8 @@ pass9_bsvec_to_bytevec(AbstractPackedImage &api_,
 }
 
 void
-pass10_bsvec_to_bytevec(AbstractPackedImage &api_,
-                        const BitStreamVec        &rows_,
-                        ByteVec             &pdat_)
+pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
+                        ByteVec            &pdat_)
 {
   pdat_.clear();
   for(const auto &row : rows_)
