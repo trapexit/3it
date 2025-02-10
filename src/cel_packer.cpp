@@ -837,8 +837,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
               api_.offset_width,
               (a.read(0,api_.offset_width) - 1));
 
-      // The same pipelining / DMA mentioned above means the offset
-      // must be minus 2 the actual distance.
+
       a.write(0,
               api_.offset_width,
               (a.size_u32() - 2));
@@ -853,6 +852,8 @@ pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
   for(const auto &row : rows_)
     {
       row.zero_till_32bit_boundary();
+      // The same pipelining / DMA mentioned above means the offset
+      // must be minus 2 the actual distance.      
       row.write(0,api_.offset_width,(row.size_u32()-2));
       pdat_.insert(pdat_.end(),
                    row.data().begin(),
