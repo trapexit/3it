@@ -211,7 +211,7 @@ pass0_build_api_from_bitmap(const Bitmap            &b_,
           RGBA8888 p;
           PackedDataPacket pdp;
           u32 c;
-          
+
           // If alpha is 0 then zero out the color to make packing
           // easier later
           p = *b_.xy(x,y);
@@ -457,7 +457,7 @@ api_to_bytevec(const Bitmap              &b_,
                        pdp.pixels.size()-1);
               fmt::print("transparent: {}\n",
                          pdp.pixels.size());
-              
+
               break;
             case PACK_EOL:
               break;
@@ -498,7 +498,7 @@ api_to_bytevec2(const Bitmap              &b_,
                 const RGBA8888Converter   &pc_,
                 ByteVec                   &pdat_)
 {
-  ByteVec row_pdat;  
+  ByteVec row_pdat;
   std::vector<ByteVec> pdat_vec;
   std::vector<bool> has_eol;
   std::vector<u8> leading_zeros;
@@ -511,7 +511,7 @@ api_to_bytevec2(const Bitmap              &b_,
   for(const auto &pdpvec : api_)
     {
       bool eol = false;
-        
+
       row_pdat.clear();
       bs.reset(row_pdat);
 
@@ -547,7 +547,7 @@ api_to_bytevec2(const Bitmap              &b_,
                        pdp.pixels.size()-1);
               // fmt::print("transparent: {}\n",
               //            pdp.pixels.size());
-              
+
               break;
             case PACK_EOL:
               eol = true;
@@ -564,7 +564,7 @@ api_to_bytevec2(const Bitmap              &b_,
       excess_bits = bs.tell_bits() & (BITS_PER_WORD-1);
       if(bs.read(bs.tell_bits() - excess_bits,excess_bits) != 0)
         excess_bits = 0;
-      
+
       bs.zero_till_32bit_boundary();
       if(bs.tell_u32() < 2)
         bs.write(BITS_PER_WORD,0);
@@ -619,7 +619,7 @@ api_to_bytevec2(const Bitmap              &b_,
     pdat_.insert(pdat_.end(),
                  pdat.begin(),
                  pdat.end());
-  
+
   //  pdat_.resize(bs.tell_bytes());
 }
 
@@ -664,7 +664,7 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
         }
     }
 }
-                        
+
 
 static
 void
@@ -673,7 +673,7 @@ api_to_bytevec3(const Bitmap              &b_,
                 const RGBA8888Converter   &pc_,
                 ByteVec                   &pdat_)
 {
-  u64 offset_width;  
+  u64 offset_width;
   std::vector<BitStream> rows_pdat;
 
   offset_width = ::calc_offset_width(pc_.bpp());
@@ -685,7 +685,7 @@ api_to_bytevec3(const Bitmap              &b_,
       auto       &row_pdat = rows_pdat[i];
 
       bool eol = false;
-        
+
       // Reserve space for the offset
       row_pdat.write(offset_width,0);
       for(const auto &pdp : pdpvec)
@@ -718,7 +718,7 @@ api_to_bytevec3(const Bitmap              &b_,
                              pdp.pixels.size()-1);
               // fmt::print("transparent: {}\n",
               //            pdp.pixels.size());
-              
+
               break;
             case PACK_EOL:
               eol = true;
@@ -730,10 +730,10 @@ api_to_bytevec3(const Bitmap              &b_,
         int offset;
 
         if(row_pdat.size_u32() < 2)
-          row_pdat.zero_till_64bit_boundary();        
-    
+          row_pdat.zero_till_64bit_boundary();
+
         offset = (row_pdat.size_u32() - 2);
-    
+
         row_pdat.write(0,
                        offset_width,
                        offset);
@@ -744,7 +744,7 @@ api_to_bytevec3(const Bitmap              &b_,
   {
     if(rows_pdat[i].size_u32() == 2)
       continue;
-    
+
     BitStream &a = rows_pdat[i+0];
     BitStream &b = rows_pdat[i+1];
     int trailing_bits;
@@ -783,15 +783,20 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
   if(rows_.back().size_bits() <= (BITS_PER_WORD * 2))
     {
       rows_.back().set_size(BITS_PER_WORD * 2);
-      rows_.back().write(0,api_.offset_width,0);      
+      rows_.back().write(0,api_.offset_width,0);
+    }
+  else
+    {
+      rows_.back().zero_till_32bit_boundary();
+      rows_.back().write(0,api_.offset_width,0);
     }
 
-    
+
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
       // Like unpacked CELs the pipelining/DMA of the CEL engine
       // requires minus 2 words for the length / offset meaning a
-      // minimum of 2 words in the CEL data.      
+      // minimum of 2 words in the CEL data.
       if(rows_[i].size_bits() <= (BITS_PER_WORD * 2))
         {
           rows_[i].set_size(BITS_PER_WORD * 2);
@@ -807,7 +812,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
       return;
 
-      bool overlap;      
+      bool overlap;
       int trailing_bits;
       BitStream &a = rows_[i+0];
       BitStream &b = rows_[i+1];
@@ -826,8 +831,8 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
       a.set_size(a.size_bits() - trailing_bits);
       a.shrink();
-      // Needs to be word aligned      
-      a.zero_till_32bit_boundary();      
+      // Needs to be word aligned
+      a.zero_till_32bit_boundary();
       a.write(0,
               api_.offset_width,
               (a.read(0,api_.offset_width) - 1));
@@ -874,5 +879,5 @@ CelPacker::pack(const Bitmap            &b_,
 
   //api_to_bytevec(b_,api,pc_,pdat_);
   //api_to_bytevec2(b_,api,pc_,pdat_);
-  //api_to_bytevec3(b_,api,pc_,pdat_);  
+  //api_to_bytevec3(b_,api,pc_,pdat_);
 };
