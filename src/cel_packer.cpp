@@ -667,18 +667,20 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       // Like unpacked CELs the pipelining/DMA of the CEL engine
       // requires minus 2 words for the length / offset meaning a
       // minimum of 2 words in the CEL data.
-      fmt::print("{} {} {} {}\n",
+      fmt::print("{} {} {} {} {}\n",
                  row.size_bits(),
                  row.size_bytes(),
                  row.size_u32(),
-                 row.on_64bit_boundary());
+                 row.on_64bit_boundary(),
+                 row.bits_to_64bit_boundary());
       if(row.size_bytes() < 8)
         row.zero_till_64bit_boundary();
-      fmt::print("{} {} {} {}\n",
+      fmt::print("{} {} {} {} {}\n",
                  row.size_bits(),
                  row.size_bytes(),
                  row.size_u32(),
-                 row.on_64bit_boundary());      
+                 row.on_64bit_boundary(),
+                 row.bits_to_64bit_boundary());                 
 
       // The same pipelining / DMA mentioned above means the offset
       // must be minus 2 the actual distance.
