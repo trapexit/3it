@@ -819,10 +819,6 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
               api_.offset_width,
               (a.read(0,api_.offset_width) - 1));
 
-
-      row.zero_till_32bit_boundary();
-      
-
       if(row.size_bytes() < 8)
         row.set_size(8 * 32);
 
