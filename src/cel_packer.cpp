@@ -852,6 +852,7 @@ pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
   pdat_.clear();
   for(const auto &row : rows_)
     {
+      row.zero_till_32bit_boundary();
       pdat_.insert(pdat_.end(),
                    row.data().begin(),
                    row.data().end());
