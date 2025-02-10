@@ -859,8 +859,4 @@ CelPacker::pack(const Bitmap            &b_,
   pass8_trim_overlap(api,rows);
   pass9_pad_rows(api.offset_width,rows);
   pass10_bsvec_to_bytevec(rows,pdat_);
-
-  //api_to_bytevec(b_,api,pc_,pdat_);
-  //api_to_bytevec2(b_,api,pc_,pdat_);
-  //api_to_bytevec3(b_,api,pc_,pdat_);
 };
