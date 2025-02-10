@@ -808,11 +808,9 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 }
 
 void
-pass9_bsvec_to_bytevec(AbstractPackedImage &api_,
-                       BitStreamVec        &rows_,
-                       ByteVec             &pdat_)
+pass9_(const int     offset_width_,
+       BitStreamVec &rows_,
 {
-  pdat_.clear();
   for(auto &row : rows_)
     {
       // Needs to be word aligned and min 2 words.
