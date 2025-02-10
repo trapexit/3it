@@ -827,8 +827,11 @@ pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
   pdat_.clear();
   for(const auto &row : rows_)
     {
-      // Needs to be word aligned.      
-      row.zero_till_32bit_boundary();
+      // Needs to be word aligned.
+      if(row.size_bits() < (2 * BITS_PER_WORD))
+        row.zero_till_64bit_boundary();
+      else
+        row.zero_till_32bit_boundary();
       // Like unpacked CELs the pipelining/DMA of the CEL engine
       // requires minus 2 words for the length / offset meaning a
       // minimum of 2 words in the CEL data.      
