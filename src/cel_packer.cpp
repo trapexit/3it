@@ -808,8 +808,8 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 }
 
 void
-pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
-                       ByteVec            &pdat_)
+pass9_bsvec_to_bytevec(BitStreamVec &rows_,
+                       ByteVec      &pdat_)
 {
   pdat_.clear();
   for(const auto &row : rows_)
