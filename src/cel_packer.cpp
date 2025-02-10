@@ -818,7 +818,6 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
               api_.offset_width,
               (a.read(0,api_.offset_width) - 1));
 
-
       // Needs to be word aligned
       row.zero_till_32bit_boundary();
       
