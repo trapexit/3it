@@ -660,6 +660,7 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
                         pdp.pixels.size()-1);
               break;
             case PACK_EOL:
+              fmt::print("eol\n");
               break;
             }
         }
