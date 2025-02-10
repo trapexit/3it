@@ -807,6 +807,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
     }
 }
 
+static
 void
 pass9_pad_rows(const int     offset_width_,
                BitStreamVec &rows_)
@@ -827,6 +828,7 @@ pass9_pad_rows(const int     offset_width_,
     }
 }
 
+static
 void
 pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
                         ByteVec            &pdat_)
