@@ -815,7 +815,6 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
                         b,0,
                         trailing_bits);
       fmt::print("{}\n",overlaped);
-                
       if(!overlaped)
         continue;
 
