@@ -784,14 +784,14 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 {
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
+      // Like unpacked CELs the pipelining/DMA of the CEL engine
+      // requires minus 2 words for the length / offset meaning a
+      // minimum of 2 words in the CEL data.      
       if(rows_[i].size_bits() <= (BITS_PER_WORD * 2))
         {
           rows_[i].set_size(BITS_PER_WORD * 2);
+          continue;
         }
-
-      
-      if(rows_[i].size_bytes() == 8)
-        continue;
 
       bool overlaped;      
       int trailing_bits;
@@ -821,9 +821,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       // Needs to be word aligned
       row.zero_till_32bit_boundary();
       
-      // Like unpacked CELs the pipelining/DMA of the CEL engine
-      // requires minus 2 words for the length / offset meaning a
-      // minimum of 2 words in the CEL data.
+
       if(row.size_bytes() < 8)
         row.set_size(8 * 32);
 
