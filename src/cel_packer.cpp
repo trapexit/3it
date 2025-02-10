@@ -809,7 +809,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
 void
 pass9_pad_rows(const int     offset_width_,
-               BitStreamVec &rows_,
+               BitStreamVec &rows_)
 {
   for(auto &row : rows_)
     {
