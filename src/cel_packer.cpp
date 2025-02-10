@@ -782,9 +782,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 {
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
-      // Like unpacked CELs the pipelining/DMA of the CEL engine
-      // requires minus 2 words for the length / offset meaning a
-      // minimum of 2 words in the CEL data.
+
       if(rows_[i].size_bits() <= (BITS_PER_WORD * 2))
         {
           rows_[i].set_size(BITS_PER_WORD * 2);
@@ -831,8 +829,9 @@ pass9_bsvec_to_bytevec(const BitStreamVec &rows_,
     {
       // Needs to be word aligned.      
       row.zero_till_32bit_boundary();
-      // The same pipelining / DMA mentioned above means the offset
-      // must be minus 2 the actual distance.      
+      // Like unpacked CELs the pipelining/DMA of the CEL engine
+      // requires minus 2 words for the length / offset meaning a
+      // minimum of 2 words in the CEL data.      
       row.write(0,api_.offset_width,(row.size_u32()-2));
       pdat_.insert(pdat_.end(),
                    row.data().begin(),
