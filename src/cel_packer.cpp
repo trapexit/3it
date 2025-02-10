@@ -780,6 +780,13 @@ void
 pass8_trim_overlap(const AbstractPackedImage &api_,
                    BitStreamVec              &rows_)
 {
+  if(rows_.back().size_bits() <= (BITS_PER_WORD * 2))
+    {
+      rows_.back().set_size(BITS_PER_WORD * 2);
+      
+    }
+
+    
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
       // Like unpacked CELs the pipelining/DMA of the CEL engine
@@ -789,6 +796,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
         {
           rows_[i].set_size(BITS_PER_WORD * 2);
           rows_[i].write(0,api_.offset_width,0);
+          fmt::print("{}\n",rows_[i].
           continue;
         }
 
