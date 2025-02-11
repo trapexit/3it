@@ -445,15 +445,15 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
         }
 
       // Needs to be done in prep for overlap pass
-      {
-        int word_offset;
+      // {
+      //   int word_offset;
 
-        word_offset = std::max((uint64_t)2,
-                               row.tell_32bits_round_up());
-        row.write(0,
-                  api_.offset_width,
-                  (word_offset - 2));
-      }
+      //   word_offset = std::max((uint64_t)2,
+      //                          row.tell_32bits_round_up());
+      //   row.write(0,
+      //             api_.offset_width,
+      //             (word_offset - 2));
+      // }
     }
 }
 
