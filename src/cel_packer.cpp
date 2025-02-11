@@ -501,9 +501,7 @@ void
 pass9_pad_rows(BitStreamVec &rows_)
 {
   for(auto &row : rows_)
-    {
-      row.zero_till_32bit_boundary();
-    }
+    row.zero_till_32bit_boundary();
 }
 
 static
