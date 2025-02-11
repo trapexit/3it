@@ -458,7 +458,8 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
 }
 
 // The overlap in theory could be from word 3 to the end of the
-// row but in practice this is extremely unlikely.
+// row but in practice this is extremely unlikely. For the moment just
+// checking the trailing bits % 32bit word.
 static
 void
 pass8_trim_overlap(const AbstractPackedImage &api_,
