@@ -722,7 +722,7 @@ public:
   {
     _size = size_;
     _idx = std::min(_idx,_size);
-    shrink();
+    shrink_to_size();
   }
 
   void
