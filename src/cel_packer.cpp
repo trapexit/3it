@@ -486,7 +486,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
         continue;
 
       // Resize buffer and update offset
-      a.set_size(a.size_bits() - trailing_bits);
+      a.set_size_bits(a.size_bits() - trailing_bits);
       a.write(0,
               api_.offset_width,
               (a.size_32bit() - 2));
