@@ -466,6 +466,8 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 {
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
+      assert(rows_[i].tell_32bits() >= 2);
+      
       if(rows_[i].tell_32bits() <= 2)
         continue;
       
