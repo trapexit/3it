@@ -660,13 +660,13 @@ public:
   }
 
   u64
-  tell_u16() const
+  tell_16bits() const
   {
     return (tell_bytes() / sizeof(u16));
   }
 
   u64
-  tell_u32() const
+  tell_32bits() const
   {
     return (tell_bytes() / sizeof(u32));
   }
