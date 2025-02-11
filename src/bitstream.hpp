@@ -700,7 +700,7 @@ public:
   void
   set_size_32bits(u64 size_)
   {
-    set_size(size_ * 32);
+    set_size_bits(size_ * 32);
   }
 
 public:
