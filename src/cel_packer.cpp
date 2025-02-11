@@ -522,6 +522,7 @@ pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
   pdat_.clear();
   for(const auto &row : rows_)
     {
+      assert(row.size_bits() & 31);
       pdat_.insert(pdat_.end(),
                    row.data().begin(),
                    row.data().end());
