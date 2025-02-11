@@ -493,7 +493,7 @@ public:
   }
 
   std::vector<u8>::const_iterator
-  idx_end()
+  idx_end() const
   {
     return (_data.begin() + ((_idx + 7) / 8));
   }
@@ -504,8 +504,8 @@ public:
     return (_data.begin() + ((_size + 7) / 8));    
   }
 
-  std::vector<u8>::iterator
-  size_end()
+  std::vector<u8>::const_iterator
+  size_end() const
   {
     return (_data.begin() + ((_size + 7) / 8));    
   }
