@@ -698,7 +698,17 @@ public:
 
 public:
   void
-  shrink()
+  shrink_to_idx()
+  {
+    u64 len_in_bytes;
+
+    len_in_bytes = ((_idx + 7) / 8);
+
+    _data.resize(len_in_bytes);
+  }
+  
+  void
+  shrink_to_size()
   {
     u64 len_in_bytes;
 
