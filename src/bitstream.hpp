@@ -468,6 +468,13 @@ public:
     return _data.begin();
   }
 
+  std::vector<u8>::const_iterator
+  begin() const
+  {
+    return _data.begin();
+  }
+  
+
   std::vector<u8>::iterator
   end()
   {
