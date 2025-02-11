@@ -477,11 +477,7 @@ public:
   std::vector<u8>::iterator
   size_end()
   {
-    int size;
-
-    size = ((_size + 7) / 8);
-    
-    return std::advance(_data.begin(),size);
+    return (_data.begin() + ((_size + 7) / 8));    
   }
 
 public:
