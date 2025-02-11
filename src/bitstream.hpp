@@ -692,13 +692,13 @@ public:
   }
 
   void
-  set_size_bytes(u64 size_)
+  set_size_8bits(u64 size_)
   {
     set_size(size_ * 8);
   }
 
   void
-  set_size_32((u64 size_)
+  set_size_32bits((u64 size_)
   {
     set_size(size_ * 32);
   }
