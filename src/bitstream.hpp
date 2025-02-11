@@ -664,7 +664,7 @@ public:
   {
     _size = size_;
     _idx = std::min(_idx,_size);
-    _maybe_resize(_size);
+    shrink();
   }
 
 public:
