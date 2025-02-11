@@ -485,6 +485,10 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
         continue;
 
       a.set_size(a.size_bits() - trailing_bits);
+      a.write(0,
+              api_.offset_width,word_,
+              (a.size_u32() - 2));
+              
     }
 }
 
