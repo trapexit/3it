@@ -444,12 +444,14 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
             }
         }
 
-      int word_offset;
-
-      word_offset = row.size_u32();
-      if(word_offset < 2)
-        word_offset = 2;
-      row.write(0,api_.offset_width,word_offset);      
+      {
+        int word_offset;
+        
+        word_offset = row.size_u32();
+        if(word_offset < 2)
+          word_offset = 2;
+        row.write(0,api_.offset_width,word_offset);
+      }
     }
 }
 
