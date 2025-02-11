@@ -485,8 +485,6 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       if(!overlap)
         continue;
 
-      fmt::println("trim line {}",i);
-
       a.rewind(trailing_bits);
       a.shrink_to_idx();
       a.write(0,
