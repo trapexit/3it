@@ -685,13 +685,13 @@ public:
   }
 
   u64
-  size_8bit() const
+  size_8bits() const
   {
     return ((_size + 7) / 8);
   }
 
   u64
-  size_32bit() const
+  size_32bits() const
   {
     return ((_size + 31) / 32);
   }
