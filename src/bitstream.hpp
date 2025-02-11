@@ -672,7 +672,7 @@ public:
   }
 
   u64
-  tell_u64() const
+  tell_64bits() const
   {
     return (tell_bytes() / sizeof(u64));
   }
