@@ -462,6 +462,22 @@ public:
     return _data;
   }
 
+  std::vector<u8>::iterator
+  begin()
+  {
+    return _data.begin();
+  }
+
+  std::vector<u8>::iterator
+  end()
+  {
+    int idx;
+
+    idx = ((_idx + 7) / 8);
+    
+    return std::advance(_data.begin(),
+  }
+
 public:
   void
   seek(const u64 idx_)
