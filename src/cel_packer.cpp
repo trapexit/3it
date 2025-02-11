@@ -504,7 +504,8 @@ pass9_pad_rows(BitStreamVec &rows_)
     {
       if(row.tell_bits() < (2 * BITS_PER_WORD))
         row.zero_till_64bit_boundary();
-      row.zero_till_32bit_boundary();
+      else
+        row.zero_till_32bit_boundary();
     }
 }
 
