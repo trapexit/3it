@@ -668,7 +668,7 @@ public:
   u64
   tell_32bits_round_up() const
   {
-    return (tell_bytes() / sizeof(u32));
+    return ((tell_bytes() + (sizeof(u32)-1)) / sizeof(u32));
   }
 
   u64
