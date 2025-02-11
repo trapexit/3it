@@ -452,9 +452,6 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
         row.write(0,
                   api_.offset_width,
                   (word_offset - 2));
-        fmt::println("{} {}",
-                     row.tell_32bits(),
-                     word_offset);
       }
     }
 }
