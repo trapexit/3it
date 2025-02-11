@@ -448,7 +448,8 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       {
         int word_offset;
 
-        word_offset = std::max((uint64_t)2,row.tell_32bits());
+        word_offset = std::max((uint64_t)2,
+                               row.tell_32bits()+1);
         row.write(0,
                   api_.offset_width,
                   (word_offset - 2));
