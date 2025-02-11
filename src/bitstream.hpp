@@ -471,11 +471,7 @@ public:
   std::vector<u8>::iterator
   idx_end()
   {
-    int idx;
-
-    idx = ((_idx + 7) / 8);
-    
-    return std::advance(_data.begin(),idx);
+    return _data.begin() + ((_idx + 7) / 8);
   }
 
   std::vector<u8>::iterator
