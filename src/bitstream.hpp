@@ -485,7 +485,7 @@ public:
 
     size = ((_size + 7) / 8);
     
-    return std::advance(_data.begin(),idx);
+    return std::advance(_data.begin(),size);
   }
 
 public:
