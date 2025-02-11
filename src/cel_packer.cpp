@@ -444,6 +444,7 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
             }
         }
 
+      // Needs to be done in prep for overlap pass
       {
         int word_offset;
         
