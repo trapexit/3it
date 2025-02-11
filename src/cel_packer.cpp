@@ -445,15 +445,15 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
         }
 
       // Needs to be done in prep for overlap pass
-      // {
-      //   int word_offset;
+      {
+        int word_offset;
 
-      //   word_offset = std::max((uint64_t)2,
-      //                          row.tell_32bits_round_up());
-      //   row.write(0,
-      //             api_.offset_width,
-      //             (word_offset - 2));
-      // }
+        word_offset = std::max((uint64_t)2,
+                               row.tell_32bits_round_up());
+        row.write(0,
+                  api_.offset_width,
+                  (word_offset - 2));
+      }
     }
 }
 
@@ -487,16 +487,15 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
       a.rewind(trailing_bits);
       a.shrink_to_idx();
-      // a.write(0,
-      //         api_.offset_width,
-      //         (a.tell_32bits_round_up() - 2));
+      a.write(0,
+              api_.offset_width,
+              (a.tell_32bits_round_up() - 2));
     }
 }
 
 static
 void
-pass9_pad_rows(const AbstractPackedImage &api_,
-               BitStreamVec              &rows_)
+pass9_pad_rows(BitStreamVec &rows_)
 {
   for(auto &row : rows_)
     {
@@ -504,10 +503,6 @@ pass9_pad_rows(const AbstractPackedImage &api_,
         row.zero_till_64bit_boundary();
       else
         row.zero_till_32bit_boundary();
-
-      row.write(0,
-                api_.offset_width,
-                (row.tell_32bits_round_up() - 2));
     }
 }
 
@@ -544,6 +539,6 @@ CelPacker::pack(const Bitmap            &b_,
   pass6_remove_trailing_eol(api);
   pass7_api_to_bitstreams(api,rows);
   pass8_trim_overlap(api,rows);
-  pass9_pad_rows(api,rows);
+  pass9_pad_rows(rows);
   pass10_bsvec_to_bytevec(rows,pdat_);
 };
