@@ -481,9 +481,9 @@ public:
   std::vector<u8>::iterator
   size_end()
   {
-    int idx;
+    int size;
 
-    idx = ((_idx + 7) / 8);
+    size = ((_size + 7) / 8);
     
     return std::advance(_data.begin(),idx);
   }
