@@ -455,7 +455,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
     {
       int word_offset;
 
-      // Needed to perform overlap
+      // Needed to perform overlap check
       word_offset = rows_[i].size_u32();
       if(word_offset < 2)
         word_offset = 2;
