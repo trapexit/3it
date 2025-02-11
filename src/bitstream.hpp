@@ -691,6 +691,22 @@ public:
     shrink();
   }
 
+  void
+  set_size_bytes((u64 size_)
+  {
+    _size = size_;
+    _idx = std::min(_idx,_size);
+    shrink();
+  }
+
+  void
+  set_size_32((u64 size_)
+  {
+    _size = size_;
+    _idx = std::min(_idx,_size);
+    shrink();
+  }
+
 public:
   bool
   cmp(u64        idx_,
