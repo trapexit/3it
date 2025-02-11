@@ -478,12 +478,30 @@ public:
   end()
   {
     return _data.end();
+  }
+
+  std::vector<u8>::const_iterator
+  end() const
+  {
+    return _data.end();
   }  
 
   std::vector<u8>::iterator
   idx_end()
   {
     return (_data.begin() + ((_idx + 7) / 8));
+  }
+
+  std::vector<u8>::const_iterator
+  idx_end()
+  {
+    return (_data.begin() + ((_idx + 7) / 8));
+  }
+
+  std::vector<u8>::iterator
+  size_end()
+  {
+    return (_data.begin() + ((_size + 7) / 8));    
   }
 
   std::vector<u8>::iterator
