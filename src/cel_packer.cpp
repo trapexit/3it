@@ -463,6 +463,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 {
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
+      // Rows have to be at least 2 words wide.
       if(rows_[i].size_bits() <= (2 * BITS_PER_WORD))
         continue;
       
