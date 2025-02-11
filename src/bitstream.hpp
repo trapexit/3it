@@ -469,7 +469,7 @@ public:
   }
 
   std::vector<u8>::iterator
-  end()
+  idx_end()
   {
     int idx;
 
