@@ -475,7 +475,7 @@ public:
 
     idx = ((_idx + 7) / 8);
     
-    return std::advance(_data.begin(),
+    return std::advance(_data.begin(),idx);
   }
 
 public:
