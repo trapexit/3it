@@ -473,7 +473,6 @@ public:
   {
     return _data.begin();
   }
-  
 
   std::vector<u8>::iterator
   end()
