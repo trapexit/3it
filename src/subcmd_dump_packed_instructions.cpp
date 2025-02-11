@@ -193,7 +193,7 @@ namespace l
                        next_offset);
             unpack_row(row,bs,ccc);
 
-            fmt::print("data: ",
+            fmt::print("data: ");
             bs.seek(offset * BITS_PER_BYTE);
             for(u64 i = offset; i < next_offset; i+=4)
               {
