@@ -498,6 +498,16 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
 
 static
 void
+pass9_pad_rows(BitStreamVec &rows_)
+{
+  for(auto &row : rows_)
+    {
+      row.zero_till_32bit_boundary();
+    }
+}
+
+static
+void
 pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
                         ByteVec            &pdat_)
 {
