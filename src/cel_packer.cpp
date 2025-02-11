@@ -504,6 +504,10 @@ pass9_pad_rows(const AbstractPackedImage &api_,
         row.zero_till_64bit_boundary();
       else
         row.zero_till_32bit_boundary();
+
+      row.write(0,
+                api_.offset_width,
+                (row.tell_32bits_round_up() - 2));
     }
 }
 
