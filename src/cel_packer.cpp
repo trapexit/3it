@@ -484,6 +484,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       if(!overlap)
         continue;
 
+      // Resize buffer and update offset
       a.set_size(a.size_bits() - trailing_bits);
       a.write(0,
               api_.offset_width,word_,
