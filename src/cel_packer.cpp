@@ -482,7 +482,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
       fmt::println("row {} trailing bits: {}",
                    i, trailing_bits);
       
-      overlap = a.cmp(a.size_bits() - trailing_bits,
+      overlap = a.cmp(a.tell_bits() - trailing_bits,
                       b,0,
                       trailing_bits);
       if(!overlap)
