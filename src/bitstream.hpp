@@ -694,7 +694,7 @@ public:
   void
   set_size_8bits(u64 size_)
   {
-    set_size(size_ * 8);
+    set_size_bits(size_ * 8);
   }
 
   void
