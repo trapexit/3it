@@ -518,7 +518,7 @@ pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
   for(const auto &row : rows_)
     {
       assert(row.tell_bits() >= (2 * BITS_PER_WORD));
-      assert((row.size_bits() & 31) == 0);
+      assert((row.tell_bits() & 31) == 0);
       pdat_.insert(pdat_.end(),
                    row.begin(),
                    row.size_end());
