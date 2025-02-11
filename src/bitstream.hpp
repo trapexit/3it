@@ -684,7 +684,7 @@ public:
   }
 
   void
-  set_size_bits((u64 size_)
+  set_size_bits(u64 size_)
   {
     _size = size_;
     _idx = std::min(_idx,_size);
@@ -692,7 +692,7 @@ public:
   }
 
   void
-  set_size_bytes((u64 size_)
+  set_size_bytes(u64 size_)
   {
     set_size(size_ * 8);
   }
