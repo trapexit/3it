@@ -448,7 +448,7 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       {
         int word_offset;
 
-        word_offset = std::max(2,row.size_u32());
+        word_offset = std::max(2,row.size_32bit());
         row.write(0,
                   api_.offset_width,
                   (word_offset - 2));
@@ -467,7 +467,7 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
   for(size_t i = 0; i < (rows_.size() - 1); i++)
     {
       // Rows have to be at least 2 words wide.
-      if(rows_[i].size_u32() <= 2)
+      if(rows_[i].size_32bit() <= 2)
         continue;
       
       bool overlap;
@@ -510,7 +510,7 @@ pass9_pad_rows(const int     offset_width_,
       // minimum of 2 words in the CEL data.      
       row.write(0,
                 offset_width_,
-                (row.size_u32()-2));
+                (row.size_32bit()-2));
     }
 }
 
