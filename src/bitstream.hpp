@@ -661,13 +661,13 @@ public:
   }
 
   u64
-  size_bytes() const
+  size_8bit() const
   {
     return ((_size + 7) / 8);
   }
 
   u64
-  size_u32() const
+  size_32bit() const
   {
     return ((_size + 31) / 32);
   }
