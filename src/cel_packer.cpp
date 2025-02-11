@@ -455,10 +455,10 @@ pass8_trim_overlap(const AbstractPackedImage &api_,
     {
       int word_offset;
         
-      word_offset = row.size_u32();
+      word_offset = rows_[i].size_u32();
       if(word_offset < 2)
         word_offset = 2;
-      row.write(0,api_.offset_width,word_offset);
+      rows_[i].write(0,api_.offset_width,word_offset);
       
       if(rows_[i].size_bits() <= (2 * BITS_PER_WORD))
         continue;
