@@ -449,10 +449,10 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
         int word_offset;
 
         word_offset = std::max((uint64_t)2,row.size_32bit());
+        row.set_size_32bits(word_offset);
         row.write(0,
                   api_.offset_width,
                   (word_offset - 2));
-        row.set_size_32bits(word_offset);
       }
     }
 }
