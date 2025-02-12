@@ -74,8 +74,6 @@ namespace l
     do
       {
         uint32_t size;
-        bool on_32bit_boundary;
-        u64 boundry;
 
         size = DATA_PACKET_DATA_TYPE_SIZE;
         on_32bit_boundary = bs_.on_32bit_boundary();
