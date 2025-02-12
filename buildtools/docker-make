@@ -1,0 +1,9 @@
+#!/bin/sh
+
+exec docker \
+     run \
+     --rm \
+     -it \
+     -u $(id -u) \
+     -v ${PWD}:/src \
+     cxxbuilder "$@"

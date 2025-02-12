@@ -1,0 +1,10 @@
+#!/bin/sh
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+docker \
+    build \
+    -t "cxxbuilder" \
+    --build-arg="USERID=$(id -u)" \
+    -f "${SCRIPT_DIR}/Containerfile" \
+    "${SCRIPT_DIR}"

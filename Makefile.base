@@ -1,3 +1,5 @@
+DOCKERMAKE=buildtools/docker-make
+
 JOBS := $(shell nproc)
 PUID := $(shell id -u)
 PGID := $(shell id -g)
@@ -51,16 +53,19 @@ clean:
 builddir:
 	mkdir -p $(BUILDDIR)
 
-release-base: clean
-#	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl"
-#	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe"
-#	$(MAKE) -f Makefile -j$(JOBS) strip NDEBUG=1
-	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
+x64-linux:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl" EXE="3it" PLATFORM="x86_64-linux-musl"
 
-release:
-	docker build -t cxxbuilder -f buildtools/Containerfile buildtools/
-	docker run --rm -it -u 1000 -v $(PWD):/src cxxbuilder "/src/buildtools/docker-make-release"
+x64-windows:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe" EXE="3it.exe" PLATFORM="x86_64-windows-gnu"
 
-.PHONY: clean builddir release docker-release
+
+build-builder:
+	buildtools/build-builder
+
+release: build-builder x64-linux x64-windows
+
+
+.PHONY: clean builddir release docker-release build-builder
 
 -include $(DEPS)
