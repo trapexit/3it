@@ -29,6 +29,7 @@ template<>
 struct fmt::formatter<std::filesystem::path> : formatter<std::string>
 {
   template <typename FormatContext>
+  inline
   auto
   format(const std::filesystem::path &path_,
          FormatContext               &ctx_)
