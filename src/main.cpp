@@ -628,8 +628,6 @@ generate_argparser(CLI::App &app_,
                          "Print help all help messages and exit");
   app_.require_subcommand();
 
-  generate_version_argparser(app_);
-  generate_docs_argparser(app_);
   generate_info_argparser(app_,options_.info);
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
@@ -641,6 +639,8 @@ generate_argparser(CLI::App &app_,
   generate_to_jpg_argparser(app_,options_.to_image);
   generate_list_chunks(app_,options_.list_chunks);
   generate_dump_packed_instructions(app_,options_.dump_packed);
+  generate_version_argparser(app_);
+  generate_docs_argparser(app_);
 }
 
 static
