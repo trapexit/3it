@@ -103,7 +103,7 @@ namespace l
               pixels_read += count;
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
               line_size += size;
-              fmt::print("transparent: count={}; size={};\n",count,size);
+              fmt::println("transparent: count={}; size={};",count,size);
             }
             break;
           case PACK_PACKED:
