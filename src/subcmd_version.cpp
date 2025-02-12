@@ -25,7 +25,7 @@ namespace SubCmd
   void
   version()
   {
-    fmt::print("3it v{}.{}.{}\n\n"
+    fmt::print("3it: 3DO Image Tool v{}.{}.{}\n\n"
                "https://github.com/trapexit/3it\n"
                "https://github.com/trapexit/support\n\n"
                "ISC License (ISC)\n\n"
