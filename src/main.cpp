@@ -17,7 +17,6 @@
 */
 
 #include "memrw.hpp"
-#include "filerw.hpp"
 #include "version.hpp"
 
 #include "subcmd.hpp"
