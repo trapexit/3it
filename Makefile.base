@@ -57,7 +57,7 @@ release-base: clean
 	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
 
 release:
-	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:edge "/src/tools/docker-make-release"
+	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:3.19 "/src/tools/docker-make-release"
 
 
 .PHONY: clean builddir release docker-release
