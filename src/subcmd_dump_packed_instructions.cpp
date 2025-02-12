@@ -54,18 +54,18 @@ namespace l
 
   static
   void
-  unpack_row(const uint32_t         row_,
+  unpack_row(const u32         row_,
              BitStreamReader       &bs_,
              const CelControlChunk &ccc_)
   {
     uint8_t type;
-    uint32_t pixel;
-    uint32_t count;
-    uint32_t bpp;
-    uint32_t pixels_read;
-    uint32_t width;
-    uint32_t line_size;
-    uint32_t start_offset;
+    u32 pixel;
+    u32 count;
+    u32 bpp;
+    u32 pixels_read;
+    u32 width;
+    u32 line_size;
+    u32 start_offset;
 
     pixels_read = 0;
     line_size = 0;
@@ -73,7 +73,7 @@ namespace l
     width = ccc_.ccb_Width;
     do
       {
-        uint32_t size;
+        u32 size;
 
         size = DATA_PACKET_DATA_TYPE_SIZE;
         type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
@@ -134,8 +134,8 @@ namespace l
   void
   dump_packed_instructions(fs::path const &filepath_)
   {
-    uint32_t type;
-    uint32_t offset;
+    u32 type;
+    u32 offset;
     u32 row_offset;
     ByteVec data;
     ChunkVec chunks;
@@ -152,7 +152,7 @@ namespace l
 
     ChunkReader::chunkify(data,chunks);
 
-    for(uint32_t i = 0; i < chunks.size(); i++)
+    for(u32 i = 0; i < chunks.size(); i++)
       {
         const auto &chunk = chunks[i];
         if(chunk.id() == CHUNK_CCB)
@@ -166,14 +166,14 @@ namespace l
         if(chunk.id() != CHUNK_PDAT)
           continue;
 
-        uint32_t offset_width;
+        u32 offset_width;
         BitStreamReader bs(chunk.data(),chunk.data_size());
 
         offset = 0;
         offset_width = l::calc_offset_width(ccc.bpp());
         for(auto row = 0; row < ccc.ccb_Height; row++)
           {
-            uint32_t next_offset;
+            u32 next_offset;
 
             bs.seek(offset * BITS_PER_BYTE);
             row_offset = bs.read(offset_width) + 2;
