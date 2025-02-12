@@ -53,9 +53,9 @@ builddir:
 
 release-base: clean
 #	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl"
-	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe"
+#	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe"
 #	$(MAKE) -f Makefile -j$(JOBS) strip NDEBUG=1
-#	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
+	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
 
 release:
 	docker build -t cxxbuilder -f buildtools/Containerfile buildtools/
