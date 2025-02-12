@@ -185,7 +185,7 @@ namespace l
             bs.seek(offset * BITS_PER_BYTE);
             row_offset = bs.read(offset_width) + 2;
             next_offset = offset + (row_offset * BYTES_PER_WORD);
-            fmt::print("row={} start; data_range=[{},{});"
+            fmt::print("row={} start; data_range=[{},{});",
                        row,
                        offset,
                        next_offset);
