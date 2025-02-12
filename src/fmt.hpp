@@ -32,7 +32,7 @@ struct fmt::formatter<std::filesystem::path> : formatter<std::string>
   inline
   auto
   format(const std::filesystem::path &path_,
-         FormatContext               &ctx_)
+         FormatContext               &ctx_) const
   {
     return formatter<std::string>::format(path_.string(),ctx_);
   }
