@@ -92,7 +92,7 @@ namespace l
               size += (count * bpp);
               line_size += size;
 
-              fmt::print("l: count={}; size={}; colors=",count,size);
+              fmt::print("literal: count={}; size={}; colors=",count,size);
               for(size_t i = 0; i < count; i++)
                 {
                   pixel = bs_.read(bpp);
