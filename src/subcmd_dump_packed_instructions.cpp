@@ -70,7 +70,7 @@ namespace l
     pixels_read = 0;
     bpp = ccc_.bpp();
     width = ccc_.ccb_Width;
-    line_size = ::calc_offset_width(bpp);
+    line_size = l::calc_offset_width(bpp);
     do
       {
         u32 size;
