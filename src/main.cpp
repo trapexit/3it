@@ -661,9 +661,9 @@ main(int    argc_,
      char **argv_)
 {
   Options options;
-  CLI::App app("3it: 3DO Image Tool");
+  CLI::App app;
 
-  app.description("foo");
+  app.description(fmt::format("3it: 3DO Image Tool v{}.{}.{}"));
   
   set_locale();
 
