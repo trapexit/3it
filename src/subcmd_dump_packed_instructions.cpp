@@ -193,7 +193,7 @@ namespace l
               }
             fmt::println("\noffset: {}+2",row_offset-2);
 
-            bs.seek(offset * BITS_PER_BYTE);
+            bs.seek((offset * BITS_PER_BYTE) + offset_width);
             unpack_row(row,bs,ccc);
 
             offset = next_offset;
