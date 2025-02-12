@@ -663,7 +663,8 @@ main(int    argc_,
   Options options;
   CLI::App app;
 
-  app.description(fmt::format("3it: 3DO Image Tool v{}.{}.{}"));
+  app.description(fmt::format("3it: 3DO Image Tool v{}.{}.{}",
+                              MAJOR,MINOR,PATCH));
   
   set_locale();
 
