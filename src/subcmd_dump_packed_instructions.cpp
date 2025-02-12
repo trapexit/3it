@@ -114,7 +114,7 @@ namespace l
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
               size += bpp;
               line_size += size;
-              fmt::print("packed: count={}; size={}; color={}\n",count,size,pixel);
+              fmt::print("packed: count={}; color={}; size={};\n",count,pixel,size);
             }
             break;
           case PACK_EOL:
