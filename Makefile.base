@@ -52,13 +52,14 @@ builddir:
 	mkdir -p $(BUILDDIR)
 
 release-base: clean
-	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl"
+#	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl"
+	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe"
 #	$(MAKE) -f Makefile -j$(JOBS) strip NDEBUG=1
 #	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
 
 release:
 	docker build -t cxxbuilder -f buildtools/Containerfile buildtools/
-	docker run --rm -it -u $(id -u):$(id -g) -v ${PWD}:/src cxxbuilder "/src/buildtools/docker-make-release"
+	docker run --rm -it -u 1000 -v $(PWD):/src cxxbuilder "/src/buildtools/docker-make-release"
 
 .PHONY: clean builddir release docker-release
 
