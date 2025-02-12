@@ -124,10 +124,7 @@ namespace l
           case PACK_EOL:
             line_size += size;
             fmt::print("eol: size={};\n",
-                       DATA_PACKET_DATA_TYPE_SIZE,
-                       on_32bit_boundary,
-                       boundry);
-
+                       DATA_PACKET_DATA_TYPE_SIZE);
             break;
           }
       } while(type != PACK_EOL && pixels_read < width);
