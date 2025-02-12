@@ -125,7 +125,7 @@ namespace l
           }
       } while(type != PACK_EOL && pixels_read < width);
 
-    fmt::println("end: row={}; line_size={}; pixels={}; leftover={};\n",
+    fmt::println("end: row={}; pixels={}; line_size={}; leftover={};\n",
                  row_,
                  line_size,
                  pixels_read,
