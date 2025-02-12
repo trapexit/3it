@@ -123,7 +123,7 @@ namespace l
             break;
           case PACK_EOL:
             line_size += size;
-            fmt::print("e: size={}; aligned={} {};\n",
+            fmt::print("eol: size={}; aligned={} {};\n",
                        DATA_PACKET_DATA_TYPE_SIZE,
                        on_32bit_boundary,
                        boundry);
