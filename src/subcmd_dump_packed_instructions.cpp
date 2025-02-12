@@ -54,7 +54,7 @@ namespace l
 
   static
   void
-  unpack_row(const u32         row_,
+  unpack_row(const u32              row_,
              BitStreamReader       &bs_,
              const CelControlChunk &ccc_)
   {
