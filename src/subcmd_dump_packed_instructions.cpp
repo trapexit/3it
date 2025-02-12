@@ -125,11 +125,11 @@ namespace l
           }
       } while(type != PACK_EOL && pixels_read < width);
 
-    fmt::print("row={} end; line_size={}; pixels={}; leftover={};\n\n",
-               row_,
-               line_size,
-               pixels_read,
-               bs_.bits_to_32bit_boundary());
+    fmt::println("row={} end; line_size={}; pixels={}; leftover={};\n",
+                 row_,
+                 line_size,
+                 pixels_read,
+                 bs_.bits_to_32bit_boundary());
   }
 
   void
