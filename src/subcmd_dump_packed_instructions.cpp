@@ -76,8 +76,6 @@ namespace l
         uint32_t size;
 
         size = DATA_PACKET_DATA_TYPE_SIZE;
-        on_32bit_boundary = bs_.on_32bit_boundary();
-        boundry = bs_.tell() & 31;
         type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
         switch(type)
           {
