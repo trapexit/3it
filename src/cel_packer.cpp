@@ -52,7 +52,6 @@
 #include "byte_reader.hpp"
 #include "bytevec.hpp"
 #include "ccb_flags.hpp"
-#include "fmt/format-inl.h"
 #include "packed.hpp"
 #include "pixel_converter.hpp"
 
