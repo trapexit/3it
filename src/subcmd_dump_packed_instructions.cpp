@@ -127,8 +127,8 @@ namespace l
 
     fmt::println("end: row={}; pixels={}; line_size={}; leftover={};\n",
                  row_,
+                 pixels_read,                 
                  line_size,
-                 pixels_read,
                  bs_.bits_to_32bit_boundary());
   }
 
