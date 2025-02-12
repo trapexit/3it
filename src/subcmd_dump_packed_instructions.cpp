@@ -102,7 +102,7 @@ namespace l
               count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
               pixels_read += count;
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
-              line_size += size;              
+              line_size += size;
               fmt::print("transparent: count={}; size={};\n",count,size);
             }
             break;
@@ -183,7 +183,7 @@ namespace l
                          offset,
                          next_offset);
 
-            
+
             fmt::print("data: ");
             bs.seek(offset * BITS_PER_BYTE);
             for(u64 i = offset; i < next_offset; i+=4)
@@ -192,7 +192,8 @@ namespace l
                 fmt::print("{:08X} ",x);
               }
             fmt::println("\noffset: {}+2",row_offset-2);
-            
+
+            bs.seek(offset * BITS_PER_BYTE);
             unpack_row(row,bs,ccc);
 
             offset = next_offset;
