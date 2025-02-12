@@ -58,7 +58,6 @@
 
 #include "fmt.hpp"
 
-#include <bits/floatn-common.h>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
