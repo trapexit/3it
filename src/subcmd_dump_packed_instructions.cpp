@@ -182,6 +182,8 @@ namespace l
                          row,
                          offset,
                          next_offset);
+
+            
             fmt::print("data: ");
             bs.seek(offset * BITS_PER_BYTE);
             for(u64 i = offset; i < next_offset; i+=4)
