@@ -660,8 +660,8 @@ int
 main(int    argc_,
      char **argv_)
 {
+  CLI::App app;  
   Options options;
-  CLI::App app;
 
   app.description(fmt::format("3it: 3DO Image Tool v{}.{}.{}",
                               MAJOR,MINOR,PATCH));
