@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-constexpr
+static
 bool
 is_little_endian(void)
 {
@@ -29,7 +29,7 @@ is_little_endian(void)
   return u.c[0] == 0x04;
 }
 
-constexpr
+static
 bool
 is_big_endian(void)
 {

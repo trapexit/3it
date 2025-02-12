@@ -52,13 +52,13 @@ builddir:
 	mkdir -p $(BUILDDIR)
 
 release-base: clean
-	$(MAKE) -f Makefile -j$(JOBS) strip NDEBUG=1
-	$(MAKE) -f Makefile.win32 -j$(JOBS) strip NDEBUG=1
-	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
+	$(MAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl"
+#	$(MAKE) -f Makefile -j$(JOBS) strip NDEBUG=1
+#	$(MAKE) -f Makefile.win64 -j$(JOBS) strip NDEBUG=1
 
 release:
-	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:3.19 "/src/tools/docker-make-release"
-
+	docker build -t cxxbuilder -f buildtools/Containerfile buildtools/
+	docker run --rm -it -u $(id -u):$(id -g) -v ${PWD}:/src cxxbuilder "/src/buildtools/docker-make-release"
 
 .PHONY: clean builddir release docker-release
 
