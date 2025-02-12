@@ -186,7 +186,7 @@ namespace l
             row_offset = bs.read(offset_width) + 2;
             next_offset = offset + (row_offset * BYTES_PER_WORD);
             fmt::print("row={} start; row_offset={}w; "
-                       "pdat_offset={}b; next_row_offset={}b;\n",
+                       " data_range=[{},{});"
                        row,
                        row_offset,
                        offset,
