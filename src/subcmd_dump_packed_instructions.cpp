@@ -187,7 +187,6 @@ namespace l
             next_offset = offset + (row_offset * BYTES_PER_WORD);
             fmt::print("row={} start; data_range=[{},{});"
                        row,
-                       row_offset,
                        offset,
                        next_offset);
             fmt::print("data: ");
