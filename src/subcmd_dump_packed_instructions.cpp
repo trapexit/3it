@@ -196,8 +196,7 @@ namespace l
                 u32 x = bs.read(BITS_PER_BYTE * 4);
                 fmt::print("{:08X} ",x);
               }
-            fmt::println("");
-            fmt::println(""row_offset,
+            fmt::println("\noffset: {}",row_offset);
             
             unpack_row(row,bs,ccc);
 
