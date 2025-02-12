@@ -186,9 +186,9 @@ namespace l
             row_offset = bs.read(offset_width) + 2;
             next_offset = offset + (row_offset * BYTES_PER_WORD);
             fmt::println("row={} start; data_range=[{},{});",
-                       row,
-                       offset,
-                       next_offset);
+                         row,
+                         offset,
+                         next_offset);
             fmt::print("data: ");
             bs.seek(offset * BITS_PER_BYTE);
             for(u64 i = offset; i < next_offset; i+=4)
