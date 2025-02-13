@@ -10,6 +10,8 @@
 #include <map>
 #include <memory>
 
+#include "types_ints.h"
+
 #include <stdint.h>
 
 struct Bitmap
@@ -46,6 +48,12 @@ public:
     h = h_;
     d = std::make_unique<uint8_t[]>(w * h * sizeof(RGBA8888));
     set("rotation","0");
+  }
+
+  RGBA8888&
+  idx(const u64 idx_)
+  {
+    return ((RGBA8888*)d.get())[idx_];
   }
 
   RGBA8888*

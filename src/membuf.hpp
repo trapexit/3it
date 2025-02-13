@@ -30,7 +30,7 @@ public:
          size_t         n_)
   {
     char *p = (char*)p_;
-    
+
     setg(p,p,p + n_);
   }
 

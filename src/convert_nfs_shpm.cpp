@@ -124,6 +124,7 @@ namespace l
         br.seek(cur_off);
       }
 
+    // FIXME: Not sure what PDV should be / where it would come from.
     bitmap_.reset(w,h);
     switch(type)
       {
@@ -137,10 +138,16 @@ namespace l
         convert::coded_unpacked_linear_6bpp_to_bitmap(br,plut,0,bitmap_);
         break;
       case (CODED|PACKED|BPP_8):
-        convert::coded_packed_linear_8bpp_to_bitmap(br,plut,0,bitmap_);
+        {
+          const int pdv = 1;
+          convert::coded_packed_linear_8bpp_to_bitmap(br,plut,pdv,bitmap_);
+        }
         break;
       case (CODED|UNPACKED|BPP_8):
-        convert::coded_unpacked_linear_8bpp_to_bitmap(br,plut,0,bitmap_);
+        {
+          const int pdv = 1;
+          convert::coded_unpacked_linear_8bpp_to_bitmap(br,plut,pdv,bitmap_);
+        }
         break;
       case (PACKED|UNCODED|BPP_16):
         convert::uncoded_packed_linear_16bpp_to_bitmap(br,bitmap_);

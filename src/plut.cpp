@@ -22,6 +22,7 @@
 #include "byte_reader.hpp"
 #include "fmt.hpp"
 #include "pixel_converter.hpp"
+#include "color_distance.hpp"
 
 #include <stdexcept>
 
@@ -77,29 +78,21 @@ int
 closest(const PLUT     &plut_,
         const uint16_t  color_)
 {
-  float  closest     = 10000000;
-  uint64_t closest_idx = 0;
+  double closest     = 1000000;
+  u64    closest_idx = 0;
 
-  float r = ((color_ >>  0) & 0x001F);
-  float g = ((color_ >>  5) & 0x001F);
-  float b = ((color_ >> 10) & 0x001F);
+  s64 r = ((color_ >> 10) & 0x1F);
+  s64 g = ((color_ >>  5) & 0x1F);
+  s64 b = ((color_ >>  0) & 0x1F);
 
   for(uint64_t i = 0; i < plut_.size(); i++)
     {
-      float pr = ((plut_[i] >>  0) & 0x1F);
-      float pg = ((plut_[i] >>  5) & 0x1F);
-      float pb = ((plut_[i] >> 10) & 0x1F);
-      float distance;
-      float dr, dg, db;
+      double distance;
+      s64 pr = ((plut_[i] >> 10) & 0x1F);
+      s64 pg = ((plut_[i] >>  5) & 0x1F);
+      s64 pb = ((plut_[i] >>  0) & 0x1F);
 
-      dr = ((pr - r) * 0.30);
-      dg = ((pg - g) * 0.59);
-      db = ((pb - b) * 0.11);
-
-      distance = ((dr * dr) +
-                  (dg * dg) +
-                  (db * db));
-
+      distance = color_distance(r,g,b,pr,pg,pb);
       if(distance > closest)
         continue;
 

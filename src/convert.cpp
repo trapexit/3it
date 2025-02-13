@@ -35,6 +35,7 @@
 #include "pixel_converter.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_writer.hpp"
+#include "pixel_writer_coded_8bpp_amv.hpp"
 #include "read_file.hpp"
 #include "vecrw.hpp"
 #include "video_image.hpp"
@@ -55,9 +56,9 @@ namespace fs = std::filesystem;
 
 
 static
-uint32_t
-round_up(const uint32_t number_,
-         const uint32_t multiple_)
+u32
+round_up(const u32 number_,
+         const u32 multiple_)
 {
   return (((number_ + multiple_ - 1) / multiple_) * multiple_);
 }
@@ -101,8 +102,8 @@ void
 check_coded_colors(const Bitmap &bitmap_,
                    const int     bpp_)
 {
-  uint32_t colors;
-  uint32_t max_colors;
+  u32 colors;
+  u32 max_colors;
 
   colors = bitmap_.color_count();
   max_colors = ::coded_colors(bpp_);
@@ -114,7 +115,7 @@ check_coded_colors(const Bitmap &bitmap_,
 }
 
 void
-convert::banner_to_bitmap(cspan<uint8_t>       data_,
+convert::banner_to_bitmap(cspan<u8>       data_,
                           std::vector<Bitmap> &bitmaps_)
 {
   VideoImage vi;
@@ -190,7 +191,7 @@ to_bitmap(CelControlChunk &ccc_,
       convert::coded_packed_linear_6bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
       break;
     case CODED_PACKED_LINEAR_8BPP:
-      convert::coded_packed_linear_8bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
+      convert::coded_packed_linear_8bpp_to_bitmap(pdat_,plut_,ccc_.pdv(),b_);
       break;
     case CODED_PACKED_LINEAR_16BPP:
       convert::coded_packed_linear_16bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
@@ -209,7 +210,7 @@ to_bitmap(CelControlChunk &ccc_,
       convert::coded_unpacked_linear_6bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
       break;
     case CODED_UNPACKED_LINEAR_8BPP:
-      convert::coded_unpacked_linear_8bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
+      convert::coded_unpacked_linear_8bpp_to_bitmap(pdat_,plut_,ccc_.pdv(),b_);
       break;
     case CODED_UNPACKED_LINEAR_16BPP:
       convert::coded_unpacked_linear_16bpp_to_bitmap(pdat_,plut_,ccc_.pluta(),b_);
@@ -232,7 +233,7 @@ to_bitmap(CelControlChunk &ccc_,
 
 static
 std::optional<PLUT>
-get_cel_file_plut(cspan<uint8_t> data_)
+get_cel_file_plut(cspan<u8> data_)
 {
   PLUT plut;
   ChunkVec chunks;
@@ -252,7 +253,7 @@ get_cel_file_plut(cspan<uint8_t> data_)
 }
 
 void
-convert::cel_to_bitmap(cspan<uint8_t>       data_,
+convert::cel_to_bitmap(cspan<u8>       data_,
                        std::vector<Bitmap> &bitmaps_)
 {
   ChunkVec chunks;
@@ -281,7 +282,7 @@ convert::cel_to_bitmap(cspan<uint8_t>       data_,
           break;
         case CHUNK_PDAT:
           {
-            uint32_t offset;
+            u32 offset;
 
             if(ccc && pdat)
               {
@@ -327,7 +328,7 @@ convert::cel_to_bitmap(cspan<uint8_t>       data_,
 }
 
 void
-convert::anim_to_bitmap(cspan<uint8_t>       data_,
+convert::anim_to_bitmap(cspan<u8>       data_,
                         std::vector<Bitmap> &bitmaps_)
 {
   ChunkVec chunks;
@@ -377,7 +378,7 @@ convert::anim_to_bitmap(cspan<uint8_t>       data_,
 }
 
 void
-convert::imag_to_bitmap(cspan<uint8_t>       data_,
+convert::imag_to_bitmap(cspan<u8>       data_,
                         std::vector<Bitmap> &bitmaps_)
 {
   ImageControlChunk icc;
@@ -389,7 +390,7 @@ convert::imag_to_bitmap(cspan<uint8_t>       data_,
     {
       switch(chunk.id())
         {
-         case CHUNK_IMAG:
+        case CHUNK_IMAG:
           icc = chunk;
           break;
         case CHUNK_PDAT:
@@ -441,10 +442,10 @@ convert::imag_to_bitmap(cspan<uint8_t>       data_,
 }
 
 void
-convert::to_bitmap(cspan<uint8_t>  data_,
+convert::to_bitmap(cspan<u8>  data_,
                    BitmapVec      &bitmaps_)
 {
-  uint32_t type;
+  u32 type;
 
   type = IdentifyFile::identify(data_);
   switch(type)
@@ -509,13 +510,13 @@ void
 convert::bitmap_to_uncoded_unpacked_linear_8bpp(const Bitmap &bitmap_,
                                                 ByteVec      &pdat_)
 {
-  uint8_t rgb;
+  u8 rgb;
   const size_t w = bitmap_.w;
   const size_t h = bitmap_.h;
   VecRW pdat;
 
   // Approximate. VecRW will manage the size as needed.
-  pdat_.reserve(w * h * sizeof(uint8_t));
+  pdat_.reserve(w * h * sizeof(u8));
   pdat.reset(&pdat_);
 
   for(size_t y = 0; y < h; y++)
@@ -538,13 +539,13 @@ void
 convert::bitmap_to_uncoded_unpacked_linear_16bpp(const Bitmap &bitmap_,
                                                  ByteVec      &pdat_)
 {
-  uint16_t rgb;
+  u16 rgb;
   int w = bitmap_.w;
   int h = bitmap_.h;
   VecRW pdat;
 
   // Approximate. VecRW will manage the size as needed.
-  pdat_.reserve(w * h * sizeof(uint16_t));
+  pdat_.reserve(w * h * sizeof(u16));
   pdat.reset(&pdat_);
 
   for(int y = 0; y < h; y++)
@@ -569,14 +570,14 @@ convert::bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap_,
   int w;
   int h;
   VecRW pdat;
-  uint16_t rgb;
+  u16 rgb;
 
   // LRForm height must be an even number of rows so truncate if odd.
   w = bitmap_.w;
   h = (bitmap_.h & ~0x1);
 
   // Approximate. VecRW will manage the size as needed.
-  pdat_.reserve(w * h * sizeof(uint16_t));
+  pdat_.reserve(w * h * sizeof(u16));
   pdat.reset(&pdat_);
 
   for(int y = 0; y < h; y += 2)
@@ -617,7 +618,7 @@ convert::bitmap_to_uncoded_packed_linear_16bpp(const Bitmap &bitmap_,
 static
 void
 bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
-                                     const uint8_t  bpp_,
+                                     const u8  bpp_,
                                      ByteVec       &pdat_,
                                      PLUT          &plut_)
 {
@@ -630,7 +631,7 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
 
   if(bitmap_.has("external-palette"))
     {
-      uint32_t filetype;
+      u32 filetype;
       ByteVec data;
       fs::path filepath;
       std::optional<PLUT> plut;
@@ -660,7 +661,7 @@ bitmap_to_coded_unpacked_linear_Xbpp(const Bitmap  &bitmap_,
       start = bs.tell();
       for(size_t x = 0; x < bitmap_.w; x++)
         {
-          uint16_t color;
+          u16 color;
           const RGBA8888 *p = bitmap_.xy(x,y);
 
           color = RGBA8888Converter::to_rgb0555(p);
@@ -740,7 +741,7 @@ bitmap_to_coded_packed_linear_Xbpp(const Bitmap &bitmap_,
 
   if(bitmap_.has("external-palette"))
     {
-      uint32_t filetype;
+      u32 filetype;
       ByteVec data;
       fs::path filepath;
       std::optional<PLUT> plut;
@@ -819,7 +820,7 @@ convert::uncoded_unpacked_lrform_16bpp_to_bitmap(cPDAT   pdat_,
                                                  Bitmap &bitmap_)
 {
   size_t i;
-  uint8_t hb,lb;
+  u8 hb,lb;
   PixelWriter pwl;
   PixelWriter pwr;
 
@@ -856,7 +857,7 @@ convert::uncoded_unpacked_linear_8bpp_to_bitmap(cPDAT   pdat_,
     {
       for(size_t x = 0; x < bitmap_.w; x++)
         {
-          uint32_t p;
+          u32 p;
 
           p = br.u8();
 
@@ -880,7 +881,7 @@ convert::uncoded_unpacked_linear_rep8_8bpp_to_bitmap(cPDAT   pdat_,
     {
       for(size_t x = 0; x < bitmap_.w; x++)
         {
-          uint32_t p;
+          u32 p;
 
           p = br.u8();
 
@@ -904,7 +905,7 @@ convert::uncoded_unpacked_linear_16bpp_to_bitmap(cPDAT   pdat_,
     {
       for(size_t x = 0; x < bitmap_.w; x++)
         {
-          uint32_t p;
+          u32 p;
 
           p = br.u16be();
 
@@ -915,17 +916,17 @@ convert::uncoded_unpacked_linear_16bpp_to_bitmap(cPDAT   pdat_,
     }
 }
 
+template<typename PW>
 static
 void
 unpack_row(BitStreamReader &bs_,
-           PixelWriter     &pw_)
+           PW              &pw_,
+           const u32        bpp_)
 {
-  uint8_t type;
-  uint32_t pixel;
-  uint32_t count;
-  uint32_t bpp;
+  u8 type;
+  u32 pixel;
+  u32 count;
 
-  bpp = pw_.bpp();
   do
     {
       type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
@@ -936,7 +937,7 @@ unpack_row(BitStreamReader &bs_,
             count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
             for(size_t i = 0; i < count; i++)
               {
-                pixel = bs_.read(bpp);
+                pixel = bs_.read(bpp_);
                 pw_.write(pixel);
               }
           }
@@ -950,8 +951,9 @@ unpack_row(BitStreamReader &bs_,
         case PACK_PACKED:
           {
             count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
-            pixel = bs_.read(bpp);
-            pw_.write(pixel,count);
+            pixel = bs_.read(bpp_);
+            for(u32 i = 0; i < count; i++)
+              pw_.write(pixel);
           }
           break;
         case PACK_EOL:
@@ -983,7 +985,7 @@ static
 void
 uncoded_packed_linear_Xbpp_to_bitmap(cPDAT        pdat_,
                                      Bitmap      &bitmap_,
-                                     std::size_t  bpp_)
+                                     const u32    bpp_)
 {
   PixelWriter pw;
   std::size_t offset;
@@ -1004,7 +1006,7 @@ uncoded_packed_linear_Xbpp_to_bitmap(cPDAT        pdat_,
 
       offset += ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
 
-      ::unpack_row(bs,pw);
+      ::unpack_row(bs,pw,bpp_);
     }
 }
 
@@ -1024,10 +1026,10 @@ convert::uncoded_packed_linear_8bpp_to_bitmap(cPDAT   pdat_,
 
 static
 void
-coded_packed_linear_to_bitmap(const uint32_t  bpp_,
+coded_packed_linear_to_bitmap(const u32  bpp_,
                               cPDAT           pdat_,
                               const PLUT     &plut_,
-                              const uint8_t   pluta_,
+                              const u8   pluta_,
                               Bitmap         &bitmap_)
 {
   PixelWriter pw;
@@ -1050,14 +1052,14 @@ coded_packed_linear_to_bitmap(const uint32_t  bpp_,
 
       offset += ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
 
-      ::unpack_row(bs,pw);
+      ::unpack_row(bs,pw,bpp_);
     }
 }
 
 void
 convert::coded_packed_linear_1bpp_to_bitmap(cPDAT          pdat_,
                                             const PLUT    &plut_,
-                                            const uint8_t  pluta_,
+                                            const u8  pluta_,
                                             Bitmap        &bitmap_)
 {
   ::coded_packed_linear_to_bitmap(1,pdat_,plut_,pluta_,bitmap_);
@@ -1066,7 +1068,7 @@ convert::coded_packed_linear_1bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_packed_linear_2bpp_to_bitmap(cPDAT          pdat_,
                                             const PLUT    &plut_,
-                                            const uint8_t  pluta_,
+                                            const u8  pluta_,
                                             Bitmap        &bitmap_)
 {
   ::coded_packed_linear_to_bitmap(2,pdat_,plut_,pluta_,bitmap_);
@@ -1075,7 +1077,7 @@ convert::coded_packed_linear_2bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_packed_linear_4bpp_to_bitmap(cPDAT          pdat_,
                                             const PLUT    &plut_,
-                                            const uint8_t  pluta_,
+                                            const u8  pluta_,
                                             Bitmap        &bitmap_)
 {
   ::coded_packed_linear_to_bitmap(4,pdat_,plut_,pluta_,bitmap_);
@@ -1084,25 +1086,53 @@ convert::coded_packed_linear_4bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_packed_linear_6bpp_to_bitmap(cPDAT          pdat_,
                                             const PLUT    &plut_,
-                                            const uint8_t  pluta_,
+                                            const u8  pluta_,
                                             Bitmap        &bitmap_)
 {
   ::coded_packed_linear_to_bitmap(6,pdat_,plut_,pluta_,bitmap_);
 }
 
 void
-convert::coded_packed_linear_8bpp_to_bitmap(cPDAT          pdat_,
-                                            const PLUT    &plut_,
-                                            const uint8_t  pluta_,
-                                            Bitmap        &bitmap_)
+convert::coded_packed_linear_8bpp_to_bitmap(cPDAT       pdat_,
+                                            const PLUT &plut_,
+                                            const u32   pdv_,
+                                            Bitmap     &bitmap_)
 {
-  ::coded_packed_linear_to_bitmap(8,pdat_,plut_,pluta_,bitmap_);
+  PixelWriterCoded8bppAMV pw;
+  u32 offset;
+  u32 offset_width;
+  BitStreamReader bs(pdat_);
+  const u32 bpp = 8;
+
+  offset = 0;
+  offset_width = ::calc_offset_width(8);
+  pw.init(bitmap_,plut_,pdv_);
+  for(u64 y = 0; y < bitmap_.h; y++)
+    {
+      if((offset * BITS_PER_BYTE) >= bs.size())
+        throw fmt::exception("attempted out of bound read - {} {}:{}",
+                             __FILE__,__FUNCTION__,__LINE__);
+
+
+      bs.seek(offset * BITS_PER_BYTE);
+      pw.move_y(y);
+
+      offset += ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
+
+      ::unpack_row(bs,pw,bpp);
+    }
+
+
+  return;
+
+
+  ::coded_packed_linear_to_bitmap(8,pdat_,plut_,0,bitmap_);
 }
 
 void
 convert::coded_packed_linear_16bpp_to_bitmap(cPDAT          pdat_,
                                              const PLUT    &plut_,
-                                             const uint8_t  pluta_,
+                                             const u8  pluta_,
                                              Bitmap        &bitmap_)
 {
   ::coded_packed_linear_to_bitmap(16,pdat_,plut_,pluta_,bitmap_);
@@ -1110,13 +1140,13 @@ convert::coded_packed_linear_16bpp_to_bitmap(cPDAT          pdat_,
 
 static
 void
-coded_unpacked_linear_to_bitmap(const uint32_t  bpp_,
+coded_unpacked_linear_to_bitmap(const u32  bpp_,
                                 cPDAT           pdat_,
                                 const PLUT     &plut_,
-                                const uint8_t   pluta_,
+                                const u8   pluta_,
                                 Bitmap         &bitmap_)
 {
-  uint32_t p;
+  u32 p;
   PixelWriter pw;
   BitStreamReader bs(pdat_);
 
@@ -1137,7 +1167,7 @@ coded_unpacked_linear_to_bitmap(const uint32_t  bpp_,
 void
 convert::coded_unpacked_linear_1bpp_to_bitmap(cPDAT          pdat_,
                                               const PLUT    &plut_,
-                                              const uint8_t  pluta_,
+                                              const u8  pluta_,
                                               Bitmap        &bitmap_)
 {
   ::coded_unpacked_linear_to_bitmap(1,pdat_,plut_,pluta_,bitmap_);
@@ -1146,7 +1176,7 @@ convert::coded_unpacked_linear_1bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_unpacked_linear_2bpp_to_bitmap(cPDAT          pdat_,
                                               const PLUT    &plut_,
-                                              const uint8_t  pluta_,
+                                              const u8  pluta_,
                                               Bitmap        &bitmap_)
 {
   ::coded_unpacked_linear_to_bitmap(2,pdat_,plut_,pluta_,bitmap_);
@@ -1155,7 +1185,7 @@ convert::coded_unpacked_linear_2bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_unpacked_linear_4bpp_to_bitmap(cPDAT          pdat_,
                                               const PLUT    &plut_,
-                                              const uint8_t  pluta_,
+                                              const u8  pluta_,
                                               Bitmap        &bitmap_)
 {
   ::coded_unpacked_linear_to_bitmap(4,pdat_,plut_,pluta_,bitmap_);
@@ -1164,7 +1194,7 @@ convert::coded_unpacked_linear_4bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_unpacked_linear_6bpp_to_bitmap(cPDAT          pdat_,
                                               const PLUT    &plut_,
-                                              const uint8_t  pluta_,
+                                              const u8  pluta_,
                                               Bitmap        &bitmap_)
 {
   ::coded_unpacked_linear_to_bitmap(6,pdat_,plut_,pluta_,bitmap_);
@@ -1173,16 +1203,32 @@ convert::coded_unpacked_linear_6bpp_to_bitmap(cPDAT          pdat_,
 void
 convert::coded_unpacked_linear_8bpp_to_bitmap(cPDAT          pdat_,
                                               const PLUT    &plut_,
-                                              const uint8_t  pluta_,
+                                              const u32      pdv_,
                                               Bitmap        &bitmap_)
 {
-  ::coded_unpacked_linear_to_bitmap(8,pdat_,plut_,pluta_,bitmap_);
+  u32 p;
+  const u32 bpp = 8;
+  BitStreamReader bs(pdat_);
+  PixelWriterCoded8bppAMV pw;
+
+  pw.init(bitmap_,plut_,pdv_);
+  for(size_t y = 0; y < bitmap_.h; y++)
+    {
+      for(size_t x = 0; x < bitmap_.w; x++)
+        {
+          p = bs.read(bpp);
+
+          pw.write(p);
+        }
+
+      bs.skip_to_32bit_boundary();
+    }
 }
 
 void
 convert::coded_unpacked_linear_16bpp_to_bitmap(cPDAT          pdat_,
                                                const PLUT    &plut_,
-                                               const uint8_t  pluta_,
+                                               const u8  pluta_,
                                                Bitmap        &bitmap_)
 {
   ::coded_unpacked_linear_to_bitmap(16,pdat_,plut_,pluta_,bitmap_);
