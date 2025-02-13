@@ -45,8 +45,8 @@ $(OUTPUT): builddir $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJS) $(LDFLAGS)
 
 strip: $(OUTPUT)
-	llvm-strip -x --strip-unneeded $(OUTPUT)
-#	$(STRIP) --strip-all $(OUTPUT)
+	$(STRIP) --strip-all $(OUTPUT) || true
+	llvm-strip -x --strip-unneeded $(OUTPUT) || true
 
 $(BUILDDIR)/%.c.o: src/%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -71,7 +71,6 @@ aarch64-linux:
 
 aarch64-macos:
 	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) NOLTO=1 strip CXX="zig c++ -target aarch64-macos-none" TARGET="x86_64-linux-musl" EXE="3it-aarch64-macos" PLATFORM="aarch64-macos-none"
-
 
 builder:
 	buildtools/build-builder
