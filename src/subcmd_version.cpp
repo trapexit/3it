@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2025, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -25,11 +25,11 @@ namespace SubCmd
   void
   version()
   {
-    fmt::print("3it v{}.{}.{}\n\n"
+    fmt::print("3it: 3DO Image Tool v{}.{}.{}\n\n"
                "https://github.com/trapexit/3it\n"
                "https://github.com/trapexit/support\n\n"
                "ISC License (ISC)\n\n"
-               "Copyright 2024, Antonio SJ Musumeci <trapexit@spawn.link>\n\n"
+               "Copyright 2025, Antonio SJ Musumeci <trapexit@spawn.link>\n\n"
                "Permission to use, copy, modify, and/or distribute this software for\n"
                "any purpose with or without fee is hereby granted, provided that the\n"
                "above copyright notice and this permission notice appear in all\n"

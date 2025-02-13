@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2025, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -16,8 +16,7 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "memrw.hpp"
-#include "filerw.hpp"
+#include "version.hpp"
 
 #include "subcmd.hpp"
 
@@ -627,8 +626,6 @@ generate_argparser(CLI::App &app_,
                          "Print help all help messages and exit");
   app_.require_subcommand();
 
-  generate_version_argparser(app_);
-  generate_docs_argparser(app_);
   generate_info_argparser(app_,options_.info);
   generate_to_cel_argparser(app_,options_.to_cel);
   generate_to_banner_argparser(app_,options_.to_banner);
@@ -640,6 +637,8 @@ generate_argparser(CLI::App &app_,
   generate_to_jpg_argparser(app_,options_.to_image);
   generate_list_chunks(app_,options_.list_chunks);
   generate_dump_packed_instructions(app_,options_.dump_packed);
+  generate_version_argparser(app_);
+  generate_docs_argparser(app_);
 }
 
 static
@@ -660,8 +659,11 @@ int
 main(int    argc_,
      char **argv_)
 {
+  CLI::App app;
   Options options;
-  CLI::App app("3it: 3DO Image Tool");
+
+  app.description(fmt::format("3it: 3DO Image Tool v{}.{}.{}",
+                              MAJOR,MINOR,PATCH));
 
   set_locale();
 

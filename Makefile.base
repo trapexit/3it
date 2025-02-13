@@ -1,3 +1,5 @@
+DOCKERMAKE=buildtools/docker-make
+
 JOBS := $(shell nproc)
 PUID := $(shell id -u)
 PGID := $(shell id -g)
@@ -8,10 +10,16 @@ CC    = $(COMPILER_PREFIX)-gcc
 CXX   = $(COMPILER_PREFIX)-g++
 STRIP = $(COMPILER_PREFIX)-strip
 
-ifeq ($(DEBUG),1)
-OPT := -O0 -ggdb
+ifeq ($(NOLTO),1)
+LTO :=
 else
-OPT := -O3 -flto -static
+LTO := -flto
+endif
+
+ifeq ($(NDEBUG),1)
+OPT := -O3 $(LTO) -static
+else
+OPT := -Og -ggdb
 endif
 
 ifeq ($(SANITIZE),1)
@@ -37,7 +45,8 @@ $(OUTPUT): builddir $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJS) $(LDFLAGS)
 
 strip: $(OUTPUT)
-	$(STRIP) --strip-all $(OUTPUT)
+	llvm-strip -x --strip-unneeded $(OUTPUT)
+#	$(STRIP) --strip-all $(OUTPUT)
 
 $(BUILDDIR)/%.c.o: src/%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -51,15 +60,25 @@ clean:
 builddir:
 	mkdir -p $(BUILDDIR)
 
-release-base: clean
-	$(MAKE) -f Makefile -j$(JOBS) strip
-	$(MAKE) -f Makefile.win32 -j$(JOBS) strip
-	$(MAKE) -f Makefile.win64 -j$(JOBS) strip
+x64-linux:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-linux-musl" TARGET="x86_64-linux-musl" EXE="3it-x64-linux" PLATFORM="x86_64-linux-musl"
 
-release:
-	docker run --rm -it -e PUID=$(PUID) -e PGID=$(PGID) -v ${PWD}:/src alpine:edge "/src/tools/docker-make-release"
+x64-windows:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target x86_64-windows-gnu" TARGET="x86_64-windows-gnu.exe" EXE="3it-x64-windows.exe" PLATFORM="x86_64-windows-gnu"
+
+aarch64-linux:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) strip CXX="zig c++ -target aarch64-linux-musl" TARGET="x86_64-linux-musl" EXE="3it-aarch64-linux" PLATFORM="aarch64-linux-musl"
+
+aarch64-macos:
+	$(DOCKERMAKE) NDEBUG=1 -j$(JOBS) NOLTO=1 strip CXX="zig c++ -target aarch64-macos-none" TARGET="x86_64-linux-musl" EXE="3it-aarch64-macos" PLATFORM="aarch64-macos-none"
 
 
-.PHONY: clean builddir release docker-release
+builder:
+	buildtools/build-builder
+
+release: build-builder x64-linux x64-windows aarch64-linux aarch64-macos
+
+
+.PHONY: clean builddir release docker-release build-builder
 
 -include $(DEPS)

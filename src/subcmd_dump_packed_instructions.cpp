@@ -1,7 +1,7 @@
 /*
   ISC License
 
-  Copyright (c) 2022, Antonio SJ Musumeci <trapexit@spawn.link>
+  Copyright (c) 2025, Antonio SJ Musumeci <trapexit@spawn.link>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -54,28 +54,28 @@ namespace l
 
   static
   void
-  unpack_row(const uint32_t         row_,
+  unpack_row(const u32              row_,
              BitStreamReader       &bs_,
              const CelControlChunk &ccc_)
   {
     uint8_t type;
-    uint32_t pixel;
-    uint32_t count;
-    uint32_t bpp;
-    uint32_t pixels_read;
-    uint32_t width;
-    uint32_t line_size;
+    u32 pixel;
+    u32 count;
+    u32 bpp;
+    u32 pixels_read;
+    u32 width;
+    u32 line_size;
+    u32 start_offset;
 
     pixels_read = 0;
-    line_size = 0;
     bpp = ccc_.bpp();
     width = ccc_.ccb_Width;
+    line_size = l::calc_offset_width(bpp);
     do
       {
-        uint32_t size;
+        u32 size;
 
         size = DATA_PACKET_DATA_TYPE_SIZE;
-
         type = bs_.read(DATA_PACKET_DATA_TYPE_SIZE);
         switch(type)
           {
@@ -86,8 +86,9 @@ namespace l
 
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
               size += (count * bpp);
+              line_size += size;
 
-              fmt::print("l: count={}; size={}; colors=",count,size);
+              fmt::print("literal: count={}; size={}; colors=",count,size);
               for(size_t i = 0; i < count; i++)
                 {
                   pixel = bs_.read(bpp);
@@ -101,7 +102,8 @@ namespace l
               count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
               pixels_read += count;
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
-              fmt::print("t: count={}; size={};\n",count,size);
+              line_size += size;
+              fmt::println("transparent: count={}; size={};",count,size);
             }
             break;
           case PACK_PACKED:
@@ -112,28 +114,30 @@ namespace l
               size += DATA_PACKET_PIXEL_COUNT_SIZE;
               size += bpp;
               line_size += size;
-              fmt::print("p: count={}; size={}; color={}\n",count,size,pixel);
+              fmt::println("packed: count={}; color={}; size={};",count,pixel,size);
             }
             break;
           case PACK_EOL:
             line_size += size;
-            fmt::print("e: size={};\n",
+            fmt::println("eol: size={};",
                        DATA_PACKET_DATA_TYPE_SIZE);
             break;
           }
       } while(type != PACK_EOL && pixels_read < width);
 
-    fmt::print("row={} end; line_size={}; pixels_read={};\n",
-               row_,
-               line_size,
-               pixels_read);
+    fmt::println("end: row={}; pixels={}; line_size={}; leftover={};\n",
+                 row_,
+                 pixels_read,
+                 line_size,
+                 bs_.bits_to_32bit_boundary());
   }
 
   void
   dump_packed_instructions(fs::path const &filepath_)
   {
-    uint32_t type;
-    uint32_t offset;
+    u32 type;
+    u32 offset;
+    u32 row_offset;
     ByteVec data;
     ChunkVec chunks;
     CelControlChunk ccc;
@@ -149,7 +153,7 @@ namespace l
 
     ChunkReader::chunkify(data,chunks);
 
-    for(uint32_t i = 0; i < chunks.size(); i++)
+    for(u32 i = 0; i < chunks.size(); i++)
       {
         const auto &chunk = chunks[i];
         if(chunk.id() == CHUNK_CCB)
@@ -163,22 +167,39 @@ namespace l
         if(chunk.id() != CHUNK_PDAT)
           continue;
 
-        uint32_t offset_width;
+        u32 offset_width;
         BitStreamReader bs(chunk.data(),chunk.data_size());
 
         offset = 0;
         offset_width = l::calc_offset_width(ccc.bpp());
         for(auto row = 0; row < ccc.ccb_Height; row++)
           {
-            uint32_t next_offset;
+            u32 next_offset;
 
             bs.seek(offset * BITS_PER_BYTE);
-            next_offset = offset + ((bs.read(offset_width) + 2) * BYTES_PER_WORD);
-            fmt::print("row={} start; offset={:x}; next_offset={:x};\n",
-                       row,
-                       offset,
-                       next_offset);
+            row_offset = bs.read(offset_width) + 2;
+            next_offset = offset + (row_offset * BYTES_PER_WORD);
+            fmt::println("start: row={}; data_range=[{},{}); bpp={};",
+                         row,
+                         offset,
+                         next_offset,
+                         ccc.bpp());
+
+
+            fmt::print("data: ");
+            bs.seek(offset * BITS_PER_BYTE);
+            for(u64 i = offset; i < next_offset; i+=4)
+              {
+                u32 x = bs.read(BITS_PER_BYTE * 4);
+                fmt::print("{:08X} ",x);
+              }
+            fmt::println("\noffset: len={}+2; size={};",
+                         row_offset-2,
+                         offset_width);
+
+            bs.seek((offset * BITS_PER_BYTE) + offset_width);
             unpack_row(row,bs,ccc);
+
             offset = next_offset;
           }
       }
