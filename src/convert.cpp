@@ -32,6 +32,7 @@
 #include "identify_file.hpp"
 #include "image_control_chunk.hpp"
 #include "packed.hpp"
+#include "pdat.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_converter.hpp"
 #include "pixel_writer.hpp"
@@ -378,8 +379,24 @@ convert::anim_to_bitmap(cspan<u8>       data_,
 }
 
 void
-convert::imag_to_bitmap(cspan<u8>       data_,
-                        std::vector<Bitmap> &bitmaps_)
+convert::lrform_to_bitmap(cspan<u8>  data_,
+                          BitmapVec &bitmaps_)
+{
+  cPDAT pdat(data_.data(),data_.size());
+
+  if(data_.size() == (320 * 240 * 2))
+    bitmaps_.emplace_back(320,240);
+  else if(data_.size() == (352 * 288 * 2))
+    bitmaps_.emplace_back(352,288);
+  else
+    throw fmt::exception("data must be exactly 153600 or 202752 bytes");
+
+ convert:uncoded_unpacked_lrform_16bpp_to_bitmap(pdat,bitmaps_.back());
+}
+
+void
+convert::imag_to_bitmap(cspan<u8>  data_,
+                        BitmapVec &bitmaps_)
 {
   ImageControlChunk icc;
   ChunkVec chunks;
@@ -443,7 +460,7 @@ convert::imag_to_bitmap(cspan<u8>       data_,
 
 void
 convert::to_bitmap(cspan<u8>  data_,
-                   BitmapVec      &bitmaps_)
+                   BitmapVec &bitmaps_)
 {
   u32 type;
 
@@ -461,6 +478,9 @@ convert::to_bitmap(cspan<u8>  data_,
       break;
     case FILE_ID_3DO_ANIM:
       convert::anim_to_bitmap(data_,bitmaps_);
+      break;
+    case FILE_ID_3DO_LRFORM:
+      convert::lrform_to_bitmap(data_,bitmaps_);
       break;
     case FILE_ID_BMP:
     case FILE_ID_PNG:

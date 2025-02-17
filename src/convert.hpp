@@ -51,6 +51,8 @@ namespace convert
                       BitmapVec &bitmaps);
   void imag_to_bitmap(cspan<u8>  data,
                       BitmapVec &bitmaps);
+  void lrform_to_bitmap(cspan<u8>  data,
+                        BitmapVec &bitmaps);  
   void nfs_shpm_to_bitmap(cspan<u8>  data,
                           BitmapVec &bitmaps);
   void nfs_wwww_to_bitmap(cspan<u8>  data,

@@ -51,6 +51,11 @@ IdentifyFile::identify(cspan<uint8_t> data_)
   if(!memcmp(&data_[0],"\x01""APPSCRN",8))
     return FILE_ID_3DO_BANNER;
 
+  if(data_.size() == (320 * 240 * 2))
+    return FILE_ID_3DO_LRFORM;
+  if(data_.size() == (352 * 288 * 2))
+    return FILE_ID_3DO_LRFORM;  
+
   return FILE_ID_UNKNOWN;
 }
 

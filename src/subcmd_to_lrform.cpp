@@ -48,7 +48,8 @@ namespace l
         {"w",fmt::to_string(bitmap_.w)},
         {"h",fmt::to_string(bitmap_.h)},
         {"index",bitmap_.get("index","0")},
-        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
+        {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""},
+        {"_name",bitmap_.has("name") ? "_" + bitmap_.get("name") : ""}
       };
 
     filepath = resolve_path_template(src_filepath_,
