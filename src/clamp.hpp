@@ -20,6 +20,8 @@
 
 #include "types_ints.h"
 
+#include <type_traits>
+
 
 static
 inline
@@ -52,5 +54,29 @@ clamp_s64_to_zero(const s64 v_)
 {
   if(v_ < 0)
     return 0;
+  return v_;
+}
+
+template<typename T>
+typename std::enable_if<std::is_signed<T>::value,T>::type
+static
+inline
+clamp_u5(const T v_)
+{
+  if(v_ < 0)
+    return 0;
+  if(v_ > 31)
+    return 31;
+  return v_;
+}
+
+template<typename T>
+typename std::enable_if<std::is_unsigned<T>::value,T>::type
+static
+inline
+clamp_u5(const T v_)
+{
+  if(v_ > 31)
+    return 31;
   return v_;
 }

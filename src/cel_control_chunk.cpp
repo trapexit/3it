@@ -26,6 +26,8 @@
 
 #include "fmt.hpp"
 
+#include "types_ints.h"
+
 
 CelControlChunk::CelControlChunk()
   : id(),
@@ -118,9 +120,9 @@ CelControlChunk::bpp() const
 }
 
 void
-CelControlChunk::bpp(const uint32_t bpp_)
+CelControlChunk::bpp(const u32 bpp_)
 {
-  uint32_t v;
+  u32 v;
 
   switch(bpp_)
     {
@@ -142,6 +144,8 @@ CelControlChunk::bpp(const uint32_t bpp_)
     case 16:
       v = PRE0_BPP_16;
       break;
+    default:
+      abort();
     }
 
   ccb_PRE0 = ((ccb_PRE0 & ~PRE0_BPP_MASK) | (v << PRE0_BPP_SHIFT));
@@ -153,18 +157,29 @@ CelControlChunk::rep8() const
   return (ccb_PRE0 & PRE0_REP8);
 }
 
-uint8_t
+u8
 CelControlChunk::pluta() const
 {
   return ((ccb_Flags & CCB_PLUTA_MASK) >> CCB_PLUTA_SHIFT);
 }
 
-uint32_t
+u32
 CelControlChunk::pdv() const
 {
-  // FIXME
+  switch(ccb_PPMPC & PPMPC_DF_MASK)
+    {
+    case PPMPC_DF_2:
+      return 2;
+    case PPMPC_DF_4:
+      return 4;
+    case PPMPC_DF_8:
+      return 8;
+    case PPMPC_DF_16:
+      return 16;
+    }
 
-  return -1;
+  abort();
+  return 0;
 }
 
 bool
@@ -185,7 +200,7 @@ CelControlChunk::noblk() const
   return (ccb_Flags & CCB_NOBLK);
 }
 
-uint8_t
+u8
 CelControlChunk::pover() const
 {
   return ((ccb_Flags & CCB_POVER_MASK) >> CCB_POVER_SHIFT);
@@ -212,7 +227,7 @@ CelControlChunk::pover_str() const
 #define PPMPC_VAL(PMODE,PART) \
   (((ccb_PPMPC >> (PMODE ? PPMP_P1_SHIFT : PPMP_P0_SHIFT)) & PPMPC_##PART##_MASK) >> PPMPC_##PART##_SHIFT)
 
-uint8_t
+u8
 CelControlChunk::pixc_1s(int pmode_) const
 {
   return PPMPC_VAL(pmode_,1S);
@@ -232,7 +247,7 @@ CelControlChunk::pixc_1s_str(int pmode_) const
   return "invalid value";
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_ms(int pmode_) const
 {
   return PPMPC_VAL(pmode_,MS);
@@ -256,7 +271,7 @@ CelControlChunk::pixc_ms_str(int pmode_) const
   return "invalid value";
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_mf(int pmode_) const
 {
   return PPMPC_VAL(pmode_,MF);
@@ -265,7 +280,7 @@ CelControlChunk::pixc_mf(int pmode_) const
 std::string
 CelControlChunk::pixc_mf_str(int pmode_) const
 {
-  uint8_t rv;
+  u8 rv;
 
   if(pixc_ms(pmode_) != 0)
     return "MS != 0 so value not used";
@@ -275,7 +290,7 @@ CelControlChunk::pixc_mf_str(int pmode_) const
   return fmt::format("PMV = {}",rv);
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_df(int pmode_) const
 {
   return PPMPC_VAL(pmode_,DF);
@@ -309,7 +324,7 @@ CelControlChunk::pixc_df_str(int pmode_) const
   return fmt::format("PDV = {}",rv);
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_2s(int pmode_) const
 {
   return PPMPC_VAL(pmode_,2S);
@@ -333,7 +348,7 @@ CelControlChunk::pixc_2s_str(int pmode_) const
   return "invalid value";
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_av(int pmode_) const
 {
   return PPMPC_VAL(pmode_,AV);
@@ -345,7 +360,7 @@ CelControlChunk::pixc_av_str(int pmode_) const
   if(pixc_2s(pmode_) == 1)
     return fmt::format("{}",pixc_av(pmode_));
 
-  uint8_t av;
+  u8 av;
   std::string s;
 
   av = pixc_av(pmode_);
@@ -398,7 +413,7 @@ CelControlChunk::pixc_av_str(int pmode_) const
   return s;
 }
 
-uint8_t
+u8
 CelControlChunk::pixc_2d(int pmode_) const
 {
   return PPMPC_VAL(pmode_,2D);
@@ -410,7 +425,7 @@ CelControlChunk::pixc_2d_str(int pmode_) const
   return fmt::format("{}",pixc_2d(pmode_) + 1);
 }
 
-uint32_t
+u32
 CelControlChunk::type() const
 {
   return CEL_TYPE(coded(),packed(),lrform(),bpp());

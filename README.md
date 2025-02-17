@@ -17,18 +17,20 @@ Options:
     --help-all
 
 Subcommands:
-  version                     print 3it version and license
-  docs                        print links to relevant documentation
   info                        prints info about the file
-  list-chunks                 list 3DO file chunks
-  to-cel                      convert image to 3DO CEL
+  to-cel                      convert image to CEL
   to-banner                   convert image to banner
-  to-imag                     convert image to 3DO IMAG
+  to-imag                     convert image to IMAG
   to-lrform                   convert image to raw LRFORM
+  to-nfs-shpm                 convert image to NFS SHPM
   to-bmp                      convert image to BMP
   to-png                      convert image to PNG
   to-jpg                      convert image to JPG
-  to-nfs-shpm                 convert image to Need for Speed SHPM
+  list-chunks                 list 3DO file chunks
+  dump-packed-instructions, dpi
+                              print out a packed CEL's instruction list
+  version                     print 3it version
+  docs                        print links to relevant documentation
 
 $ 3it to-cel --help
 ...
@@ -36,6 +38,24 @@ $ 3it to-cel --help
 
 All subcommands have their own help and arguments. Use `--help` or
 `--help-all` to see all available options.
+
+
+## Notes
+
+* All images are first converted to RGBA8888 before converting to the
+  target format.
+* No dithering is done by 3it when reducing bit depth.
+* VDLP is not considered at all. The assumption is that the fixed,
+  default CLUT is used. IE a linear dark to light gradiant.
+* When converting to coded (paletted) formats the number of colors
+  will be checked. The transparent color is not included.
+* The 3DO CEL renderer has many features. A good number of them are
+  rarely used. As such 3it does not support all permutations of
+  options when converting to or from supported formats. If an image
+  looks wrong please file a
+  [ticket](https://github.com/trapexit/3it/issues) and include as much
+  information as you can including program arguments and the original
+  source file.
 
 
 ## File Types
@@ -116,7 +136,7 @@ No extras.
 * to ANIM
 * ability to write text chunks
 * figure out NFS HSPT chunk
-* ability to write NFS wwww files? May deserve its own tool.
+* ability to write NFS wwww files
 * Other game formats
 
 

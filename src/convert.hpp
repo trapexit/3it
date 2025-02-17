@@ -23,6 +23,7 @@
 #include "pdat.hpp"
 #include "plut.hpp"
 #include "span.hpp"
+#include "types_ints.h"
 
 #include <filesystem>
 
@@ -31,32 +32,32 @@ union CelType
 {
   struct
   {
-    uint8_t bpp:5;
-    uint8_t lrform:1;
-    uint8_t packed:1;
-    uint8_t coded:1;
+    u8 bpp:5;
+    u8 lrform:1;
+    u8 packed:1;
+    u8 coded:1;
   };
 
-  uint8_t  switchable;
+  u8 switchable;
 };
 
 namespace convert
 {
-  void banner_to_bitmap(cspan<uint8_t>  data,
-                        BitmapVec      &bitmaps);
-  void cel_to_bitmap(cspan<uint8_t>  data,
-                     BitmapVec      &bitmaps);
-  void anim_to_bitmap(cspan<uint8_t>  data,
-                      BitmapVec      &bitmaps);
-  void imag_to_bitmap(cspan<uint8_t>  data,
-                      BitmapVec      &bitmaps);
-  void nfs_shpm_to_bitmap(cspan<uint8_t>  data,
-                          BitmapVec      &bitmaps);
-  void nfs_wwww_to_bitmap(cspan<uint8_t>  data,
-                          BitmapVec      &bitmaps);
+  void banner_to_bitmap(cspan<u8>  data,
+                        BitmapVec &bitmaps);
+  void cel_to_bitmap(cspan<u8>  data,
+                     BitmapVec &bitmaps);
+  void anim_to_bitmap(cspan<u8>  data,
+                      BitmapVec &bitmaps);
+  void imag_to_bitmap(cspan<u8>  data,
+                      BitmapVec &bitmaps);
+  void nfs_shpm_to_bitmap(cspan<u8>  data,
+                          BitmapVec &bitmaps);
+  void nfs_wwww_to_bitmap(cspan<u8>  data,
+                          BitmapVec &bitmaps);
 
-  void to_bitmap(cspan<uint8_t>  data,
-                 BitmapVec      &bitmaps);
+  void to_bitmap(cspan<u8>  data,
+                 BitmapVec &bitmaps);
   void to_bitmap(const std::filesystem::path &filepath,
                  BitmapVec                   &bitmaps);
 
@@ -131,53 +132,53 @@ namespace convert
   void uncoded_packed_linear_16bpp_to_bitmap(cPDAT   pdat,
                                              Bitmap &bitmap);
 
-  void coded_packed_linear_1bpp_to_bitmap(cPDAT          pdat,
-                                          const PLUT    &plut,
-                                          const uint8_t  pluta,
-                                          Bitmap        &bitmap);
-  void coded_packed_linear_2bpp_to_bitmap(cPDAT          pdat,
-                                          const PLUT    &plut,
-                                          const uint8_t  pluta,
-                                          Bitmap        &bitmap);
-  void coded_packed_linear_4bpp_to_bitmap(cPDAT          pdat,
-                                          const PLUT    &plut,
-                                          const uint8_t  pluta,
-                                          Bitmap        &bitmap);
-  void coded_packed_linear_6bpp_to_bitmap(cPDAT          pdat,
-                                          const PLUT    &plut,
-                                          const uint8_t  pluta,
-                                          Bitmap        &bitmap);
-  void coded_packed_linear_8bpp_to_bitmap(cPDAT          pdat,
-                                          const PLUT    &plut,
-                                          const uint8_t  pluta,
-                                          Bitmap        &bitmap);
-  void coded_packed_linear_16bpp_to_bitmap(cPDAT          pdat,
-                                           const PLUT    &plut,
-                                           const uint8_t  pluta,
-                                           Bitmap        &bitmap);
+  void coded_packed_linear_1bpp_to_bitmap(cPDAT       pdat,
+                                          const PLUT &plut,
+                                          const u8    pluta,
+                                          Bitmap     &bitmap);
+  void coded_packed_linear_2bpp_to_bitmap(cPDAT       pdat,
+                                          const PLUT &plut,
+                                          const u8    pluta,
+                                          Bitmap     &bitmap);
+  void coded_packed_linear_4bpp_to_bitmap(cPDAT       pdat,
+                                          const PLUT &plut,
+                                          const u8    pluta,
+                                          Bitmap     &bitmap);
+  void coded_packed_linear_6bpp_to_bitmap(cPDAT       pdat,
+                                          const PLUT &plut,
+                                          const u8    pluta,
+                                          Bitmap     &bitmap);
+  void coded_packed_linear_8bpp_to_bitmap(cPDAT       pdat,
+                                          const PLUT &plut,
+                                          const u32   pdv,
+                                          Bitmap     &bitmap);
+  void coded_packed_linear_16bpp_to_bitmap(cPDAT       pdat,
+                                           const PLUT &plut,
+                                           const u8    pluta,
+                                           Bitmap     &bitmap);
 
-  void coded_unpacked_linear_1bpp_to_bitmap(cPDAT          pdat,
-                                            const PLUT    &plut,
-                                            const uint8_t  pluta,
-                                            Bitmap        &bitmap);
-  void coded_unpacked_linear_2bpp_to_bitmap(cPDAT          pdat,
-                                            const PLUT    &plut,
-                                            const uint8_t  pluta,
-                                            Bitmap        &bitmap);
-  void coded_unpacked_linear_4bpp_to_bitmap(cPDAT          pdat,
-                                            const PLUT    &plut,
-                                            const uint8_t  pluta,
-                                            Bitmap        &bitmap);
-  void coded_unpacked_linear_6bpp_to_bitmap(cPDAT          pdat,
-                                            const PLUT    &plut,
-                                            const uint8_t  pluta,
-                                            Bitmap        &bitmap);
-  void coded_unpacked_linear_8bpp_to_bitmap(cPDAT          pdat,
-                                            const PLUT    &plut,
-                                            const uint8_t  pluta,
-                                            Bitmap        &bitmap);
-  void coded_unpacked_linear_16bpp_to_bitmap(cPDAT          pdat,
-                                             const PLUT    &plut,
-                                             const uint8_t  pluta,
-                                             Bitmap        &bitmap);
+  void coded_unpacked_linear_1bpp_to_bitmap(cPDAT       pdat,
+                                            const PLUT &plut,
+                                            const u8    pluta,
+                                            Bitmap     &bitmap);
+  void coded_unpacked_linear_2bpp_to_bitmap(cPDAT       pdat,
+                                            const PLUT &plut,
+                                            const u8    pluta,
+                                            Bitmap     &bitmap);
+  void coded_unpacked_linear_4bpp_to_bitmap(cPDAT       pdat,
+                                            const PLUT &plut,
+                                            const u8    pluta,
+                                            Bitmap     &bitmap);
+  void coded_unpacked_linear_6bpp_to_bitmap(cPDAT       pdat,
+                                            const PLUT &plut,
+                                            const u8    pluta,
+                                            Bitmap     &bitmap);
+  void coded_unpacked_linear_8bpp_to_bitmap(cPDAT       pdat,
+                                            const PLUT &plut,
+                                            const u32   pdv,
+                                            Bitmap     &bitmap);
+  void coded_unpacked_linear_16bpp_to_bitmap(cPDAT       pdat,
+                                             const PLUT &plut,
+                                             const u8    pluta,
+                                             Bitmap     &bitmap);
 }
