@@ -21,36 +21,17 @@
 // https://3dodev.com/documentation/development/opera/pf25/ppgfldr/ggsfldr/gpgfldr/3gpga
 
 /*
-  This code is purposefully inefficient. It was written to be easy to
-  maintain, experiment with, and read. Since this is all out of band
-  the performance and space considerations are secondary to output and
-  maintainability. The code is broken down into numerous passes.
+  This code is intentionally straightforward rather than micro-optimized,
+  but the hot path still avoids avoidable work:
 
-  0. Convert the raw bitmap into an abstract form. Absolutely worse
-  'packed' form with every pixel being an individual literal
-  packet. Does color conversion as well to ensure proper packing
-  later. (Previous release packed then converted which led to poor
-  packing.)
-  1. Walk over rows and turn contiguous lists of pixels of the same
-  color into packed packets. Ignores 64 length limit.
-  2. Go over all packets and change those with alpha as transparent
-  packets.
-  3. Find instances of literal packets followed by packed, packed
-  followed by literal, or literal after literal and check if it would
-  take less space if combined and do so. This will be run till the
-  size stops reducing.
-  4. Split abstract packets with a count greater than 64 into multiple
-  packets of size 64 or less.
-  5. Remove trailing transparent packets and replace with EOL.
-  6. Remove unnecessary EOLs.
-  7. Convert the AbstractPackedImage to a vector of 3DO packed data
-  bitstreams. This is necessary to compare end of row 1 with
-  beginning of row 2. This is valid output but more can be done.
-  8. For each sequential pair of rows compare the end of row 1 with
-  beginning of row 2. If they overlap remove the overlap from row 1.
-  9. Pad the row bitstreams to ensure they are >= 2 words and padded
-  to a multiple of 4 byte word.
-  10. Convert the row of bitstreams to a byte vector for writing to disk.
+  0. Initialize the abstract packed image metadata.
+  1. Convert each bitmap row to packed-source pixels and run dynamic
+     programming over that row to find the minimum-cost legal encoding.
+  2. Encode the abstract packets as 3DO packed row bitstreams.
+  3. Pad each row bitstream to at least 2 words and then to a 32-bit
+     boundary.
+  4. Serialize the row bitstreams into a byte vector for writing to
+     disk.
 */
 
 #include "cel_packer.hpp"
@@ -67,17 +48,23 @@
 
 #include "fmt.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
 typedef std::vector<BitStream> BitStreamVec;
 
+static constexpr u32 MAX_PACKET_PIXELS = (1u << DATA_PACKET_PIXEL_COUNT_SIZE);
+
 struct PackedDataPacket
 {
-  uint8_t type;
-  uint8_t bpp;
+  uint8_t type = PACK_EOL;
+  uint8_t bpp = 0;
+  u32 count = 0;
+  u32 pixel = 0;
   std::vector<u32> pixels;
 
   bool is_literal() const { return type == PACK_LITERAL; };
@@ -85,8 +72,8 @@ struct PackedDataPacket
   bool is_transparent() const { return type == PACK_TRANSPARENT; };
   bool is_eol() const { return type == PACK_EOL; };
 
+  u32 pixel_count() const;
   u32 size_in_bits() const;
-  u32 raw_literal_size() const;
 };
 
 struct PackedDataPacketVec : public std::vector<PackedDataPacket>
@@ -103,6 +90,23 @@ struct AbstractPackedImage : public std::vector<PackedDataPacketVec>
   u32 size_in_bits() const;
 };
 
+struct RowChoice
+{
+  size_t begin;
+  size_t end;
+  u32 type;
+  u32 cost;
+};
+
+
+u32
+PackedDataPacket::pixel_count() const
+{
+  if(is_literal())
+    return pixels.size();
+
+  return count;
+}
 
 u32
 PackedDataPacketVec::pixel_count() const
@@ -111,7 +115,7 @@ PackedDataPacketVec::pixel_count() const
 
   c = 0;
   for(const auto &pdp : *this)
-    c += pdp.pixels.size();
+    c += pdp.pixel_count();
 
   return c;
 }
@@ -131,12 +135,14 @@ PackedDataPacketVec::size_in_bits() const
 u32
 PackedDataPacket::size_in_bits() const
 {
+  const u32 count = pixel_count();
+
   switch(type)
     {
     case PACK_LITERAL:
       return (DATA_PACKET_DATA_TYPE_SIZE +
               DATA_PACKET_PIXEL_COUNT_SIZE +
-              (pixels.size() * bpp));
+              (count * bpp));
     case PACK_TRANSPARENT:
       return (DATA_PACKET_DATA_TYPE_SIZE +
               DATA_PACKET_PIXEL_COUNT_SIZE);
@@ -146,22 +152,6 @@ PackedDataPacket::size_in_bits() const
               bpp);
     case PACK_EOL:
       return (DATA_PACKET_DATA_TYPE_SIZE);
-    }
-
-  return 0;
-}
-
-u32
-PackedDataPacket::raw_literal_size() const
-{
-  switch(type)
-    {
-    case PACK_LITERAL:
-    case PACK_PACKED:
-      return (pixels.size() * bpp);
-    case PACK_TRANSPARENT:
-    case PACK_EOL:
-      return 0;
     }
 
   return 0;
@@ -202,219 +192,246 @@ calc_offset_width(const std::size_t bpp_)
 
 static
 void
-pass0_build_api_from_bitmap(const Bitmap            &b_,
-                            const RGBA8888Converter &pc_,
-                            AbstractPackedImage     &api_)
+pass0_init_api(const Bitmap            &b_,
+               const RGBA8888Converter &pc_,
+               AbstractPackedImage     &api_)
 {
   api_.bpp = pc_.bpp();
   api_.line_width = b_.w;
   api_.offset_width = ::calc_offset_width(pc_.bpp());
   api_.resize(b_.h);
-  for(size_t y = 0; y < b_.h; y++)
+}
+
+static
+std::vector<u32>
+build_row_pixels(const Bitmap            &b_,
+                 const RGBA8888Converter &pc_,
+                 const size_t             row_)
+{
+  std::vector<u32> pixels;
+
+  pixels.reserve(b_.w);
+  for(size_t x = 0; x < b_.w; x++)
     {
-      PackedDataPacketVec &pdpvec = api_[y];
+      RGBA8888 p;
 
-      for(size_t x = 0; x < b_.w; x++)
+      // If alpha is 0 then zero out the color to make packing easier later.
+      p = *b_.xy(x,row_);
+      if(p.a == 0)
+        pixels.emplace_back(ALPHA);
+      else
+        pixels.emplace_back(pc_.convert(&p));
+    }
+
+  return pixels;
+}
+
+static
+PackedDataPacket
+build_packet_from_range(const std::vector<u32> &pixels_,
+                        const u32               bpp_,
+                        const size_t            begin_,
+                        const size_t            end_)
+{
+  PackedDataPacket pdp;
+  const size_t len = (end_ - begin_);
+
+  pdp.bpp = bpp_;
+  pdp.count = len;
+  if(len == 0)
+    return pdp;
+
+  if(pixels_[begin_] == ALPHA)
+    {
+      pdp.type = PACK_TRANSPARENT;
+      return pdp;
+    }
+
+  if((len >= 2) &&
+     std::all_of(pixels_.begin() + begin_ + 1,
+                 pixels_.begin() + end_,
+                 [&](const u32 pixel_) { return pixel_ == pixels_[begin_]; }))
+    {
+      pdp.type = PACK_PACKED;
+      pdp.pixel = pixels_[begin_];
+      return pdp;
+    }
+
+  pdp.type = PACK_LITERAL;
+  pdp.pixels.assign(pixels_.begin() + begin_,
+                    pixels_.begin() + end_);
+  return pdp;
+}
+
+static
+u32
+packet_size_in_bits(const u32 type_,
+                    const u32 count_,
+                    const u32 bpp_)
+{
+  switch(type_)
+    {
+    case PACK_LITERAL:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE +
+              (count_ * bpp_));
+    case PACK_TRANSPARENT:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE);
+    case PACK_PACKED:
+      return (DATA_PACKET_DATA_TYPE_SIZE +
+              DATA_PACKET_PIXEL_COUNT_SIZE +
+              bpp_);
+    case PACK_EOL:
+      return DATA_PACKET_DATA_TYPE_SIZE;
+    }
+
+  return 0;
+}
+
+static
+bool
+pass1_choice_is_better(const RowChoice &candidate_,
+                       const RowChoice &current_,
+                       const u32        bpp_)
+{
+  const auto candidate_count = candidate_.end - candidate_.begin;
+  const auto current_count = current_.end - current_.begin;
+  const auto candidate_bits = packet_size_in_bits(candidate_.type,candidate_count,bpp_);
+  const auto current_bits = packet_size_in_bits(current_.type,current_count,bpp_);
+
+  if(candidate_bits != current_bits)
+    return candidate_bits < current_bits;
+  if(candidate_count != current_count)
+    return candidate_count > current_count;
+  return candidate_.type < current_.type;
+}
+
+static
+PackedDataPacketVec
+pass1_optimize_row_encoding(const std::vector<u32> &pixels_,
+                            const u32               bpp_)
+{
+  const size_t n = pixels_.size();
+  std::vector<u32> best_cost(n + 1,std::numeric_limits<u32>::max());
+  std::vector<RowChoice> best_choice(n + 1);
+  std::vector<bool> has_choice(n + 1,false);
+  std::vector<bool> transparent_suffix(n + 1,false);
+
+  transparent_suffix[n] = true;
+  for(size_t pos = n; pos-- > 0;)
+    transparent_suffix[pos] = (pixels_[pos] == ALPHA) && transparent_suffix[pos + 1];
+
+  best_cost[n] = 0;
+  has_choice[n] = true;
+  for(size_t pos = n; pos-- > 0;)
+    {
+      auto consider_choice = [&](const size_t end_,
+                                 const u32    type_)
         {
-          RGBA8888 p;
-          PackedDataPacket pdp;
-          u32 c;
+          const u32 packet_cost = packet_size_in_bits(type_,
+                                                      end_ - pos,
+                                                      bpp_);
+          const u32 total_cost = packet_cost + best_cost[end_];
+          const RowChoice choice = {pos,end_,type_,total_cost};
 
-          // If alpha is 0 then zero out the color to make packing
-          // easier later
-          p = *b_.xy(x,y);
+          if(!has_choice[pos] ||
+             (total_cost < best_cost[pos]) ||
+             ((total_cost == best_cost[pos]) &&
+              pass1_choice_is_better(choice,best_choice[pos],bpp_)))
+            {
+              best_cost[pos] = total_cost;
+              best_choice[pos] = choice;
+              has_choice[pos] = true;
+            }
+        };
 
-          if(p.a == 0)
-            c = ALPHA;
-          else
-            c = pc_.convert(&p);
+      if(transparent_suffix[pos])
+        consider_choice(n,PACK_EOL);
 
-          pdp.type = PACK_LITERAL;
-          pdp.bpp  = pc_.bpp();
-          pdp.pixels.emplace_back(c);
+      if(pixels_[pos] == ALPHA)
+        {
+          size_t end = pos;
 
-          pdpvec.emplace_back(pdp);
+          while((end < n) &&
+                ((end - pos) < MAX_PACKET_PIXELS) &&
+                (pixels_[end] == ALPHA))
+            {
+              ++end;
+              if(transparent_suffix[end])
+                continue;
+
+              consider_choice(end,PACK_TRANSPARENT);
+            }
+        }
+      else
+        {
+          size_t packed_end = pos + 1;
+
+          while((packed_end < n) &&
+                ((packed_end - pos) < MAX_PACKET_PIXELS) &&
+                (pixels_[packed_end] == pixels_[pos]) &&
+                (pixels_[packed_end] != ALPHA))
+            ++packed_end;
+
+          for(size_t end = pos + 1;
+              (end <= n) && ((end - pos) <= MAX_PACKET_PIXELS);
+              ++end)
+            {
+              consider_choice(end,PACK_LITERAL);
+
+              if((end - pos >= 2) && (end <= packed_end))
+                consider_choice(end,PACK_PACKED);
+            }
         }
     }
-}
 
-static
-void
-pass1_pack_packed(AbstractPackedImage &api_)
-{
-  for(auto &pdpvec : api_)
+  if(!has_choice[0])
+    throw std::runtime_error("cel_packer: row candidate enumeration failed");
+
+  PackedDataPacketVec out;
+  for(size_t pos = 0; pos < n;)
     {
-      PackedDataPacketVec newpdpvec;
+      const RowChoice &choice = best_choice[pos];
+      PackedDataPacket packet;
 
-      newpdpvec.emplace_back(pdpvec[0]);
-
-      for(size_t i = 1; i < pdpvec.size(); i++)
+      if(choice.type == PACK_EOL)
         {
-          PackedDataPacket &curpdp = pdpvec[i];
-          PackedDataPacket &newpdp = newpdpvec.back();
-
-          if(curpdp.pixels[0] == newpdp.pixels[0])
-            {
-              newpdp.type = PACK_PACKED;
-              newpdp.pixels.emplace_back(curpdp.pixels[0]);
-            }
-          else
-            {
-              newpdpvec.emplace_back(pdpvec[i]);
-            }
+          packet.type = PACK_EOL;
+          packet.bpp = bpp_;
+          out.emplace_back(std::move(packet));
+          break;
         }
 
-      pdpvec = newpdpvec;
+      packet = build_packet_from_range(pixels_,
+                                       bpp_,
+                                       choice.begin,
+                                       choice.end);
+      packet.type = choice.type;
+      out.emplace_back(std::move(packet));
+      pos = choice.end;
     }
+
+  return out;
 }
 
 static
 void
-pass2_mark_transparents(AbstractPackedImage &api_)
+pass1_optimize_rows(const Bitmap            &b_,
+                    const RGBA8888Converter &pc_,
+                    AbstractPackedImage     &api_)
 {
-  for(auto &pdpvec : api_)
+  for(size_t row = 0; row < api_.size(); row++)
     {
-      for(auto &pdp : pdpvec)
-        {
-          if(pdp.pixels[0] != ALPHA)
-            continue;
-
-          pdp.type = PACK_TRANSPARENT;
-        }
+      const auto pixels = build_row_pixels(b_,pc_,row);
+      api_[row] = pass1_optimize_row_encoding(pixels,
+                                              api_.bpp);
     }
 }
 
 static
 void
-pass3_compress_literal_and_packed(AbstractPackedImage &api_)
-{
-  for(auto &pdpvec : api_)
-    {
-      PackedDataPacketVec newpdpvec;
-
-      newpdpvec.emplace_back(pdpvec.front());
-
-      for(size_t i = 1; i < pdpvec.size(); i++)
-        {
-          auto &pdp    = pdpvec[i];
-          auto &newpdp = newpdpvec.back();
-
-          if(newpdp.is_literal() && pdp.is_literal())
-            {
-              for(auto &p : pdp.pixels)
-                newpdp.pixels.emplace_back(p);
-              continue;
-            }
-
-          if(newpdp.is_literal() && pdp.is_packed())
-            {
-              if(pdp.size_in_bits() >= pdp.raw_literal_size())
-                {
-                  for(auto &p : pdp.pixels)
-                    newpdp.pixels.emplace_back(p);
-                  continue;
-                }
-            }
-
-          if(newpdp.is_packed() && pdp.is_literal())
-            {
-              if(newpdp.size_in_bits() >= newpdp.raw_literal_size())
-                {
-                  newpdp.type = PACK_LITERAL;
-                  for(auto &p : pdp.pixels)
-                    newpdp.pixels.emplace_back(p);
-                  continue;
-                }
-            }
-
-          newpdpvec.emplace_back(pdp);
-        }
-
-      pdpvec = newpdpvec;
-    }
-}
-
-static
-void
-pass3_combine(AbstractPackedImage &api_)
-{
-  size_t prev_size;
-  size_t comp_size;
-
-  do
-    {
-      prev_size = api_.size_in_bits();
-      pass3_compress_literal_and_packed(api_);
-      comp_size = api_.size_in_bits();
-    }
-  while(comp_size != prev_size);
-}
-
-static
-void
-pass4_split_large_packets(AbstractPackedImage &api_)
-{
-  for(auto &pdpvec : api_)
-    {
-      PackedDataPacketVec newpdpvec;
-
-      for(auto &pdp : pdpvec)
-        {
-          PackedDataPacket newpdp;
-
-          newpdp.type = pdp.type;
-          auto i  = pdp.pixels.begin();
-          auto ei = pdp.pixels.end();
-          while(i != ei)
-            {
-              newpdp.pixels.clear();
-              for(size_t c = 0; i != ei && c < 64; ++c, ++i)
-                newpdp.pixels.emplace_back(*i);
-              newpdpvec.emplace_back(newpdp);
-            }
-        }
-
-      pdpvec = newpdpvec;
-    }
-}
-
-static
-void
-pass5_remove_trailing_transparents(AbstractPackedImage &api_)
-{
-  for(auto &pdpvec : api_)
-    {
-      size_t orig_size;
-
-      orig_size = pdpvec.size();
-      while(!pdpvec.empty() && pdpvec.rbegin()->is_transparent())
-        pdpvec.pop_back();
-
-      if(orig_size != pdpvec.size())
-        {
-          pdpvec.emplace_back();
-          pdpvec.rbegin()->type = PACK_EOL;
-        }
-    }
-}
-
-static
-void
-pass6_remove_trailing_eol(AbstractPackedImage &api_)
-{
-  for(auto &pdpvec : api_)
-    {
-      if(pdpvec.pixel_count() < api_.line_width)
-        continue;
-
-      while(!pdpvec.empty() && pdpvec.rbegin()->is_eol())
-        pdpvec.pop_back();
-    }
-}
-
-static
-void
-pass7_api_to_bitstreams(const AbstractPackedImage &api_,
+pass2_api_to_bitstreams(const AbstractPackedImage &api_,
                         BitStreamVec              &rows_)
 {
   rows_.clear();
@@ -424,39 +441,41 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
       const auto &pdpvec = api_[i];
       auto       &row    = rows_[i];
 
-      // Reserve space for the offset
+      // Reserve space for the row offset header.
       row.write(api_.offset_width,0);
       for(const auto &pdp : pdpvec)
         {
+          const u32 count = pdp.pixel_count();
+
           row.write(DATA_PACKET_DATA_TYPE_SIZE,pdp.type);
           switch(pdp.type)
             {
             case PACK_PACKED:
               row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
-                        pdp.pixels.size()-1);
+                        count-1);
               row.write(api_.bpp,
-                        pdp.pixels[0]);
+                        pdp.pixel);
               break;
             case PACK_LITERAL:
               row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
-                        pdp.pixels.size()-1);
+                        count-1);
               for(const auto pixel : pdp.pixels)
                 row.write(api_.bpp,pixel);
               break;
             case PACK_TRANSPARENT:
               row.write(DATA_PACKET_PIXEL_COUNT_SIZE,
-                        pdp.pixels.size()-1);
+                        count-1);
               break;
             case PACK_EOL:
               break;
             }
         }
 
-      // Needs to be done in prep for overlap pass
+      // Finalize the row offset header before padding.
       {
-        int word_offset;
+        u64 word_offset;
 
-        word_offset = std::max((uint64_t)2,
+        word_offset = std::max((u64)2,
                                row.tell_32bits_round_up());
         row.write(0,
                   api_.offset_width,
@@ -465,45 +484,9 @@ pass7_api_to_bitstreams(const AbstractPackedImage &api_,
     }
 }
 
-// The overlap in theory could be from word 3 to the end of the
-// row but in practice this is extremely unlikely. For the moment just
-// checking the trailing bits % 32bit word.
 static
 void
-pass8_trim_overlap(const AbstractPackedImage &api_,
-                   BitStreamVec              &rows_)
-{
-  for(size_t i = 0; i < (rows_.size() - 1); i++)
-    {
-      if(rows_[i].tell_32bits_round_up() <= 2)
-        continue;
-
-      bool overlap;
-      int trailing_bits;
-      BitStream &a = rows_[i+0];
-      BitStream &b = rows_[i+1];
-
-      trailing_bits = (a.tell_bits() & 31);
-      if(trailing_bits == 0)
-        trailing_bits = 32;
-
-      overlap = a.cmp(a.tell_bits() - trailing_bits,
-                      b,0,
-                      trailing_bits);
-      if(!overlap)
-        continue;
-
-      a.rewind(trailing_bits);
-      a.shrink_to_idx();
-      a.write(0,
-              api_.offset_width,
-              (a.tell_32bits_round_up() - 2));
-    }
-}
-
-static
-void
-pass9_pad_rows(BitStreamVec &rows_)
+pass3_pad_rows(BitStreamVec &rows_)
 {
   for(auto &row : rows_)
     {
@@ -516,14 +499,16 @@ pass9_pad_rows(BitStreamVec &rows_)
 
 static
 void
-pass10_bsvec_to_bytevec(const BitStreamVec &rows_,
-                        ByteVec            &pdat_)
+pass4_bitstreams_to_bytevec(const BitStreamVec &rows_,
+                            ByteVec            &pdat_)
 {
   pdat_.clear();
   for(const auto &row : rows_)
     {
-      assert(row.tell_bits() >= (2 * BITS_PER_WORD));
-      assert((row.tell_bits() & 31) == 0);
+      if(row.tell_bits() < (2 * BITS_PER_WORD))
+        throw std::runtime_error("cel_packer: row is shorter than 2 words after padding");
+      if(row.tell_bits() & 31)
+        throw std::runtime_error("cel_packer: row is not word-aligned after padding");
       pdat_.insert(pdat_.end(),
                    row.begin(),
                    row.idx_end());
@@ -538,15 +523,9 @@ CelPacker::pack(const Bitmap            &b_,
   AbstractPackedImage api;
   BitStreamVec rows;
 
-  pass0_build_api_from_bitmap(b_,pc_,api);
-  pass1_pack_packed(api);
-  pass2_mark_transparents(api);
-  pass3_combine(api);
-  pass4_split_large_packets(api);
-  pass5_remove_trailing_transparents(api);
-  pass6_remove_trailing_eol(api);
-  pass7_api_to_bitstreams(api,rows);
-  pass8_trim_overlap(api,rows);
-  pass9_pad_rows(rows);
-  pass10_bsvec_to_bytevec(rows,pdat_);
+  pass0_init_api(b_,pc_,api);
+  pass1_optimize_rows(b_,pc_,api);
+  pass2_api_to_bitstreams(api,rows);
+  pass3_pad_rows(rows);
+  pass4_bitstreams_to_bytevec(rows,pdat_);
 };

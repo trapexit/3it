@@ -20,6 +20,7 @@ public:
   u32 x() const;
   u32 y() const;
   bool row_filled() const;
+  u32 row_pixels_remaining() const;
 
 public:
   void move_xy(const u32 x, const u32 y);
