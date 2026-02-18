@@ -954,8 +954,10 @@ unpack_row(BitStreamReader &bs_,
         {
         case PACK_LITERAL:
           {
+            const size_t remaining = pw_.row_pixels_remaining();
+
             count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
-            for(size_t i = 0; i < count; i++)
+            for(size_t i = 0; i < count && i < remaining; i++)
               {
                 pixel = bs_.read(bpp_);
                 pw_.write(pixel);
@@ -964,22 +966,26 @@ unpack_row(BitStreamReader &bs_,
           break;
         case PACK_TRANSPARENT:
           {
+            const size_t remaining = pw_.row_pixels_remaining();
+
             count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
-            pw_.write_transparent(count);
+            pw_.write_transparent(std::min<size_t>(count,remaining));
           }
           break;
         case PACK_PACKED:
           {
+            const size_t remaining = pw_.row_pixels_remaining();
+
             count = bs_.read(DATA_PACKET_PIXEL_COUNT_SIZE) + 1;
             pixel = bs_.read(bpp_);
-            for(u32 i = 0; i < count; i++)
+            for(u32 i = 0; i < count && i < remaining; i++)
               pw_.write(pixel);
           }
           break;
         case PACK_EOL:
           break;
         }
-    } while((type != PACK_EOL) && !pw_.row_filled());
+    } while((type != PACK_EOL) && (pw_.row_pixels_remaining() != 0));
 }
 
 static

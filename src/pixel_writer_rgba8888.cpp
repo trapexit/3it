@@ -1,5 +1,7 @@
 #include "pixel_writer_rgba8888.hpp"
 
+#include <stdexcept>
+
 void
 PixelWriterRGBA8888::init(Bitmap &b_)
 {
@@ -62,12 +64,21 @@ PixelWriterRGBA8888::row_filled() const
   return ((_idx % w()) == 0);
 }
 
+u32
+PixelWriterRGBA8888::row_pixels_remaining() const
+{
+  return (w() - x());
+}
+
 void
 PixelWriterRGBA8888::write_rgba(const u8 r_,
                                 const u8 g_,
                                 const u8 b_,
                                 const u8 a_)
 {
+  if(_idx >= (u64)(w() * h()))
+    throw std::runtime_error("pixel writer overflow");
+
   RGBA8888 &rgba = _b->idx(_idx++);
 
   rgba.r = r_;

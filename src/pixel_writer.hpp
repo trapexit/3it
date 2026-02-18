@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <stdexcept>
 
 class PixelWriter
 {
@@ -114,6 +115,14 @@ public:
     return ((_idx % (_w * _n) == 0));
   }
 
+  size_t
+  row_pixels_remaining() const
+  {
+    const size_t row_pixels = ((_idx / _n) % _w);
+
+    return (_w - row_pixels);
+  }
+
   void
   write(const u32 p_)
   {
@@ -162,6 +171,9 @@ public:
              const u8 b_,
              const u8 a_ = 0xFF)
   {
+    if((_idx + sizeof(RGBA8888)) > (_w * _h * _n))
+      throw std::runtime_error("pixel writer overflow");
+
     _data[_idx++] = r_;
     _data[_idx++] = g_;
     _data[_idx++] = b_;
