@@ -442,6 +442,7 @@ private:
 public:
   BitStream()
     : _idx(0),
+      _size(0),
       _data()
   {
   }
