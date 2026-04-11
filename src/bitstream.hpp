@@ -166,6 +166,8 @@ public:
   {
     u64 val = 0;
 
+    assert((idx_ + bits_) <= _size);
+
     for(u64 i = idx_; i < (idx_ + bits_); i++)
       val = ((val << 1) | ((_data[i >> 3] >> (7 - (i & 7))) & 1));
 
