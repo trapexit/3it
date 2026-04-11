@@ -92,7 +92,7 @@ public:
   u8
   bits_to_32bit_boundary() const
   {
-    return (0x20 - (_idx & 0x1F));
+    return ((0x20 - (_idx & 0x1F)) & 0x1F);
   }
 
   bool
@@ -104,7 +104,7 @@ public:
   u8
   bits_to_64bit_boundary() const
   {
-    return (0x40 - (_idx & 0x3F));
+    return ((0x40 - (_idx & 0x3F)) & 0x3F);
   }
 
   void
@@ -267,7 +267,7 @@ public:
   u8
   bits_to_8bit_boundary() const
   {
-    return (0x08 - (_idx & 0x7));
+    return ((0x08 - (_idx & 0x7)) & 0x7);
   }
 
   bool
@@ -279,7 +279,7 @@ public:
   u8
   bits_to_16bit_boundary() const
   {
-    return (0x10 - (_idx & 0xF));
+    return ((0x10 - (_idx & 0xF)) & 0xF);
   }
 
   bool
@@ -291,7 +291,7 @@ public:
   u8
   bits_to_32bit_boundary() const
   {
-    return (0x20 - (_idx & 0x1F));
+    return ((0x20 - (_idx & 0x1F)) & 0x1F);
   }
 
   bool
@@ -303,7 +303,7 @@ public:
   u8
   bits_to_64bit_boundary() const
   {
-    return (0x40 - (_idx & 0x3F));
+    return ((0x40 - (_idx & 0x3F)) & 0x3F);
   }
 
   void
@@ -549,7 +549,7 @@ public:
   u8
   bits_to_8bit_boundary() const
   {
-    return (0x08 - (_idx & 0x7));
+    return ((0x08 - (_idx & 0x7)) & 0x7);
   }
 
   bool
@@ -561,7 +561,7 @@ public:
   u8
   bits_to_16bit_boundary() const
   {
-    return (0x10 - (_idx & 0xF));
+    return ((0x10 - (_idx & 0xF)) & 0xF);
   }
 
   bool
@@ -573,7 +573,7 @@ public:
   u8
   bits_to_32bit_boundary() const
   {
-    return (0x20 - (_idx & 0x1F));
+    return ((0x20 - (_idx & 0x1F)) & 0x1F);
   }
 
   bool
@@ -585,7 +585,7 @@ public:
   u8
   bits_to_64bit_boundary() const
   {
-    return (0x40 - (_idx & 0x3F));
+    return ((0x40 - (_idx & 0x3F)) & 0x3F);
   }
 
   void
