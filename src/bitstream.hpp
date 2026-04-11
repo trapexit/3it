@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 
 
 class BitStreamReader
@@ -167,6 +168,14 @@ public:
     u64 val = 0;
 
     assert((idx_ + bits_) <= _size);
+
+    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+      {
+        const u8 *src = &_data[idx_ >> 3];
+        for(u64 i = 0; i < (bits_ >> 3); i++)
+          val = (val << 8) | src[i];
+        return val;
+      }
 
     for(u64 i = idx_; i < (idx_ + bits_); i++)
       val = ((val << 1) | ((_data[i >> 3] >> (7 - (i & 7))) & 1));
@@ -394,6 +403,14 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
+    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+      {
+        u8 *dst = &(*_data)[idx_ >> 3];
+        for(u64 i = bits_; i > 0; i -= 8)
+          *dst++ = (val_ >> (i - 8)) & 0xFF;
+        return;
+      }
+
     for(u64 i = 0; i < bits_; i++)
       {
         u8 &d = (*_data)[idx_ >> 3];
@@ -415,8 +432,16 @@ public:
   void
   write(const std::vector<u8> &v_)
   {
-    for(const u8 byte : v_)
-      write(8,byte);
+    if(_idx & 7)
+      {
+        for(const u8 byte : v_)
+          write(8,byte);
+        return;
+      }
+
+    _maybe_resize(_idx + (v_.size() * 8));
+    std::memcpy(&(*_data)[_idx >> 3],v_.data(),v_.size());
+    _idx += v_.size() * 8;
   }
 
 public:
@@ -767,6 +792,14 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
+    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+      {
+        u8 *dst = &_data[idx_ >> 3];
+        for(u64 i = bits_; i > 0; i -= 8)
+          *dst++ = (val_ >> (i - 8)) & 0xFF;
+        return;
+      }
+
     for(u64 i = 0; i < bits_; i++)
       {
         u8 &d = _data[idx_ >> 3];
@@ -789,8 +822,17 @@ public:
   void
   write(const std::vector<u8> &v_)
   {
-    for(const u8 byte : v_)
-      write(8,byte);
+    if(_idx & 7)
+      {
+        for(const u8 byte : v_)
+          write(8,byte);
+        return;
+      }
+
+    _maybe_resize(_idx + (v_.size() * 8));
+    std::memcpy(&_data[_idx >> 3],v_.data(),v_.size());
+    _idx += v_.size() * 8;
+    _size = std::max(_idx,_size);
   }
 
 public:
@@ -805,6 +847,14 @@ public:
        const u64 bits_)
   {
     u64 val = 0;
+
+    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+      {
+        const u8 *src = &_data[idx_ >> 3];
+        for(u64 i = 0; i < (bits_ >> 3); i++)
+          val = (val << 8) | src[i];
+        return val;
+      }
 
     for(u64 i = idx_; i < (idx_ + bits_); i++)
       val = ((val << 1) | read_bit(i));
