@@ -519,21 +519,35 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
-    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+    if(bits_ == 0)
+      return;
+
+    u8 *dst      = &(*_data)[idx_ >> 3];
+    u8  bit_off  = idx_ & 7;
+    u64 remaining = bits_;
+
+    if(bit_off)
       {
-        u8 *dst = &(*_data)[idx_ >> 3];
-        for(u64 i = bits_; i > 0; i -= 8)
-          *dst++ = (val_ >> (i - 8)) & 0xFF;
-        return;
+        const u8 avail = 8 - bit_off;
+        const u8 take  = (remaining < avail) ? (u8)remaining : avail;
+        const u8 shift = avail - take;
+        const u8 mask  = (u8)(((1U << take) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)(((val_ >> (remaining - take)) & ((1ULL << take) - 1)) << shift);
+        dst++;
+        remaining -= take;
       }
 
-    for(u64 i = 0; i < bits_; i++)
+    while(remaining >= 8)
       {
-        u8 &d = (*_data)[idx_ >> 3];
-        const int shift = (7 - (idx_ & 7));
+        remaining -= 8;
+        *dst++ = (u8)((val_ >> remaining) & 0xFF);
+      }
 
-        d = ((d & ~(1UL << shift)) | (((val_ >> (bits_ - i - 1)) & 1) << shift));
-        idx_++;
+    if(remaining)
+      {
+        const u8 shift = 8 - (u8)remaining;
+        const u8 mask  = (u8)(((1U << remaining) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)((val_ & ((1ULL << remaining) - 1)) << shift);
       }
   }
 
@@ -1002,21 +1016,35 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
-    if(!(idx_ & 7) && !(bits_ & 7) && (bits_ <= 64))
+    if(bits_ == 0)
+      return;
+
+    u8 *dst      = &_data[idx_ >> 3];
+    u8  bit_off  = idx_ & 7;
+    u64 remaining = bits_;
+
+    if(bit_off)
       {
-        u8 *dst = &_data[idx_ >> 3];
-        for(u64 i = bits_; i > 0; i -= 8)
-          *dst++ = (val_ >> (i - 8)) & 0xFF;
-        return;
+        const u8 avail = 8 - bit_off;
+        const u8 take  = (remaining < avail) ? (u8)remaining : avail;
+        const u8 shift = avail - take;
+        const u8 mask  = (u8)(((1U << take) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)(((val_ >> (remaining - take)) & ((1ULL << take) - 1)) << shift);
+        dst++;
+        remaining -= take;
       }
 
-    for(u64 i = 0; i < bits_; i++)
+    while(remaining >= 8)
       {
-        u8 &d = _data[idx_ >> 3];
-        const int shift = (7 - (idx_ & 7));
+        remaining -= 8;
+        *dst++ = (u8)((val_ >> remaining) & 0xFF);
+      }
 
-        d = ((d & ~(1UL << shift)) | (((val_ >> (bits_ - i - 1)) & 1) << shift));
-        idx_++;
+    if(remaining)
+      {
+        const u8 shift = 8 - (u8)remaining;
+        const u8 mask  = (u8)(((1U << remaining) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)((val_ & ((1ULL << remaining) - 1)) << shift);
       }
   }
 
@@ -1623,21 +1651,35 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
-    if(!(idx_ & 7) && !(bits_ & 7))
+    if(bits_ == 0)
+      return;
+
+    u8 *dst       = &(*_data)[idx_ >> 3];
+    u8  bit_off   = idx_ & 7;
+    u32 remaining = bits_;
+
+    if(bit_off)
       {
-        u8 *dst = &(*_data)[idx_ >> 3];
-        for(u32 i = bits_; i > 0; i -= 8)
-          *dst++ = (val_ >> (i - 8)) & 0xFF;
-        return;
+        const u8  avail = 8 - bit_off;
+        const u8  take  = (remaining < avail) ? (u8)remaining : avail;
+        const u8  shift = avail - take;
+        const u8  mask  = (u8)(((1U << take) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)(((val_ >> (remaining - take)) & ((1U << take) - 1)) << shift);
+        dst++;
+        remaining -= take;
       }
 
-    for(u32 i = 0; i < bits_; i++)
+    while(remaining >= 8)
       {
-        u8 &d = (*_data)[idx_ >> 3];
-        const int shift = (7 - (idx_ & 7));
+        remaining -= 8;
+        *dst++ = (u8)((val_ >> remaining) & 0xFF);
+      }
 
-        d = ((d & ~(1U << shift)) | (((val_ >> (bits_ - i - 1)) & 1) << shift));
-        idx_++;
+    if(remaining)
+      {
+        const u8 shift = 8 - (u8)remaining;
+        const u8 mask  = (u8)(((1U << remaining) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)((val_ & ((1U << remaining) - 1)) << shift);
       }
   }
 
@@ -2074,21 +2116,35 @@ public:
   {
     _maybe_resize(idx_ + bits_);
 
-    if(!(idx_ & 7) && !(bits_ & 7))
+    if(bits_ == 0)
+      return;
+
+    u8 *dst       = &_data[idx_ >> 3];
+    u8  bit_off   = idx_ & 7;
+    u32 remaining = bits_;
+
+    if(bit_off)
       {
-        u8 *dst = &_data[idx_ >> 3];
-        for(u32 i = bits_; i > 0; i -= 8)
-          *dst++ = (val_ >> (i - 8)) & 0xFF;
-        return;
+        const u8  avail = 8 - bit_off;
+        const u8  take  = (remaining < avail) ? (u8)remaining : avail;
+        const u8  shift = avail - take;
+        const u8  mask  = (u8)(((1U << take) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)(((val_ >> (remaining - take)) & ((1U << take) - 1)) << shift);
+        dst++;
+        remaining -= take;
       }
 
-    for(u32 i = 0; i < bits_; i++)
+    while(remaining >= 8)
       {
-        u8 &d = _data[idx_ >> 3];
-        const int shift = (7 - (idx_ & 7));
+        remaining -= 8;
+        *dst++ = (u8)((val_ >> remaining) & 0xFF);
+      }
 
-        d = ((d & ~(1U << shift)) | (((val_ >> (bits_ - i - 1)) & 1) << shift));
-        idx_++;
+    if(remaining)
+      {
+        const u8 shift = 8 - (u8)remaining;
+        const u8 mask  = (u8)(((1U << remaining) - 1) << shift);
+        dst[0] = (dst[0] & ~mask) | (u8)((val_ & ((1U << remaining) - 1)) << shift);
       }
   }
 
