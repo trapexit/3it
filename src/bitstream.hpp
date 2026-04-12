@@ -12,6 +12,25 @@
 #include <type_traits>
 
 
+#if defined(__GNUC__) || defined(__clang__)
+  #define BSR_HAS_BSWAP 1
+  static inline u32 bsr_bswap32(u32 v) { return __builtin_bswap32(v); }
+  static inline u64 bsr_bswap64(u64 v) { return __builtin_bswap64(v); }
+#elif defined(_MSC_VER)
+  #include <stdlib.h>
+  #define BSR_HAS_BSWAP 1
+  static inline u32 bsr_bswap32(u32 v) { return _byteswap_ulong(v);  }
+  static inline u64 bsr_bswap64(u64 v) { return _byteswap_uint64(v); }
+#else
+  #define BSR_HAS_BSWAP 0
+#endif
+
+#if BSR_HAS_BSWAP
+  static inline u32 bsr_load32_be(const u8 *p) { u32 v; std::memcpy(&v,p,4); return bsr_bswap32(v); }
+  static inline u64 bsr_load64_be(const u8 *p) { u64 v; std::memcpy(&v,p,8); return bsr_bswap64(v); }
+#endif
+
+
 class BitStreamReader
 {
 private:
@@ -174,8 +193,20 @@ public:
     const u64 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &_data[byte_idx];
+    const u64 mask     = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
 
-    // Byte-aligned fast path
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 64)
+      {
+        u64 acc = bsr_load64_be(src);
+        return (acc >> (64 - bit_off - bits_)) & mask;
+      }
+
+    u64 acc = bsr_load64_be(src);
+    acc &= (1ULL << (64 - bit_off)) - 1;
+    const u8 remaining = bits_ - (64 - bit_off);
+    return (acc << remaining) | (src[8] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u64 val = 0;
@@ -184,9 +215,6 @@ public:
         return val;
       }
 
-    const u64 mask = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
-
-    // All needed bits fit within 8 bytes
     if(bit_off + bits_ <= 64)
       {
         u64 acc = 0;
@@ -196,13 +224,13 @@ public:
         return (acc >> (n * 8 - bit_off - bits_)) & mask;
       }
 
-    // Spans 9 bytes: bit_off in [1..7], remaining bits from 9th byte
     u64 acc = 0;
     for(u64 i = 0; i < 8; i++)
       acc = (acc << 8) | src[i];
     acc &= (1ULL << (64 - bit_off)) - 1;
     const u8 remaining = bits_ - (64 - bit_off);
     return (acc << remaining) | (src[8] >> (8 - remaining));
+#endif
   }
 
   u64
@@ -543,7 +571,20 @@ public:
     const u64 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &(*_data)[byte_idx];
+    const u64 mask     = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
 
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 64)
+      {
+        u64 acc = bsr_load64_be(src);
+        return (acc >> (64 - bit_off - bits_)) & mask;
+      }
+
+    u64 acc = bsr_load64_be(src);
+    acc &= (1ULL << (64 - bit_off)) - 1;
+    const u8 remaining = bits_ - (64 - bit_off);
+    return (acc << remaining) | (src[8] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u64 val = 0;
@@ -551,8 +592,6 @@ public:
           val = (val << 8) | src[i];
         return val;
       }
-
-    const u64 mask = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
 
     if(bit_off + bits_ <= 64)
       {
@@ -569,6 +608,7 @@ public:
     acc &= (1ULL << (64 - bit_off)) - 1;
     const u8 remaining = bits_ - (64 - bit_off);
     return (acc << remaining) | (src[8] >> (8 - remaining));
+#endif
   }
 
 private:
@@ -1022,7 +1062,20 @@ public:
     const u64 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &_data[byte_idx];
+    const u64 mask     = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
 
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 64)
+      {
+        u64 acc = bsr_load64_be(src);
+        return (acc >> (64 - bit_off - bits_)) & mask;
+      }
+
+    u64 acc = bsr_load64_be(src);
+    acc &= (1ULL << (64 - bit_off)) - 1;
+    const u8 remaining = bits_ - (64 - bit_off);
+    return (acc << remaining) | (src[8] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u64 val = 0;
@@ -1030,8 +1083,6 @@ public:
           val = (val << 8) | src[i];
         return val;
       }
-
-    const u64 mask = (bits_ == 64) ? ~0ULL : ((1ULL << bits_) - 1);
 
     if(bit_off + bits_ <= 64)
       {
@@ -1048,6 +1099,7 @@ public:
     acc &= (1ULL << (64 - bit_off)) - 1;
     const u8 remaining = bits_ - (64 - bit_off);
     return (acc << remaining) | (src[8] >> (8 - remaining));
+#endif
   }
 
   u64
@@ -1271,7 +1323,20 @@ public:
     const u32 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &_data[byte_idx];
+    const u32 mask     = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 32)
+      {
+        u32 acc = bsr_load32_be(src);
+        return (acc >> (32 - bit_off - bits_)) & mask;
+      }
+
+    u32 acc = bsr_load32_be(src);
+    acc &= (1U << (32 - bit_off)) - 1;
+    const u8 remaining = bits_ - (32 - bit_off);
+    return (acc << remaining) | (src[4] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u32 val = 0;
@@ -1279,8 +1344,6 @@ public:
           val = (val << 8) | src[i];
         return val;
       }
-
-    const u32 mask = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
     if(bit_off + bits_ <= 32)
       {
@@ -1297,6 +1360,7 @@ public:
     acc &= (1U << (32 - bit_off)) - 1;
     const u8 remaining = bits_ - (32 - bit_off);
     return (acc << remaining) | (src[4] >> (8 - remaining));
+#endif
   }
 
   u32
@@ -1611,7 +1675,20 @@ public:
     const u32 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &(*_data)[byte_idx];
+    const u32 mask     = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 32)
+      {
+        u32 acc = bsr_load32_be(src);
+        return (acc >> (32 - bit_off - bits_)) & mask;
+      }
+
+    u32 acc = bsr_load32_be(src);
+    acc &= (1U << (32 - bit_off)) - 1;
+    const u8 remaining = bits_ - (32 - bit_off);
+    return (acc << remaining) | (src[4] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u32 val = 0;
@@ -1619,8 +1696,6 @@ public:
           val = (val << 8) | src[i];
         return val;
       }
-
-    const u32 mask = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
     if(bit_off + bits_ <= 32)
       {
@@ -1637,6 +1712,7 @@ public:
     acc &= (1U << (32 - bit_off)) - 1;
     const u8 remaining = bits_ - (32 - bit_off);
     return (acc << remaining) | (src[4] >> (8 - remaining));
+#endif
   }
 
 private:
@@ -2058,7 +2134,20 @@ public:
     const u32 byte_idx = idx_ >> 3;
     const u8  bit_off  = idx_ & 7;
     const u8 *src      = &_data[byte_idx];
+    const u32 mask     = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
+#if BSR_HAS_BSWAP
+    if(bit_off + bits_ <= 32)
+      {
+        u32 acc = bsr_load32_be(src);
+        return (acc >> (32 - bit_off - bits_)) & mask;
+      }
+
+    u32 acc = bsr_load32_be(src);
+    acc &= (1U << (32 - bit_off)) - 1;
+    const u8 remaining = bits_ - (32 - bit_off);
+    return (acc << remaining) | (src[4] >> (8 - remaining));
+#else
     if(!bit_off && !(bits_ & 7))
       {
         u32 val = 0;
@@ -2066,8 +2155,6 @@ public:
           val = (val << 8) | src[i];
         return val;
       }
-
-    const u32 mask = (bits_ == 32) ? ~0U : ((1U << bits_) - 1);
 
     if(bit_off + bits_ <= 32)
       {
@@ -2084,6 +2171,7 @@ public:
     acc &= (1U << (32 - bit_off)) - 1;
     const u8 remaining = bits_ - (32 - bit_off);
     return (acc << remaining) | (src[4] >> (8 - remaining));
+#endif
   }
 
   u32
