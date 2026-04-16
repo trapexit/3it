@@ -693,6 +693,27 @@ public:
     _size = std::max(_idx,_size);
   }
 
+  template<u64 BITS>
+  void
+  write(u64  idx_,
+        Word val_)
+  {
+    static_assert(BITS >= 1 && BITS <= WORD_BITS,
+                  "BitStream: fixed write width exceeds word size");
+    write(idx_,static_cast<Word>(BITS),val_);
+  }
+
+  template<u64 BITS>
+  void
+  write(Word val_)
+  {
+    static_assert(BITS >= 1 && BITS <= WORD_BITS,
+                  "BitStream: fixed write width exceeds word size");
+    write<BITS>(_idx,val_);
+    _idx += BITS;
+    _size = std::max(_idx,_size);
+  }
+
   void
   write_bytes(const u8 *src_,
               u64       count_)
