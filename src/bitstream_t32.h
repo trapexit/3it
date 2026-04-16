@@ -1,9 +1,13 @@
 /*
- * bitstream_t32.h - Header-only C89 combined bit stream (32-bit index)
+ * bitstream_t32.h - Header-only C89 combined bit stream
  *
- * Combines read and write access into a single struct.  All functions
- * are static to allow header-only usage without linker conflicts.
- * Compilers will inline at optimization levels >= -O1.
+ * Index/cursor:  64-bit (streams may be arbitrarily large)
+ * Field width:   32-bit maximum (read returns u32, bits/val args are u32)
+ *
+ * Publicly this remains the fixed-buffer bitstream with the original
+ * 3-field struct layout. Internally the read/write machinery is shared
+ * with bitstream_dyn32.h by adapting BitStreamT32 to a fixed
+ * BitStreamDyn32 view (realloc_fn == NULL, assert on overflow).
  *
  * The caller manages the buffer and must ensure sufficient size.
  *
@@ -26,43 +30,40 @@
 #ifndef BITSTREAM_T32_H
 #define BITSTREAM_T32_H
 
-#include <assert.h>
-#include <string.h>
-
-#ifndef BST32_U8
-typedef unsigned char  bst32_u8;
-#else
-typedef BST32_U8       bst32_u8;
+#ifndef BSD32_U8
+  #ifdef BST32_U8
+    #define BSD32_U8 BST32_U8
+  #endif
 #endif
 
-#ifndef BST32_U32
-typedef unsigned long  bst32_u32;
-#else
-typedef BST32_U32      bst32_u32;
+#ifndef BSD32_U32
+  #ifdef BST32_U32
+    #define BSD32_U32 BST32_U32
+  #endif
 #endif
 
-#define BST32_BITS_PER_BYTE 8
-
-
-/* bswap detection */
-#if defined(__GNUC__) || defined(__clang__)
-  #define BST32_HAS_BSWAP 1
-  #define bst32_bswap32(v) __builtin_bswap32(v)
-#elif defined(_MSC_VER)
-  #include <stdlib.h>
-  #define BST32_HAS_BSWAP 1
-  #define bst32_bswap32(v) _byteswap_ulong(v)
-#else
-  #define BST32_HAS_BSWAP 0
+#ifndef BSD32_U64
+  #ifdef BST32_U64
+    #define BSD32_U64 BST32_U64
+  #endif
 #endif
+
+#include "bitstream_dyn32.h"
+
+typedef bsd32_u8  bst32_u8;
+typedef bsd32_u32 bst32_u32;
+typedef bsd32_u64 bst32_u64;
+
+#define BST32_BITS_PER_BYTE BSD32_BITS_PER_BYTE
+#define BST32_HAS_BSWAP     BSD32_HAS_BSWAP
 
 #if BST32_HAS_BSWAP
+  #define bst32_bswap32(v) bsd32_bswap32(v)
+
 static bst32_u32
 bst32_load32_be(const bst32_u8 *p)
 {
-  bst32_u32 v;
-  memcpy(&v, p, 4);
-  return bst32_bswap32(v);
+  return (bst32_u32)bsd32_load32_be((const bsd32_u8 *)p);
 }
 #endif
 
@@ -70,17 +71,37 @@ bst32_load32_be(const bst32_u8 *p)
 typedef struct BitStreamT32
 {
   bst32_u8  *data;
-  bst32_u32  size; /* in bits */
-  bst32_u32  idx;  /* in bits */
+  bst32_u64  size; /* in bits */
+  bst32_u64  idx;  /* in bits */
 } BitStreamT32;
+
+
+static void
+bst32__to_dyn(const BitStreamT32 *src, BitStreamDyn32 *dst)
+{
+  dst->data        = (bsd32_u8 *)src->data;
+  dst->capacity    = (bsd32_u64)src->size;
+  dst->size        = (bsd32_u64)src->size;
+  dst->idx         = (bsd32_u64)src->idx;
+  dst->realloc_fn  = NULL;
+  dst->realloc_ctx = NULL;
+}
+
+static void
+bst32__from_dyn(BitStreamT32 *dst, const BitStreamDyn32 *src)
+{
+  dst->data = (bst32_u8 *)src->data;
+  dst->size = (bst32_u64)src->capacity;
+  dst->idx  = (bst32_u64)src->idx;
+}
 
 
 /* init with writable buffer */
 static void
 bst32_init(BitStreamT32 *s,
            bst32_u8     *data,
-           bst32_u32     size_in_bytes,
-           bst32_u32     idx)
+           bst32_u64     size_in_bytes,
+           bst32_u64     idx)
 {
   s->data = data;
   s->size = size_in_bytes * BST32_BITS_PER_BYTE;
@@ -91,8 +112,8 @@ bst32_init(BitStreamT32 *s,
 static void
 bst32_init_ro(BitStreamT32    *s,
               const bst32_u8  *data,
-              bst32_u32        size_in_bytes,
-              bst32_u32        idx)
+              bst32_u64        size_in_bytes,
+              bst32_u64        idx)
 {
   s->data = (bst32_u8 *)data;
   s->size = size_in_bytes * BST32_BITS_PER_BYTE;
@@ -106,7 +127,7 @@ bst32_init_ro(BitStreamT32    *s,
 
 static void
 bst32_seek(BitStreamT32 *s,
-           bst32_u32     idx)
+           bst32_u64     idx)
 {
   s->idx = idx;
 }
@@ -119,14 +140,14 @@ bst32_rewind(BitStreamT32 *s)
 
 static void
 bst32_rewind_bits(BitStreamT32 *s,
-                  bst32_u32     bits)
+                  bst32_u64     bits)
 {
   s->idx -= bits;
 }
 
 static void
 bst32_skip(BitStreamT32 *s,
-           bst32_u32     bits)
+           bst32_u64     bits)
 {
   s->idx += bits;
 }
@@ -134,85 +155,85 @@ bst32_skip(BitStreamT32 *s,
 static int
 bst32_on_8bit_boundary(const BitStreamT32 *s)
 {
-  return !(s->idx & 0x7UL);
+  return !(s->idx & 0x7);
 }
 
 static bst32_u8
 bst32_bits_to_8bit_boundary(const BitStreamT32 *s)
 {
-  return (bst32_u8)((0x08UL - (s->idx & 0x7UL)) & 0x7UL);
+  return (bst32_u8)((0x08 - (s->idx & 0x7)) & 0x7);
 }
 
 static int
 bst32_on_16bit_boundary(const BitStreamT32 *s)
 {
-  return !(s->idx & 0xFUL);
+  return !(s->idx & 0xF);
 }
 
 static bst32_u8
 bst32_bits_to_16bit_boundary(const BitStreamT32 *s)
 {
-  return (bst32_u8)((0x10UL - (s->idx & 0xFUL)) & 0xFUL);
+  return (bst32_u8)((0x10 - (s->idx & 0xF)) & 0xF);
 }
 
 static int
 bst32_on_32bit_boundary(const BitStreamT32 *s)
 {
-  return !(s->idx & 0x1FUL);
+  return !(s->idx & 0x1F);
 }
 
 static bst32_u8
 bst32_bits_to_32bit_boundary(const BitStreamT32 *s)
 {
-  return (bst32_u8)((0x20UL - (s->idx & 0x1FUL)) & 0x1FUL);
+  return (bst32_u8)((0x20 - (s->idx & 0x1F)) & 0x1F);
 }
 
 static void
 bst32_skip_to_8bit_boundary(BitStreamT32 *s)
 {
-  if(s->idx & 0x7UL)
-    s->idx += 0x8UL - (s->idx & 0x7UL);
+  if(s->idx & 0x7)
+    s->idx += 0x8 - (s->idx & 0x7);
 }
 
 static void
 bst32_skip_to_16bit_boundary(BitStreamT32 *s)
 {
-  if(s->idx & 0x0FUL)
-    s->idx += 0x10UL - (s->idx & 0x0FUL);
+  if(s->idx & 0x0F)
+    s->idx += 0x10 - (s->idx & 0x0F);
 }
 
 static void
 bst32_skip_to_32bit_boundary(BitStreamT32 *s)
 {
-  if(s->idx & 0x1FUL)
-    s->idx += 0x20UL - (s->idx & 0x1FUL);
+  if(s->idx & 0x1F)
+    s->idx += 0x20 - (s->idx & 0x1F);
 }
 
-static bst32_u32
+static bst32_u64
 bst32_size(const BitStreamT32 *s)
 {
   return s->size;
 }
 
-static bst32_u32
+static bst32_u64
 bst32_tell(const BitStreamT32 *s)
 {
   return s->idx;
 }
 
-static bst32_u32
+static bst32_u64
 bst32_tell_bits(const BitStreamT32 *s)
 {
   return s->idx;
 }
 
-static bst32_u32
+static bst32_u64
 bst32_tell_bytes(const BitStreamT32 *s)
 {
   return (s->idx + (BST32_BITS_PER_BYTE - 1)) / BST32_BITS_PER_BYTE;
 }
 
-static bst32_u32
+static bst32_u64
 bst32_tell_u32(const BitStreamT32 *s)
 {
   return bst32_tell_bytes(s) / 4;
@@ -220,389 +241,125 @@ bst32_tell_u32(const BitStreamT32 *s)
 
 
 /* ------------------------------------------------------------------ */
-/* Read                                                                */
+/* Read / write shared with bitstream_dyn32.h                          */
 /* ------------------------------------------------------------------ */
 
-/*
- * Read 'bits' bits starting at bit position 'idx' (random access).
- * bits must be 0-32.
- */
 static bst32_u32
 bst32_read_at(const BitStreamT32 *s,
-              bst32_u32           idx,
+              bst32_u64           idx,
               bst32_u32           bits)
 {
-  bst32_u32       byte_idx;
-  bst32_u8        bit_off;
-  const bst32_u8 *src;
-  bst32_u32       mask;
-  bst32_u32       acc;
-  bst32_u8        remaining;
+  BitStreamDyn32 dyn;
 
-  assert((idx + bits) <= s->size);
-
-  if(bits == 0)
-    return 0;
-
-  byte_idx = idx >> 3;
-  bit_off  = (bst32_u8)(idx & 7);
-  src      = &s->data[byte_idx];
-  mask     = (bits == 32) ? ~0UL : ((1UL << bits) - 1);
-
-#if BST32_HAS_BSWAP
-  if(bit_off + bits <= 32)
-    {
-      acc = bst32_load32_be(src);
-      return (acc >> (32 - bit_off - bits)) & mask;
-    }
-
-  acc = bst32_load32_be(src);
-  acc &= (1UL << (32 - bit_off)) - 1;
-  remaining = (bst32_u8)(bits - (32 - bit_off));
-  return (acc << remaining) | (src[4] >> (8 - remaining));
-#else
-  if(!bit_off && !(bits & 7))
-    {
-      bst32_u32 val = 0;
-      bst32_u32 i;
-      for(i = 0; i < (bits >> 3); i++)
-        val = (val << 8) | src[i];
-      return val;
-    }
-
-  if(bit_off + bits <= 32)
-    {
-      bst32_u32 n;
-      acc = 0;
-      n = (bit_off + bits + 7) >> 3;
-      {
-        bst32_u32 i;
-        for(i = 0; i < n; i++)
-          acc = (acc << 8) | src[i];
-      }
-      return (acc >> (n * 8 - bit_off - bits)) & mask;
-    }
-
-  acc = 0;
-  {
-    bst32_u32 i;
-    for(i = 0; i < 4; i++)
-      acc = (acc << 8) | src[i];
-  }
-  acc &= (1UL << (32 - bit_off)) - 1;
-  remaining = (bst32_u8)(bits - (32 - bit_off));
-  return (acc << remaining) | (src[4] >> (8 - remaining));
-#endif
+  bst32__to_dyn(s, &dyn);
+  return (bst32_u32)bsd32_read_at(&dyn, (bsd32_u64)idx, (bsd32_u32)bits);
 }
 
-/*
- * Read 'bits' bits at the current cursor and advance.
- */
 static bst32_u32
 bst32_read(BitStreamT32 *s,
            bst32_u32     bits)
 {
-  bst32_u32 v;
+  BitStreamDyn32 dyn;
+  bst32_u32      v;
 
-  v = bst32_read_at(s, s->idx, bits);
-  s->idx += bits;
+  bst32__to_dyn(s, &dyn);
+  v = (bst32_u32)bsd32_read(&dyn, (bsd32_u32)bits);
+  bst32__from_dyn(s, &dyn);
 
   return v;
 }
 
-
-/* ------------------------------------------------------------------ */
-/* Write                                                               */
-/* ------------------------------------------------------------------ */
-
-/*
- * Write 'bits' bits of 'val' at bit position 'idx' (random access).
- * bits must be 0-32. val must fit in 'bits' bits.
- */
 static void
 bst32_write_at(BitStreamT32 *s,
-               bst32_u32     idx,
+               bst32_u64     idx,
                bst32_u32     bits,
                bst32_u32     val)
 {
-  bst32_u8  *dst;
-  bst32_u8   bit_off;
-  bst32_u32  remaining;
+  BitStreamDyn32 dyn;
 
-  assert((idx + bits) <= s->size);
-
-  if(bits == 0)
-    return;
-
-  dst       = &s->data[idx >> 3];
-  bit_off   = (bst32_u8)(idx & 7);
-  remaining = bits;
-
-  if(bit_off)
-    {
-      bst32_u8 avail = 8 - bit_off;
-      bst32_u8 take  = (remaining < avail) ? (bst32_u8)remaining : avail;
-      bst32_u8 shift = avail - take;
-      bst32_u8 mask  = (bst32_u8)(((1U << take) - 1) << shift);
-      dst[0] = (dst[0] & ~mask) | (bst32_u8)(((val >> (remaining - take)) & ((1UL << take) - 1)) << shift);
-      dst++;
-      remaining -= take;
-    }
-
-  while(remaining >= 8)
-    {
-      remaining -= 8;
-      *dst++ = (bst32_u8)((val >> remaining) & 0xFF);
-    }
-
-  if(remaining)
-    {
-      bst32_u8 shift = 8 - (bst32_u8)remaining;
-      bst32_u8 mask  = (bst32_u8)(((1U << remaining) - 1) << shift);
-      dst[0] = (dst[0] & ~mask) | (bst32_u8)((val & ((1UL << remaining) - 1)) << shift);
-    }
+  bst32__to_dyn(s, &dyn);
+  bsd32_write_at(&dyn, (bsd32_u64)idx, (bsd32_u32)bits, (bsd32_u32)val);
+  bst32__from_dyn(s, &dyn);
 }
 
-/*
- * Write 'bits' bits of 'val' at the current cursor and advance.
- */
 static void
 bst32_write(BitStreamT32 *s,
             bst32_u32     bits,
             bst32_u32     val)
 {
-  bst32_write_at(s, s->idx, bits, val);
-  s->idx += bits;
+  BitStreamDyn32 dyn;
+
+  bst32__to_dyn(s, &dyn);
+  bsd32_write(&dyn, (bsd32_u32)bits, (bsd32_u32)val);
+  bst32__from_dyn(s, &dyn);
 }
 
-/*
- * Write raw bytes at the current cursor. If byte-aligned, uses memcpy.
- */
 static void
 bst32_write_bytes(BitStreamT32   *s,
                   const bst32_u8 *src,
-                  bst32_u32       count)
+                  bst32_u64       count)
 {
-  if(!(s->idx & 7))
-    {
-      assert((s->idx + count * 8) <= s->size);
-      memcpy(&s->data[s->idx >> 3], src, count);
-      s->idx += count * 8;
-    }
-  else
-    {
-      bst32_u32 i;
-      for(i = 0; i < count; i++)
-        bst32_write(s, 8, src[i]);
-    }
+  BitStreamDyn32 dyn;
+
+  bst32__to_dyn(s, &dyn);
+  bsd32_write_bytes(&dyn, (const bsd32_u8 *)src, (bsd32_u64)count);
+  bst32__from_dyn(s, &dyn);
 }
 
 
 /* ------------------------------------------------------------------ */
-/* Fixed-width read/write macros                                       */
-/*                                                                     */
-/* BST32_DEFINE_FIXED(N) generates:                                    */
-/*   bst32_read_fixed_N_at(s, idx)  - random-access read, N bits      */
-/*   bst32_read_fixed_N(s)          - streaming read, N bits          */
-/*   bst32_write_fixed_N_at(s, idx, val) - random-access write        */
-/*   bst32_write_fixed_N(s, val)         - streaming write            */
-/*                                                                     */
-/* For read widths 1-25, bit_off + N <= 32 always holds so the        */
-/* 5-byte path is dead code and optimized away.                       */
+/* Fixed-width read/write wrappers                                     */
 /* ------------------------------------------------------------------ */
-
-#if BST32_HAS_BSWAP
 
 #define BST32_DEFINE_FIXED(N)                                              \
                                                                            \
 static bst32_u32                                                           \
 bst32_read_fixed_##N##_at(const BitStreamT32 *s,                           \
-                          bst32_u32           idx)                         \
+                          bst32_u64           idx)                         \
 {                                                                          \
-  const bst32_u32 BITS = (N);                                              \
-  const bst32_u32 MASK = ((N) == 32) ? ~0UL : ((1UL << (N)) - 1);        \
-  bst32_u32       byte_idx = idx >> 3;                                     \
-  bst32_u8        bit_off  = (bst32_u8)(idx & 7);                         \
-  const bst32_u8 *src      = &s->data[byte_idx];                          \
-  bst32_u32       acc;                                                     \
+  BitStreamDyn32 dyn;                                                      \
                                                                            \
-  assert((idx + BITS) <= s->size);                                         \
-                                                                           \
-  acc = bst32_load32_be(src);                                              \
-  if(bit_off + BITS <= 32)                                                 \
-    return (acc >> (32 - bit_off - BITS)) & MASK;                          \
-                                                                           \
-  {                                                                        \
-    bst32_u8 remaining;                                                    \
-    acc &= (1UL << (32 - bit_off)) - 1;                                   \
-    remaining = (bst32_u8)(BITS - (32 - bit_off));                         \
-    return (acc << remaining) | (src[4] >> (8 - remaining));               \
-  }                                                                        \
+  bst32__to_dyn(s, &dyn);                                                  \
+  return (bst32_u32)bsd32_read_fixed_##N##_at(&dyn, (bsd32_u64)idx);      \
 }                                                                          \
                                                                            \
 static bst32_u32                                                           \
 bst32_read_fixed_##N(BitStreamT32 *s)                                      \
 {                                                                          \
-  bst32_u32 v = bst32_read_fixed_##N##_at(s, s->idx);                     \
-  s->idx += (N);                                                           \
+  BitStreamDyn32 dyn;                                                      \
+  bst32_u32      v;                                                        \
+                                                                           \
+  bst32__to_dyn(s, &dyn);                                                  \
+  v = (bst32_u32)bsd32_read_fixed_##N(&dyn);                               \
+  bst32__from_dyn(s, &dyn);                                                \
+                                                                           \
   return v;                                                                \
 }                                                                          \
                                                                            \
 static void                                                                \
 bst32_write_fixed_##N##_at(BitStreamT32 *s,                                \
-                           bst32_u32     idx,                              \
+                           bst32_u64     idx,                              \
                            bst32_u32     val)                              \
 {                                                                          \
-  const bst32_u32 BITS = (N);                                              \
-  bst32_u8  *dst;                                                          \
-  bst32_u8   bit_off;                                                      \
-  bst32_u32  remaining;                                                    \
+  BitStreamDyn32 dyn;                                                      \
                                                                            \
-  assert((idx + BITS) <= s->size);                                         \
-                                                                           \
-  dst       = &s->data[idx >> 3];                                          \
-  bit_off   = (bst32_u8)(idx & 7);                                        \
-  remaining = BITS;                                                        \
-                                                                           \
-  if(bit_off)                                                              \
-    {                                                                      \
-      bst32_u8 avail = 8 - bit_off;                                       \
-      bst32_u8 take  = (BITS < avail) ? (bst32_u8)BITS : avail;          \
-      bst32_u8 shift = avail - take;                                      \
-      bst32_u8 mask  = (bst32_u8)(((1U << take) - 1) << shift);          \
-      dst[0] = (dst[0] & ~mask) |                                         \
-        (bst32_u8)(((val >> (remaining - take)) &                         \
-                     ((1UL << take) - 1)) << shift);                      \
-      dst++;                                                               \
-      remaining -= take;                                                   \
-    }                                                                      \
-                                                                           \
-  while(remaining >= 8)                                                    \
-    {                                                                      \
-      remaining -= 8;                                                      \
-      *dst++ = (bst32_u8)((val >> remaining) & 0xFF);                     \
-    }                                                                      \
-                                                                           \
-  if(remaining)                                                            \
-    {                                                                      \
-      bst32_u8 shift = 8 - (bst32_u8)remaining;                          \
-      bst32_u8 mask  = (bst32_u8)(((1U << remaining) - 1) << shift);     \
-      dst[0] = (dst[0] & ~mask) |                                         \
-        (bst32_u8)((val & ((1UL << remaining) - 1)) << shift);           \
-    }                                                                      \
+  bst32__to_dyn(s, &dyn);                                                  \
+  bsd32_write_fixed_##N##_at(&dyn, (bsd32_u64)idx, (bsd32_u32)val);       \
+  bst32__from_dyn(s, &dyn);                                                \
 }                                                                          \
                                                                            \
 static void                                                                \
 bst32_write_fixed_##N(BitStreamT32 *s,                                     \
                       bst32_u32     val)                                   \
 {                                                                          \
-  bst32_write_fixed_##N##_at(s, s->idx, val);                             \
-  s->idx += (N);                                                           \
+  BitStreamDyn32 dyn;                                                      \
+                                                                           \
+  bst32__to_dyn(s, &dyn);                                                  \
+  bsd32_write_fixed_##N(&dyn, (bsd32_u32)val);                             \
+  bst32__from_dyn(s, &dyn);                                                \
 }
 
-#else /* !BST32_HAS_BSWAP */
-
-#define BST32_DEFINE_FIXED(N)                                              \
-                                                                           \
-static bst32_u32                                                           \
-bst32_read_fixed_##N##_at(const BitStreamT32 *s,                           \
-                          bst32_u32           idx)                         \
-{                                                                          \
-  const bst32_u32 BITS  = (N);                                             \
-  const bst32_u32 BYTES = (7 + (N) + 7) >> 3;                             \
-  const bst32_u32 MASK  = ((N) == 32) ? ~0UL : ((1UL << (N)) - 1);       \
-  const bst32_u8 *src   = &s->data[idx >> 3];                             \
-  bst32_u8        bit_off = (bst32_u8)(idx & 7);                          \
-  bst32_u32       acc   = 0;                                               \
-  bst32_u32       i;                                                       \
-                                                                           \
-  assert((idx + BITS) <= s->size);                                         \
-                                                                           \
-  if(bit_off + BITS <= 32)                                                 \
-    {                                                                      \
-      for(i = 0; i < BYTES; i++)                                           \
-        acc = (acc << 8) | src[i];                                         \
-      return (acc >> (BYTES * 8 - bit_off - BITS)) & MASK;                 \
-    }                                                                      \
-                                                                           \
-  {                                                                        \
-    bst32_u8 remaining;                                                    \
-    for(i = 0; i < 4; i++)                                                 \
-      acc = (acc << 8) | src[i];                                           \
-    acc &= (1UL << (32 - bit_off)) - 1;                                   \
-    remaining = (bst32_u8)(BITS - (32 - bit_off));                         \
-    return (acc << remaining) | (src[4] >> (8 - remaining));               \
-  }                                                                        \
-}                                                                          \
-                                                                           \
-static bst32_u32                                                           \
-bst32_read_fixed_##N(BitStreamT32 *s)                                      \
-{                                                                          \
-  bst32_u32 v = bst32_read_fixed_##N##_at(s, s->idx);                     \
-  s->idx += (N);                                                           \
-  return v;                                                                \
-}                                                                          \
-                                                                           \
-static void                                                                \
-bst32_write_fixed_##N##_at(BitStreamT32 *s,                                \
-                           bst32_u32     idx,                              \
-                           bst32_u32     val)                              \
-{                                                                          \
-  const bst32_u32 BITS = (N);                                              \
-  bst32_u8  *dst;                                                          \
-  bst32_u8   bit_off;                                                      \
-  bst32_u32  remaining;                                                    \
-                                                                           \
-  assert((idx + BITS) <= s->size);                                         \
-                                                                           \
-  dst       = &s->data[idx >> 3];                                          \
-  bit_off   = (bst32_u8)(idx & 7);                                        \
-  remaining = BITS;                                                        \
-                                                                           \
-  if(bit_off)                                                              \
-    {                                                                      \
-      bst32_u8 avail = 8 - bit_off;                                       \
-      bst32_u8 take  = (BITS < avail) ? (bst32_u8)BITS : avail;          \
-      bst32_u8 shift = avail - take;                                      \
-      bst32_u8 mask  = (bst32_u8)(((1U << take) - 1) << shift);          \
-      dst[0] = (dst[0] & ~mask) |                                         \
-        (bst32_u8)(((val >> (remaining - take)) &                         \
-                     ((1UL << take) - 1)) << shift);                      \
-      dst++;                                                               \
-      remaining -= take;                                                   \
-    }                                                                      \
-                                                                           \
-  while(remaining >= 8)                                                    \
-    {                                                                      \
-      remaining -= 8;                                                      \
-      *dst++ = (bst32_u8)((val >> remaining) & 0xFF);                     \
-    }                                                                      \
-                                                                           \
-  if(remaining)                                                            \
-    {                                                                      \
-      bst32_u8 shift = 8 - (bst32_u8)remaining;                          \
-      bst32_u8 mask  = (bst32_u8)(((1U << remaining) - 1) << shift);     \
-      dst[0] = (dst[0] & ~mask) |                                         \
-        (bst32_u8)((val & ((1UL << remaining) - 1)) << shift);           \
-    }                                                                      \
-}                                                                          \
-                                                                           \
-static void                                                                \
-bst32_write_fixed_##N(BitStreamT32 *s,                                     \
-                      bst32_u32     val)                                   \
-{                                                                          \
-  bst32_write_fixed_##N##_at(s, s->idx, val);                             \
-  s->idx += (N);                                                           \
-}
-
-#endif /* BST32_HAS_BSWAP */
-
-
-#define BST32_X_ALL \
-  X(1)  X(2)  X(3)  X(4)  X(5)  X(6)  X(7)  X(8)  \
-  X(9)  X(10) X(11) X(12) X(13) X(14) X(15) X(16) \
-  X(17) X(18) X(19) X(20) X(21) X(22) X(23) X(24) \
-  X(25) X(26) X(27) X(28) X(29) X(30) X(31) X(32)
+#define BST32_X_ALL BSD32_X_ALL
 
 #define X(n) BST32_DEFINE_FIXED(n)
 BST32_X_ALL

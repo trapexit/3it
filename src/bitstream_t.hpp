@@ -6,8 +6,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 
@@ -75,6 +77,175 @@ struct BitStreamConstSpan
 
   const T* data() const { return _data; }
   u64      size() const { return _size; }
+};
+
+
+using bitstream_realloc_fn = void* (*)(void *ptr, size_t new_bytes, void *ctx);
+
+static inline void*
+bitstream_stdlib_realloc(void *ptr, size_t new_bytes, void *ctx)
+{
+  (void)ctx;
+  if(new_bytes == 0)
+    {
+      std::free(ptr);
+      return nullptr;
+    }
+  return std::realloc(ptr, new_bytes);
+}
+
+
+template<typename T = u8>
+class BitStreamReallocStorage
+{
+  static_assert(!std::is_const_v<T>,
+                "BitStreamReallocStorage requires a non-const element type");
+  static_assert(std::is_trivially_copyable_v<T>,
+                "BitStreamReallocStorage requires a trivially copyable element type");
+
+private:
+  T                   *_data;
+  size_t               _size;
+  bitstream_realloc_fn _realloc_fn;
+  void                *_realloc_ctx;
+
+  void
+  _free()
+  {
+    if(_data)
+      _realloc_fn(_data, 0, _realloc_ctx);
+    _data = nullptr;
+    _size = 0;
+  }
+
+public:
+  BitStreamReallocStorage()
+    : BitStreamReallocStorage(nullptr, 0, bitstream_stdlib_realloc, nullptr)
+  {
+  }
+
+  explicit
+  BitStreamReallocStorage(bitstream_realloc_fn realloc_fn_,
+                          void                *realloc_ctx_ = nullptr)
+    : BitStreamReallocStorage(nullptr, 0, realloc_fn_, realloc_ctx_)
+  {
+  }
+
+  explicit
+  BitStreamReallocStorage(size_t                elems_,
+                          bitstream_realloc_fn  realloc_fn_ = bitstream_stdlib_realloc,
+                          void                 *realloc_ctx_ = nullptr)
+    : BitStreamReallocStorage(nullptr, 0, realloc_fn_, realloc_ctx_)
+  {
+    resize(elems_);
+  }
+
+  BitStreamReallocStorage(T                   *data_,
+                          size_t               elems_,
+                          bitstream_realloc_fn realloc_fn_ = bitstream_stdlib_realloc,
+                          void                *realloc_ctx_ = nullptr)
+    : _data(data_),
+      _size(elems_),
+      _realloc_fn(realloc_fn_ ? realloc_fn_ : bitstream_stdlib_realloc),
+      _realloc_ctx(realloc_ctx_)
+  {
+  }
+
+  ~BitStreamReallocStorage()
+  {
+    _free();
+  }
+
+  BitStreamReallocStorage(const BitStreamReallocStorage&) = delete;
+  BitStreamReallocStorage& operator=(const BitStreamReallocStorage&) = delete;
+
+  BitStreamReallocStorage(BitStreamReallocStorage &&other) noexcept
+    : _data(other._data),
+      _size(other._size),
+      _realloc_fn(other._realloc_fn),
+      _realloc_ctx(other._realloc_ctx)
+  {
+    other._data = nullptr;
+    other._size = 0;
+  }
+
+  BitStreamReallocStorage&
+  operator=(BitStreamReallocStorage &&other) noexcept
+  {
+    if(this != &other)
+      {
+        _free();
+        _data        = other._data;
+        _size        = other._size;
+        _realloc_fn  = other._realloc_fn;
+        _realloc_ctx = other._realloc_ctx;
+        other._data = nullptr;
+        other._size = 0;
+      }
+    return *this;
+  }
+
+  T*
+  data()
+  {
+    return _data;
+  }
+
+  const T*
+  data() const
+  {
+    return _data;
+  }
+
+  size_t
+  size() const
+  {
+    return _size;
+  }
+
+  bitstream_realloc_fn
+  realloc_fn() const
+  {
+    return _realloc_fn;
+  }
+
+  void*
+  realloc_ctx() const
+  {
+    return _realloc_ctx;
+  }
+
+  void
+  resize(size_t elems_)
+  {
+    if(elems_ == _size)
+      return;
+
+    if(elems_ == 0)
+      {
+        _free();
+        return;
+      }
+
+    void *p = _realloc_fn(_data, elems_ * sizeof(T), _realloc_ctx);
+    assert(p != nullptr && "BitStreamReallocStorage: realloc_fn returned NULL");
+
+    T *new_data = static_cast<T*>(p);
+    if(elems_ > _size)
+      std::memset(new_data + _size, 0, (elems_ - _size) * sizeof(T));
+
+    _data = new_data;
+    _size = elems_;
+  }
+
+  T*
+  release()
+  {
+    T *data_ = _data;
+    _data = nullptr;
+    _size = 0;
+    return data_;
+  }
 };
 
 
@@ -559,7 +730,9 @@ public:
 using BitStream       = BitStreamT<std::vector<u8>>;
 using BitStreamView   = BitStreamT<BitStreamSpan<u8>>;
 using BitStreamReader = BitStreamT<BitStreamConstSpan<u8>>;
+using BitStreamRealloc = BitStreamT<BitStreamReallocStorage<u8>>;
 
 using BitStream32       = BitStreamT<std::vector<u8>, u32>;
 using BitStreamView32   = BitStreamT<BitStreamSpan<u8>, u32>;
 using BitStreamReader32 = BitStreamT<BitStreamConstSpan<u8>, u32>;
+using BitStreamRealloc32 = BitStreamT<BitStreamReallocStorage<u8>, u32>;

@@ -1,5 +1,8 @@
 /*
- * bitstream_writer32.h - Header-only C89 bit stream writer (32-bit)
+ * bitstream_writer32.h - Header-only C89 bit stream writer
+ *
+ * Index/cursor:  64-bit (streams may be arbitrarily large)
+ * Field width:   32-bit maximum (bits/val args are u32)
  *
  * All functions are static to allow header-only usage without linker
  * conflicts. Compilers will inline at optimization levels >= -O1.
@@ -22,15 +25,21 @@
 #include <string.h>
 
 #ifndef BSW32_U8
-typedef unsigned char  bsw32_u8;
+typedef unsigned char      bsw32_u8;
 #else
-typedef BSW32_U8       bsw32_u8;
+typedef BSW32_U8           bsw32_u8;
 #endif
 
 #ifndef BSW32_U32
-typedef unsigned long  bsw32_u32;
+typedef unsigned int       bsw32_u32;
 #else
-typedef BSW32_U32      bsw32_u32;
+typedef BSW32_U32          bsw32_u32;
+#endif
+
+#ifndef BSW32_U64
+typedef unsigned long long bsw32_u64;
+#else
+typedef BSW32_U64          bsw32_u64;
 #endif
 
 #define BSW32_BITS_PER_BYTE 8
@@ -39,16 +48,16 @@ typedef BSW32_U32      bsw32_u32;
 typedef struct BitStreamWriter32
 {
   bsw32_u8  *data;
-  bsw32_u32  capacity; /* in bits */
-  bsw32_u32  idx;      /* in bits */
+  bsw32_u64  capacity; /* in bits */
+  bsw32_u64  idx;      /* in bits */
 } BitStreamWriter32;
 
 
 static void
 bsw32_init(BitStreamWriter32 *w,
            bsw32_u8          *data,
-           bsw32_u32          capacity_in_bytes,
-           bsw32_u32          idx)
+           bsw32_u64          capacity_in_bytes,
+           bsw32_u64          idx)
 {
   w->data     = data;
   w->capacity = capacity_in_bytes * BSW32_BITS_PER_BYTE;
@@ -57,7 +66,7 @@ bsw32_init(BitStreamWriter32 *w,
 
 static void
 bsw32_seek(BitStreamWriter32 *w,
-           bsw32_u32          idx)
+           bsw32_u64          idx)
 {
   w->idx = idx;
 }
@@ -70,14 +79,14 @@ bsw32_rewind(BitStreamWriter32 *w)
 
 static void
 bsw32_rewind_bits(BitStreamWriter32 *w,
-                  bsw32_u32          bits)
+                  bsw32_u64          bits)
 {
   w->idx -= bits;
 }
 
 static void
 bsw32_skip(BitStreamWriter32 *w,
-           bsw32_u32          bits)
+           bsw32_u64          bits)
 {
   w->idx += bits;
 }
@@ -85,58 +94,79 @@ bsw32_skip(BitStreamWriter32 *w,
 static int
 bsw32_on_8bit_boundary(const BitStreamWriter32 *w)
 {
-  return !(w->idx & 0x7UL);
+  return !(w->idx & 0x7);
 }
 
 static bsw32_u8
 bsw32_bits_to_8bit_boundary(const BitStreamWriter32 *w)
 {
-  return (bsw32_u8)((0x08UL - (w->idx & 0x7UL)) & 0x7UL);
+  return (bsw32_u8)((0x08 - (w->idx & 0x7)) & 0x7);
 }
 
 static int
 bsw32_on_16bit_boundary(const BitStreamWriter32 *w)
 {
-  return !(w->idx & 0xFUL);
+  return !(w->idx & 0xF);
 }
 
 static bsw32_u8
 bsw32_bits_to_16bit_boundary(const BitStreamWriter32 *w)
 {
-  return (bsw32_u8)((0x10UL - (w->idx & 0xFUL)) & 0xFUL);
+  return (bsw32_u8)((0x10 - (w->idx & 0xF)) & 0xF);
 }
 
 static int
 bsw32_on_32bit_boundary(const BitStreamWriter32 *w)
 {
-  return !(w->idx & 0x1FUL);
+  return !(w->idx & 0x1F);
 }
 
 static bsw32_u8
 bsw32_bits_to_32bit_boundary(const BitStreamWriter32 *w)
 {
-  return (bsw32_u8)((0x20UL - (w->idx & 0x1FUL)) & 0x1FUL);
+  return (bsw32_u8)((0x20 - (w->idx & 0x1F)) & 0x1F);
 }
 
-static bsw32_u32
+static void
+bsw32_skip_to_8bit_boundary(BitStreamWriter32 *w)
+{
+  if(w->idx & 0x7)
+    w->idx += 0x8 - (w->idx & 0x7);
+}
+
+static void
+bsw32_skip_to_16bit_boundary(BitStreamWriter32 *w)
+{
+  if(w->idx & 0x0F)
+    w->idx += 0x10 - (w->idx & 0x0F);
+}
+
+static void
+bsw32_skip_to_32bit_boundary(BitStreamWriter32 *w)
+{
+  if(w->idx & 0x1F)
+    w->idx += 0x20 - (w->idx & 0x1F);
+}
+
+static bsw32_u64
 bsw32_tell(const BitStreamWriter32 *w)
 {
   return w->idx;
 }
 
-static bsw32_u32
+static bsw32_u64
 bsw32_tell_bits(const BitStreamWriter32 *w)
 {
   return w->idx;
 }
 
-static bsw32_u32
+static bsw32_u64
 bsw32_tell_bytes(const BitStreamWriter32 *w)
 {
   return (w->idx + (BSW32_BITS_PER_BYTE - 1)) / BSW32_BITS_PER_BYTE;
 }
 
-static bsw32_u32
+static bsw32_u64
 bsw32_tell_u32(const BitStreamWriter32 *w)
 {
   return bsw32_tell_bytes(w) / 4;
@@ -145,11 +175,11 @@ bsw32_tell_u32(const BitStreamWriter32 *w)
 
 /*
  * Write 'bits' bits of 'val' at bit position 'idx' (random access).
- * bits must be 0-32. val must fit in 'bits' bits.
+ * bits must be 1-32. val must fit in 'bits' bits.
  */
 static void
 bsw32_write_at(BitStreamWriter32 *w,
-               bsw32_u32          idx,
+               bsw32_u64          idx,
                bsw32_u32          bits,
                bsw32_u32          val)
 {
@@ -173,7 +203,7 @@ bsw32_write_at(BitStreamWriter32 *w,
       bsw32_u8 take  = (remaining < avail) ? (bsw32_u8)remaining : avail;
       bsw32_u8 shift = avail - take;
       bsw32_u8 mask  = (bsw32_u8)(((1U << take) - 1) << shift);
-      dst[0] = (dst[0] & ~mask) | (bsw32_u8)(((val >> (remaining - take)) & ((1UL << take) - 1)) << shift);
+      dst[0] = (dst[0] & ~mask) | (bsw32_u8)(((val >> (remaining - take)) & (((bsw32_u32)1 << take) - 1)) << shift);
       dst++;
       remaining -= take;
     }
@@ -190,7 +220,7 @@ bsw32_write_at(BitStreamWriter32 *w,
     {
       bsw32_u8 shift = 8 - (bsw32_u8)remaining;
       bsw32_u8 mask  = (bsw32_u8)(((1U << remaining) - 1) << shift);
-      dst[0] = (dst[0] & ~mask) | (bsw32_u8)((val & ((1UL << remaining) - 1)) << shift);
+      dst[0] = (dst[0] & ~mask) | (bsw32_u8)((val & (((bsw32_u32)1 << remaining) - 1)) << shift);
     }
 }
 
@@ -214,17 +244,17 @@ bsw32_write(BitStreamWriter32 *w,
 static void
 bsw32_write_bytes(BitStreamWriter32 *w,
                   const bsw32_u8    *src,
-                  bsw32_u32          count)
+                  bsw32_u64          count)
 {
   if(!(w->idx & 7))
     {
       assert((w->idx + count * 8) <= w->capacity);
-      memcpy(&w->data[w->idx >> 3], src, count);
+      memcpy(&w->data[w->idx >> 3], src, (size_t)count);
       w->idx += count * 8;
     }
   else
     {
-      bsw32_u32 i;
+      bsw32_u64 i;
       for(i = 0; i < count; i++)
         bsw32_write(w, 8, src[i]);
     }
@@ -234,7 +264,7 @@ bsw32_write_bytes(BitStreamWriter32 *w,
 /*
  * BSW32_DEFINE_WRITE_FIXED(N) - generates two functions:
  *
- *   bsw32_write_fixed_N_at(w, idx, val)  - random access
+ *   bsw32_write_fixed_N_at(w, idx, val)  - random access  (idx is u64)
  *   bsw32_write_fixed_N(w, val)          - streaming
  */
 
@@ -242,7 +272,7 @@ bsw32_write_bytes(BitStreamWriter32 *w,
                                                                            \
 static void                                                                \
 bsw32_write_fixed_##N##_at(BitStreamWriter32 *w,                           \
-                           bsw32_u32          idx,                         \
+                           bsw32_u64          idx,                         \
                            bsw32_u32          val)                         \
 {                                                                          \
   const bsw32_u32 BITS = (N);                                              \
@@ -264,7 +294,7 @@ bsw32_write_fixed_##N##_at(BitStreamWriter32 *w,                           \
       bsw32_u8 mask  = (bsw32_u8)(((1U << take) - 1) << shift);          \
       dst[0] = (dst[0] & ~mask) |                                         \
         (bsw32_u8)(((val >> (remaining - take)) &                         \
-                     ((1UL << take) - 1)) << shift);                      \
+                     (((bsw32_u32)1 << take) - 1)) << shift);            \
       dst++;                                                               \
       remaining -= take;                                                   \
     }                                                                      \
@@ -280,7 +310,7 @@ bsw32_write_fixed_##N##_at(BitStreamWriter32 *w,                           \
       bsw32_u8 shift = 8 - (bsw32_u8)remaining;                          \
       bsw32_u8 mask  = (bsw32_u8)(((1U << remaining) - 1) << shift);     \
       dst[0] = (dst[0] & ~mask) |                                         \
-        (bsw32_u8)((val & ((1UL << remaining) - 1)) << shift);           \
+        (bsw32_u8)((val & (((bsw32_u32)1 << remaining) - 1)) << shift);  \
     }                                                                      \
 }                                                                          \
                                                                            \

@@ -44,6 +44,13 @@ all: $(OUTPUT)
 $(OUTPUT): builddir $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJS) $(LDFLAGS)
 
+check-c-bitstream-headers: builddir
+	$(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -Wno-unused-function -c tools/bitstream_c_headers_smoke.c -o $(BUILDDIR)/bitstream_c_headers_smoke.c.o
+
+check-cpp-bitstream-headers: builddir
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -Wno-unused-function -c tools/bitstream_cpp_headers_smoke.cpp -o $(BUILDDIR)/bitstream_cpp_headers_smoke.cpp.o
+	$(CXX) $(CPPFLAGS) $(OPT) -Wall -std=c++11 -Wno-unused-function -DBITSTREAM_CPP11=1 -c tools/bitstream_cpp_headers_smoke.cpp -o $(BUILDDIR)/bitstream_cpp11_headers_smoke.cpp.o
+
 strip: $(OUTPUT)
 	$(STRIP) --strip-all $(OUTPUT) || true
 	llvm-strip -x --strip-unneeded $(OUTPUT) || true
@@ -78,6 +85,6 @@ builder:
 release: build-builder x64-linux x64-windows aarch64-linux aarch64-macos
 
 
-.PHONY: clean builddir release docker-release build-builder
+.PHONY: clean builddir release docker-release build-builder check-c-bitstream-headers check-cpp-bitstream-headers
 
 -include $(DEPS)
