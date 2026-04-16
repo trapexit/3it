@@ -249,20 +249,20 @@ public:
 };
 
 
-template<typename Storage, typename Idx = u64>
+template<typename Storage, typename Word = u64>
 class BitStreamT
 {
-  static_assert(std::is_same_v<Idx,u32> || std::is_same_v<Idx,u64>,
-                "Idx must be u32 or u64");
+  static_assert(std::is_same_v<Word,u32> || std::is_same_v<Word,u64>,
+                "Word must be u32 or u64");
 
   using traits = bitstream_detail::storage_traits<Storage>;
 
-  static constexpr Idx IDX_BITS = sizeof(Idx) * 8;
+  static constexpr u64 WORD_BITS = sizeof(Word) * 8;
 
 private:
   Storage _storage;
-  Idx     _idx;
-  Idx     _size;
+  u64     _idx;
+  u64     _size;
 
   const u8*
   _rptr() const
@@ -276,16 +276,16 @@ private:
     return reinterpret_cast<u8*>(_storage.data());
   }
 
-  Idx
+  u64
   _byte_capacity() const
   {
-    return (Idx)(_storage.size() * traits::elem_size);
+    return static_cast<u64>(_storage.size() * traits::elem_size);
   }
 
   void
-  _maybe_resize(Idx size_in_bits)
+  _maybe_resize(u64 size_in_bits)
   {
-    Idx bytes_needed = (size_in_bits + BITS_PER_BYTE - 1) / BITS_PER_BYTE;
+    u64 bytes_needed = (size_in_bits + BITS_PER_BYTE - 1) / BITS_PER_BYTE;
     if(bytes_needed > _byte_capacity())
       {
         if constexpr(bitstream_detail::is_resizable<Storage>::value)
@@ -313,7 +313,7 @@ public:
   BitStreamT(Storage storage_)
     : _storage(std::move(storage_)),
       _idx(0),
-      _size((Idx)(_storage.size() * traits::elem_size * BITS_PER_BYTE))
+      _size(static_cast<u64>(_storage.size() * traits::elem_size * BITS_PER_BYTE))
   {
   }
 
@@ -338,7 +338,7 @@ public:
 
 public:
   void
-  seek(const Idx idx_)
+  seek(const u64 idx_)
   {
     if constexpr(bitstream_detail::is_resizable<Storage>::value)
       _maybe_resize(idx_);
@@ -353,13 +353,13 @@ public:
   }
 
   void
-  rewind(const Idx bits_)
+  rewind(const u64 bits_)
   {
     _idx -= bits_;
   }
 
   void
-  skip(const Idx bits_)
+  skip(const u64 bits_)
   {
     seek(_idx + bits_);
   }
@@ -422,13 +422,13 @@ public:
   void zero_till_32bit_boundary() { if(!on_32bit_boundary()) write(bits_to_32bit_boundary(),0); }
   void zero_till_64bit_boundary() { if(!on_64bit_boundary()) write(bits_to_64bit_boundary(),0); }
 
-  Idx tell()       const { return _idx; }
-  Idx tell_bits()  const { return _idx; }
-  Idx tell_bytes() const { return ((_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE); }
+  u64 tell()       const { return _idx; }
+  u64 tell_bits()  const { return _idx; }
+  u64 tell_bytes() const { return ((_idx + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE); }
 
-  Idx size_bits()   const { return _size; }
-  Idx size_8bits()  const { return ((_size + 7) / 8); }
-  Idx size_32bits() const { return ((_size + 31) / 32); }
+  u64 size_bits()   const { return _size; }
+  u64 size_8bits()  const { return ((_size + 7) / 8); }
+  u64 size_32bits() const { return ((_size + 31) / 32); }
 
 public:
   void
@@ -452,216 +452,220 @@ public:
   }
 
   void
-  set_size_bits(Idx size_)
+  set_size_bits(u64 size_)
   {
     _size = size_;
     _idx  = std::min(_idx,_size);
     shrink_to_size();
   }
 
-  void set_size_8bits(Idx s)  { set_size_bits(s * 8);  }
-  void set_size_32bits(Idx s) { set_size_bits(s * 32); }
+  void set_size_8bits(u64 s)  { set_size_bits(s * 8);  }
+  void set_size_32bits(u64 s) { set_size_bits(s * 32); }
 
 public:
-  Idx
-  read_bit(const Idx idx_) const
+  Word
+  read_bit(const u64 idx_) const
   {
-    return ((_rptr()[idx_ >> 3] >> (7 - (idx_ & 7))) & 1);
+    return static_cast<Word>((_rptr()[idx_ >> 3] >> (7 - (idx_ & 7))) & 1);
   }
 
-  Idx
-  read(const Idx idx_,
-       const Idx bits_) const
+  Word
+  read(const u64  idx_,
+       const Word bits_) const
   {
+    assert(bits_ <= WORD_BITS && "BitStream: field width exceeds word size");
+
     if(bits_ == 0)
       return 0;
 
-    const Idx byte_idx = idx_ >> 3;
-    const u8  bit_off  = idx_ & 7;
+    const u64 byte_idx = idx_ >> 3;
+    const u8  bit_off  = static_cast<u8>(idx_ & 7);
     const u8 *src      = &_rptr()[byte_idx];
 
-    if constexpr(sizeof(Idx) == 4)
+    if constexpr(sizeof(Word) == 4)
       {
-        const Idx mask = (bits_ == 32) ? ~(Idx)0 : (((Idx)1 << bits_) - 1);
+        const Word mask = (bits_ == 32) ? ~(Word)0 : ((static_cast<Word>(1) << bits_) - 1);
 
 #if BITSTREAM_T_HAS_BSWAP
         if(bit_off + bits_ <= 32)
           {
-            Idx acc = bitstream_detail::load32_be(src);
+            Word acc = bitstream_detail::load32_be(src);
             return (acc >> (32 - bit_off - bits_)) & mask;
           }
 
-        Idx acc = bitstream_detail::load32_be(src);
-        acc &= ((Idx)1 << (32 - bit_off)) - 1;
-        const u8 remaining = bits_ - (32 - bit_off);
-        return (acc << remaining) | (src[4] >> (8 - remaining));
+        Word acc = bitstream_detail::load32_be(src);
+        acc &= (static_cast<Word>(1) << (32 - bit_off)) - 1;
+        const u8 remaining = static_cast<u8>(bits_ - (32 - bit_off));
+        return static_cast<Word>((acc << remaining) | (src[4] >> (8 - remaining)));
 #else
         if(!bit_off && !(bits_ & 7))
           {
-            Idx val = 0;
-            for(Idx i = 0; i < (bits_ >> 3); i++)
-              val = (val << 8) | src[i];
+            Word val = 0;
+            for(u64 i = 0; i < (bits_ >> 3); i++)
+              val = static_cast<Word>((val << 8) | src[i]);
             return val;
           }
 
         if(bit_off + bits_ <= 32)
           {
-            Idx acc = 0;
-            const Idx n = (bit_off + bits_ + 7) >> 3;
-            for(Idx i = 0; i < n; i++)
-              acc = (acc << 8) | src[i];
+            Word acc = 0;
+            const u64 n = (bit_off + bits_ + 7) >> 3;
+            for(u64 i = 0; i < n; i++)
+              acc = static_cast<Word>((acc << 8) | src[i]);
             return (acc >> (n * 8 - bit_off - bits_)) & mask;
           }
 
-        Idx acc = 0;
-        for(Idx i = 0; i < 4; i++)
-          acc = (acc << 8) | src[i];
-        acc &= ((Idx)1 << (32 - bit_off)) - 1;
-        const u8 remaining = bits_ - (32 - bit_off);
-        return (acc << remaining) | (src[4] >> (8 - remaining));
+        Word acc = 0;
+        for(u64 i = 0; i < 4; i++)
+          acc = static_cast<Word>((acc << 8) | src[i]);
+        acc &= (static_cast<Word>(1) << (32 - bit_off)) - 1;
+        const u8 remaining = static_cast<u8>(bits_ - (32 - bit_off));
+        return static_cast<Word>((acc << remaining) | (src[4] >> (8 - remaining)));
 #endif
       }
     else
       {
-        const Idx mask = (bits_ == 64) ? ~(Idx)0 : (((Idx)1 << bits_) - 1);
+        const Word mask = (bits_ == 64) ? ~(Word)0 : ((static_cast<Word>(1) << bits_) - 1);
 
 #if BITSTREAM_T_HAS_BSWAP
         if(bit_off + bits_ <= 64)
           {
-            Idx acc = bitstream_detail::load64_be(src);
+            Word acc = bitstream_detail::load64_be(src);
             return (acc >> (64 - bit_off - bits_)) & mask;
           }
 
-        Idx acc = bitstream_detail::load64_be(src);
-        acc &= ((Idx)1 << (64 - bit_off)) - 1;
-        const u8 remaining = bits_ - (64 - bit_off);
-        return (acc << remaining) | (src[8] >> (8 - remaining));
+        Word acc = bitstream_detail::load64_be(src);
+        acc &= (static_cast<Word>(1) << (64 - bit_off)) - 1;
+        const u8 remaining = static_cast<u8>(bits_ - (64 - bit_off));
+        return static_cast<Word>((acc << remaining) | (src[8] >> (8 - remaining)));
 #else
         if(!bit_off && !(bits_ & 7))
           {
-            Idx val = 0;
-            for(Idx i = 0; i < (bits_ >> 3); i++)
-              val = (val << 8) | src[i];
+            Word val = 0;
+            for(u64 i = 0; i < (bits_ >> 3); i++)
+              val = static_cast<Word>((val << 8) | src[i]);
             return val;
           }
 
         if(bit_off + bits_ <= 64)
           {
-            Idx acc = 0;
-            const Idx n = (bit_off + bits_ + 7) >> 3;
-            for(Idx i = 0; i < n; i++)
-              acc = (acc << 8) | src[i];
+            Word acc = 0;
+            const u64 n = (bit_off + bits_ + 7) >> 3;
+            for(u64 i = 0; i < n; i++)
+              acc = static_cast<Word>((acc << 8) | src[i]);
             return (acc >> (n * 8 - bit_off - bits_)) & mask;
           }
 
-        Idx acc = 0;
-        for(Idx i = 0; i < 8; i++)
-          acc = (acc << 8) | src[i];
-        acc &= ((Idx)1 << (64 - bit_off)) - 1;
-        const u8 remaining = bits_ - (64 - bit_off);
-        return (acc << remaining) | (src[8] >> (8 - remaining));
+        Word acc = 0;
+        for(u64 i = 0; i < 8; i++)
+          acc = static_cast<Word>((acc << 8) | src[i]);
+        acc &= (static_cast<Word>(1) << (64 - bit_off)) - 1;
+        const u8 remaining = static_cast<u8>(bits_ - (64 - bit_off));
+        return static_cast<Word>((acc << remaining) | (src[8] >> (8 - remaining)));
 #endif
       }
   }
 
-  Idx
-  read(const Idx bits_)
+  Word
+  read(const Word bits_)
   {
-    Idx v = read(_idx,bits_);
+    Word v = read(_idx,bits_);
     _idx += bits_;
     return v;
   }
 
 private:
-  template<Idx BITS>
+  template<u64 BITS>
   inline
-  typename std::enable_if<(sizeof(Idx)==4 && BITS>=1 && BITS<=25) ||
-                          (sizeof(Idx)==8 && BITS>=1 && BITS<=57), Idx>::type
-  _read_fixed(const Idx idx_) const
+  typename std::enable_if<(sizeof(Word)==4 && BITS>=1 && BITS<=25) ||
+                          (sizeof(Word)==8 && BITS>=1 && BITS<=57), Word>::type
+  _read_fixed(const u64 idx_) const
   {
-    static constexpr Idx BYTES = (7 + BITS + 7) >> 3;
-    static constexpr Idx MASK  = ((Idx)1 << BITS) - 1;
+    static constexpr u64  BYTES = (7 + BITS + 7) >> 3;
+    static constexpr Word MASK  = (static_cast<Word>(1) << BITS) - 1;
 
-    const Idx byte_idx = idx_ >> 3;
-    const u8  bit_off  = idx_ & 7;
+    const u64 byte_idx = idx_ >> 3;
+    const u8  bit_off  = static_cast<u8>(idx_ & 7);
     const u8 *src      = &_rptr()[byte_idx];
 
-    Idx acc = 0;
-    for(Idx i = 0; i < BYTES; i++)
-      acc = (acc << 8) | src[i];
+    Word acc = 0;
+    for(u64 i = 0; i < BYTES; i++)
+      acc = static_cast<Word>((acc << 8) | src[i]);
 
     return (acc >> (BYTES * 8 - bit_off - BITS)) & MASK;
   }
 
-  template<Idx BITS>
+  template<u64 BITS>
   inline
-  typename std::enable_if<(sizeof(Idx)==4 && BITS>=26 && BITS<=32) ||
-                          (sizeof(Idx)==8 && BITS>=58 && BITS<=64), Idx>::type
-  _read_fixed(const Idx idx_) const
+  typename std::enable_if<(sizeof(Word)==4 && BITS>=26 && BITS<=32) ||
+                          (sizeof(Word)==8 && BITS>=58 && BITS<=64), Word>::type
+  _read_fixed(const u64 idx_) const
   {
-    static constexpr Idx MASK = (BITS == IDX_BITS) ? ~(Idx)0 : (((Idx)1 << BITS) - 1);
+    static constexpr Word MASK = (BITS == WORD_BITS) ? ~(Word)0 : ((static_cast<Word>(1) << BITS) - 1);
 
-    const Idx byte_idx = idx_ >> 3;
-    const u8  bit_off  = idx_ & 7;
+    const u64 byte_idx = idx_ >> 3;
+    const u8  bit_off  = static_cast<u8>(idx_ & 7);
     const u8 *src      = &_rptr()[byte_idx];
 
-    if(bit_off + BITS <= IDX_BITS)
+    if(bit_off + BITS <= WORD_BITS)
       {
-        Idx acc = 0;
-        static constexpr Idx N = (BITS + 7) >> 3;
-        for(Idx i = 0; i < N; i++)
-          acc = (acc << 8) | src[i];
+        Word acc = 0;
+        static constexpr u64 N = (BITS + 7) >> 3;
+        for(u64 i = 0; i < N; i++)
+          acc = static_cast<Word>((acc << 8) | src[i]);
         return (acc >> (N * 8 - bit_off - BITS)) & MASK;
       }
 
-    Idx acc = 0;
-    constexpr Idx LOAD = sizeof(Idx);
-    for(Idx i = 0; i < LOAD; i++)
-      acc = (acc << 8) | src[i];
-    acc &= ((Idx)1 << (IDX_BITS - bit_off)) - 1;
-    const u8 remaining = BITS - (IDX_BITS - bit_off);
-    return (acc << remaining) | (src[LOAD] >> (8 - remaining));
+    Word acc = 0;
+    static constexpr u64 LOAD = sizeof(Word);
+    for(u64 i = 0; i < LOAD; i++)
+      acc = static_cast<Word>((acc << 8) | src[i]);
+    acc &= (static_cast<Word>(1) << (WORD_BITS - bit_off)) - 1;
+    const u8 remaining = static_cast<u8>(BITS - (WORD_BITS - bit_off));
+    return static_cast<Word>((acc << remaining) | (src[LOAD] >> (8 - remaining)));
   }
 
 public:
-  template<Idx BITS>
-  Idx
-  read(const Idx idx_) const
+  template<u64 BITS>
+  Word
+  read(const u64 idx_) const
   {
     return _read_fixed<BITS>(idx_);
   }
 
-  template<Idx BITS>
-  Idx
+  template<u64 BITS>
+  Word
   read()
   {
-    Idx v = read<BITS>(_idx);
+    Word v = read<BITS>(_idx);
     _idx += BITS;
     return v;
   }
 
 public:
   void
-  write(Idx idx_,
-        Idx bits_,
-        Idx val_)
+  write(u64  idx_,
+        Word bits_,
+        Word val_)
   {
+    assert(bits_ <= WORD_BITS && "BitStream: field width exceeds word size");
+
     _maybe_resize(idx_ + bits_);
 
     if(bits_ == 0)
       return;
 
     u8 *dst      = &_wptr()[idx_ >> 3];
-    u8  bit_off  = idx_ & 7;
-    Idx remaining = bits_;
+    u8  bit_off  = static_cast<u8>(idx_ & 7);
+    Word remaining = bits_;
 
     if(bit_off)
       {
         const u8 avail = 8 - bit_off;
-        const u8 take  = (remaining < avail) ? (u8)remaining : avail;
+        const u8 take  = (remaining < avail) ? static_cast<u8>(remaining) : avail;
         const u8 shift = avail - take;
         const u8 mask  = (u8)(((1U << take) - 1) << shift);
-        dst[0] = (dst[0] & ~mask) | (u8)(((val_ >> (remaining - take)) & (((Idx)1 << take) - 1)) << shift);
+        dst[0] = (dst[0] & ~mask) | static_cast<u8>(((val_ >> (remaining - take)) & ((static_cast<Word>(1) << take) - 1)) << shift);
         dst++;
         remaining -= take;
       }
@@ -674,15 +678,15 @@ public:
 
     if(remaining)
       {
-        const u8 shift = 8 - (u8)remaining;
+        const u8 shift = 8 - static_cast<u8>(remaining);
         const u8 mask  = (u8)(((1U << remaining) - 1) << shift);
-        dst[0] = (dst[0] & ~mask) | (u8)((val_ & (((Idx)1 << remaining) - 1)) << shift);
+        dst[0] = (dst[0] & ~mask) | static_cast<u8>((val_ & ((static_cast<Word>(1) << remaining) - 1)) << shift);
       }
   }
 
   void
-  write(Idx bits_,
-        Idx val_)
+  write(Word bits_,
+        Word val_)
   {
     write(_idx,bits_,val_);
     _idx += bits_;
@@ -691,7 +695,7 @@ public:
 
   void
   write_bytes(const u8 *src_,
-              Idx       count_)
+              u64       count_)
   {
     if(!(_idx & 7))
       {
@@ -702,20 +706,20 @@ public:
       }
     else
       {
-        for(Idx i = 0; i < count_; i++)
-          write(8,(Idx)src_[i]);
+        for(u64 i = 0; i < count_; i++)
+          write(static_cast<Word>(8),static_cast<Word>(src_[i]));
       }
   }
 
 public:
-  template<typename OtherStorage>
+  template<typename OtherStorage, typename OtherWord>
   bool
-  cmp(Idx                                idx_,
-      const BitStreamT<OtherStorage,Idx> &other_,
-      Idx                                other_idx_,
-      Idx                                length_) const
+  cmp(u64                                      idx_,
+      const BitStreamT<OtherStorage,OtherWord> &other_,
+      u64                                      other_idx_,
+      u64                                      length_) const
   {
-    for(Idx i = 0; i < length_; i++)
+    for(u64 i = 0; i < length_; i++)
       {
         if(read_bit(idx_) != other_.read_bit(other_idx_))
           return false;

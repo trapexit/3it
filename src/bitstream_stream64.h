@@ -1,5 +1,5 @@
 /*
- * bitstream_stream64.h - Owning/dynamic bitstream, 64-bit index
+ * bitstream_stream64.h - Owning/dynamic bitstream, 64-bit cursor + 64-bit field width
  *
  * C analog of:
  *   using BitStream = BitStreamT<std::vector<u8>>;

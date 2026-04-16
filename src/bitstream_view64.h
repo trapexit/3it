@@ -1,5 +1,5 @@
 /*
- * bitstream_view64.h - Mutable bitstream view, 64-bit index
+ * bitstream_view64.h - Mutable bitstream view, 64-bit cursor + 64-bit field width
  *
  * C analog of:
  *   using BitStreamView = BitStreamT<BitStreamSpan<u8>>;

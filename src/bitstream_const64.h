@@ -1,5 +1,5 @@
 /*
- * bitstream_const64.h - Read-only bitstream view, 64-bit index
+ * bitstream_const64.h - Read-only bitstream view, 64-bit cursor + 64-bit field width
  *
  * C analog of:
  *   using BitStreamReader = BitStreamT<BitStreamConstSpan<u8>>;
