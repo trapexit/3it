@@ -13,6 +13,7 @@
 
 #include "bitstream_t64.h"
 
+typedef BitStreamT64 BitStreamView;
 typedef BitStreamT64 BitStreamView64;
 
 #endif /* BITSTREAM_VIEW64_H */

@@ -69,8 +69,9 @@ Do you need C or C++?
    |
    +-- Do you need the buffer to grow automatically?
    |  |
-   |  +-- YES  --  bitstream_dyn32.h  /  bitstream_dyn64.h
-   |              (or alias: bitstream_stream32.h / bitstream_stream64.h)
+    |  +-- YES  --  bitstream_dyn32.h  /  bitstream_dyn64.h
+    |              (or canonical aliases: bitstream32.h / bitstream64.h;
+    |               compatibility: bitstream_stream32.h / bitstream_stream64.h)
    |
    +-- NO (fixed buffer or view)
       |
@@ -257,15 +258,23 @@ names matching the C++ aliases, with zero additional code.
 | Header                   | Typedef          | Analog                                    |
 |--------------------------|------------------|-------------------------------------------|
 | `bitstream_view32.h`     | `BitStreamView32`  | `BitStreamT<BitStreamSpan<u8>, u32>`    |
-| `bitstream_view64.h`     | `BitStreamView64`  | `BitStreamT<BitStreamSpan<u8>>`         |
+| `bitstream_view64.h`     | `BitStreamView`, `BitStreamView64`  | `BitStreamT<BitStreamSpan<u8>>`         |
 | `bitstream_const32.h`    | `BitStreamConst32` | `BitStreamT<BitStreamConstSpan<u8>, u32>` |
 | `bitstream_const64.h`    | `BitStreamConst64` | `BitStreamT<BitStreamConstSpan<u8>>`    |
-| `bitstream_stream32.h`   | `BitStream32`      | `BitStreamT<std::vector<u8>, u32>`      |
-| `bitstream_stream64.h`   | `BitStream64`      | `BitStreamT<std::vector<u8>>`           |
+| `bitstream32.h`          | `BitStream32`      | owning dynamic C89 type |
+| `bitstream64.h`          | `BitStream`, `BitStream64`      | owning dynamic C89 type |
+| `bitstream_stream32.h`   | `BitStream32`      | compatibility wrapper for `bitstream32.h` |
+| `bitstream_stream64.h`   | `BitStream`, `BitStream64`      | compatibility wrapper for `bitstream64.h` |
 
 `View`   = mutable fixed buffer (init with `bst*_init`).
 `Const`  = read-only fixed buffer (init with `bst*_init_ro`).
 `Stream` = dynamic growable buffer (init with `bsd*_init_dyn`).
+
+For naming parity with the C++ headers, the 64-bit aliases now also export the
+unsuffixed names `BitStream`, `BitStreamView`, and `BitStreamReader`.
+
+On the C89 side there is no separate `BitStreamRealloc*` family. The owning
+dynamic type is simply `BitStream32` / `BitStream` / `BitStream64`.
 
 ### Function reference
 
@@ -608,11 +617,13 @@ returned by reads and accepted by writes.
 | File                    | Typedef            | Underlying header    |
 |-------------------------|--------------------|----------------------|
 | `bitstream_view32.h`    | `BitStreamView32`  | `bitstream_t32.h`    |
-| `bitstream_view64.h`    | `BitStreamView64`  | `bitstream_t64.h`    |
+| `bitstream_view64.h`    | `BitStreamView`, `BitStreamView64`  | `bitstream_t64.h`    |
 | `bitstream_const32.h`   | `BitStreamConst32` | `bitstream_t32.h`    |
 | `bitstream_const64.h`   | `BitStreamConst64` | `bitstream_t64.h`    |
-| `bitstream_stream32.h`  | `BitStream32`      | `bitstream_dyn32.h`  |
-| `bitstream_stream64.h`  | `BitStream64`      | `bitstream_dyn64.h`  |
+| `bitstream32.h`         | `BitStream32`      | `bitstream_dyn32.h`  |
+| `bitstream64.h`         | `BitStream`, `BitStream64`      | `bitstream_dyn64.h`  |
+| `bitstream_stream32.h`  | `BitStream32`      | `bitstream32.h`  |
+| `bitstream_stream64.h`  | `BitStream`, `BitStream64`      | `bitstream64.h`  |
 
 ### C++ headers
 

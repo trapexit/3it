@@ -63,6 +63,8 @@ typedef struct BitStreamReader64
   bsr64_u64       idx;  /* in bits */
 } BitStreamReader64;
 
+typedef BitStreamReader64 BitStreamReader;
+
 
 static void
 bsr64__to_dyn(const BitStreamReader64 *src, BitStreamDyn64 *dst)
