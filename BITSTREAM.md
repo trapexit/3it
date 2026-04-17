@@ -70,8 +70,7 @@ Do you need C or C++?
    +-- Do you need the buffer to grow automatically?
    |  |
     |  +-- YES  --  bitstream_dyn32.h  /  bitstream_dyn64.h
-    |              (or canonical aliases: bitstream32.h / bitstream64.h;
-    |               compatibility: bitstream_stream32.h / bitstream_stream64.h)
+    |              (or canonical aliases: bitstream32.h / bitstream64.h)
    |
    +-- NO (fixed buffer or view)
       |
@@ -263,8 +262,6 @@ names matching the C++ aliases, with zero additional code.
 | `bitstream_const64.h`    | `BitStreamConst64` | `BitStreamT<BitStreamConstSpan<u8>>`    |
 | `bitstream32.h`          | `BitStream32`      | owning dynamic C89 type |
 | `bitstream64.h`          | `BitStream`, `BitStream64`      | owning dynamic C89 type |
-| `bitstream_stream32.h`   | `BitStream32`      | compatibility wrapper for `bitstream32.h` |
-| `bitstream_stream64.h`   | `BitStream`, `BitStream64`      | compatibility wrapper for `bitstream64.h` |
 
 `View`   = mutable fixed buffer (init with `bst*_init`).
 `Const`  = read-only fixed buffer (init with `bst*_init_ro`).
@@ -622,8 +619,6 @@ returned by reads and accepted by writes.
 | `bitstream_const64.h`   | `BitStreamConst64` | `bitstream_t64.h`    |
 | `bitstream32.h`         | `BitStream32`      | `bitstream_dyn32.h`  |
 | `bitstream64.h`         | `BitStream`, `BitStream64`      | `bitstream_dyn64.h`  |
-| `bitstream_stream32.h`  | `BitStream32`      | `bitstream32.h`  |
-| `bitstream_stream64.h`  | `BitStream`, `BitStream64`      | `bitstream64.h`  |
 
 ### C++ headers
 
