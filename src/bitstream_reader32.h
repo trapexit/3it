@@ -4,8 +4,10 @@
  * Index/cursor:  64-bit (streams may be arbitrarily large)
  * Field width:   32-bit maximum (read returns u32, bits arg is u32)
  *
- * All functions are static to allow header-only usage without linker
- * conflicts. Compilers will inline at optimization levels >= -O1.
+ * Publicly this remains a compact read-only view. Internally the
+ * read/fixed-width core is shared with bitstream_dyn32.h by adapting
+ * BitStreamReader32 to a fixed read-only BitStreamDyn32 view
+ * (realloc_fn == NULL).
  *
  * Usage:
  *   BitStreamReader32 r;
@@ -20,49 +22,40 @@
 #ifndef BITSTREAM_READER32_H
 #define BITSTREAM_READER32_H
 
-#include <assert.h>
-#include <string.h>
-
-#ifndef BSR32_U8
-typedef unsigned char      bsr32_u8;
-#else
-typedef BSR32_U8           bsr32_u8;
+#ifndef BSD32_U8
+  #ifdef BSR32_U8
+    #define BSD32_U8 BSR32_U8
+  #endif
 #endif
 
-#ifndef BSR32_U32
-typedef unsigned int       bsr32_u32;
-#else
-typedef BSR32_U32          bsr32_u32;
+#ifndef BSD32_U32
+  #ifdef BSR32_U32
+    #define BSD32_U32 BSR32_U32
+  #endif
 #endif
 
-#ifndef BSR32_U64
-typedef unsigned long long bsr32_u64;
-#else
-typedef BSR32_U64          bsr32_u64;
+#ifndef BSD32_U64
+  #ifdef BSR32_U64
+    #define BSD32_U64 BSR32_U64
+  #endif
 #endif
 
-#define BSR32_BITS_PER_BYTE 8
+#include "bitstream_dyn32.h"
 
+typedef bsd32_u8  bsr32_u8;
+typedef bsd32_u32 bsr32_u32;
+typedef bsd32_u64 bsr32_u64;
 
-/* bswap detection */
-#if defined(__GNUC__) || defined(__clang__)
-  #define BSR32_HAS_BSWAP 1
-  #define bsr32_bswap32(v) __builtin_bswap32(v)
-#elif defined(_MSC_VER)
-  #include <stdlib.h>
-  #define BSR32_HAS_BSWAP 1
-  #define bsr32_bswap32(v) _byteswap_ulong(v)
-#else
-  #define BSR32_HAS_BSWAP 0
-#endif
+#define BSR32_BITS_PER_BYTE BSD32_BITS_PER_BYTE
+#define BSR32_HAS_BSWAP     BSD32_HAS_BSWAP
 
 #if BSR32_HAS_BSWAP
+  #define bsr32_bswap32(v) bsd32_bswap32(v)
+
 static bsr32_u32
 bsr32_load32_be(const bsr32_u8 *p)
 {
-  bsr32_u32 v;
-  memcpy(&v, p, 4);
-  return bsr32_bswap32(v);
+  return (bsr32_u32)bsd32_load32_be((const bsd32_u8 *)p);
 }
 #endif
 
@@ -73,6 +66,26 @@ typedef struct BitStreamReader32
   bsr32_u64       size; /* in bits */
   bsr32_u64       idx;  /* in bits */
 } BitStreamReader32;
+
+
+static void
+bsr32__to_dyn(const BitStreamReader32 *src, BitStreamDyn32 *dst)
+{
+  dst->data        = (bsd32_u8 *)src->data;
+  dst->capacity    = (bsd32_u64)src->size;
+  dst->size        = (bsd32_u64)src->size;
+  dst->idx         = (bsd32_u64)src->idx;
+  dst->realloc_fn  = NULL;
+  dst->realloc_ctx = NULL;
+}
+
+static void
+bsr32__from_dyn(BitStreamReader32 *dst, const BitStreamDyn32 *src)
+{
+  dst->data = (const bsr32_u8 *)src->data;
+  dst->size = (bsr32_u64)src->size;
+  dst->idx  = (bsr32_u64)src->idx;
+}
 
 
 static void
@@ -204,70 +217,10 @@ bsr32_read_at(const BitStreamReader32 *r,
               bsr32_u64                idx,
               bsr32_u32                bits)
 {
-  bsr32_u64       byte_idx;
-  bsr32_u8        bit_off;
-  const bsr32_u8 *src;
-  bsr32_u32       mask;
-  bsr32_u32       acc;
-  bsr32_u8        remaining;
+  BitStreamDyn32 dyn;
 
-  assert((idx + bits) <= r->size);
-
-  if(bits == 0)
-    return 0;
-
-  byte_idx = idx >> 3;
-  bit_off  = (bsr32_u8)(idx & 7);
-  src      = &r->data[byte_idx];
-  mask     = (bits == 32) ? ~(bsr32_u32)0 : (((bsr32_u32)1 << bits) - 1);
-
-#if BSR32_HAS_BSWAP
-  if(bit_off + bits <= 32)
-    {
-      acc = bsr32_load32_be(src);
-      return (acc >> (32 - bit_off - bits)) & mask;
-    }
-
-  acc = bsr32_load32_be(src);
-  acc &= ((bsr32_u32)1 << (32 - bit_off)) - 1;
-  remaining = (bsr32_u8)(bits - (32 - bit_off));
-  return (acc << remaining) | (src[4] >> (8 - remaining));
-#else
-  /* byte-aligned fast path */
-  if(!bit_off && !(bits & 7))
-    {
-      bsr32_u32 val = 0;
-      bsr32_u32 i;
-      for(i = 0; i < (bits >> 3); i++)
-        val = (val << 8) | src[i];
-      return val;
-    }
-
-  /* fits in 4 bytes */
-  if(bit_off + bits <= 32)
-    {
-      bsr32_u32 n;
-      acc = 0;
-      n = (bit_off + bits + 7) >> 3;
-      {
-        bsr32_u32 i;
-        for(i = 0; i < n; i++)
-          acc = (acc << 8) | src[i];
-      }
-      return (acc >> (n * 8 - bit_off - bits)) & mask;
-    }
-
-  /* spans 5 bytes */
-  acc = 0;
-  {
-    bsr32_u32 i;
-    for(i = 0; i < 4; i++)
-      acc = (acc << 8) | src[i];
-  }
-  acc &= ((bsr32_u32)1 << (32 - bit_off)) - 1;
-  remaining = (bsr32_u8)(bits - (32 - bit_off));
-  return (acc << remaining) | (src[4] >> (8 - remaining));
-#endif
+  bsr32__to_dyn(r, &dyn);
+  return (bsr32_u32)bsd32_read_at(&dyn, (bsd32_u64)idx, (bsd32_u32)bits);
 }
 
 
@@ -278,10 +231,12 @@ static bsr32_u32
 bsr32_read(BitStreamReader32 *r,
            bsr32_u32          bits)
 {
-  bsr32_u32 v;
+  BitStreamDyn32 dyn;
+  bsr32_u32      v;
 
-  v = bsr32_read_at(r, r->idx, bits);
-  r->idx += bits;
+  bsr32__to_dyn(r, &dyn);
+  v = (bsr32_u32)bsd32_read(&dyn, (bsd32_u32)bits);
+  bsr32__from_dyn(r, &dyn);
 
   return v;
 }
@@ -292,106 +247,34 @@ bsr32_read(BitStreamReader32 *r,
  *
  *   bsr32_read_fixed_N_at(r, idx)  - random access, N bits  (idx is u64)
  *   bsr32_read_fixed_N(r)          - streaming, N bits
- *
- * For widths 1-25, bit_off + N <= 32 always holds (max 7+25=32),
- * so the 5-byte path is dead code and optimized away.
- *
- * For widths 26-32, the 5-byte path may be taken when bit_off > 0.
  */
 
-#if BSR32_HAS_BSWAP
-
-#define BSR32_DEFINE_READ_FIXED(N)                                         \
+#define BSR32_DEFINE_READ_FIXED(N)                                          \
                                                                            \
 static bsr32_u32                                                           \
 bsr32_read_fixed_##N##_at(const BitStreamReader32 *r,                      \
                           bsr32_u64                idx)                    \
 {                                                                          \
-  const bsr32_u32 BITS  = (N);                                             \
-  const bsr32_u32 MASK  = ((N) == 32) ? ~(bsr32_u32)0                    \
-                                      : (((bsr32_u32)1 << (N)) - 1);     \
+  BitStreamDyn32 dyn;                                                      \
                                                                            \
-  bsr32_u64       byte_idx = idx >> 3;                                     \
-  bsr32_u8        bit_off  = (bsr32_u8)(idx & 7);                         \
-  const bsr32_u8 *src      = &r->data[byte_idx];                          \
-  bsr32_u32       acc;                                                     \
-                                                                           \
-  assert((idx + BITS) <= r->size);                                         \
-                                                                           \
-  acc = bsr32_load32_be(src);                                              \
-  if(bit_off + BITS <= 32)                                                 \
-    return (acc >> (32 - bit_off - BITS)) & MASK;                          \
-                                                                           \
-  {                                                                        \
-    bsr32_u8 remaining;                                                    \
-    acc &= ((bsr32_u32)1 << (32 - bit_off)) - 1;                         \
-    remaining = (bsr32_u8)(BITS - (32 - bit_off));                         \
-    return (acc << remaining) | (src[4] >> (8 - remaining));               \
-  }                                                                        \
+  bsr32__to_dyn(r, &dyn);                                                  \
+  return (bsr32_u32)bsd32_read_fixed_##N##_at(&dyn, (bsd32_u64)idx);      \
 }                                                                          \
                                                                            \
 static bsr32_u32                                                           \
 bsr32_read_fixed_##N(BitStreamReader32 *r)                                 \
 {                                                                          \
-  bsr32_u32 v = bsr32_read_fixed_##N##_at(r, r->idx);                     \
-  r->idx += (N);                                                           \
+  BitStreamDyn32 dyn;                                                      \
+  bsr32_u32      v;                                                        \
+                                                                           \
+  bsr32__to_dyn(r, &dyn);                                                  \
+  v = (bsr32_u32)bsd32_read_fixed_##N(&dyn);                               \
+  bsr32__from_dyn(r, &dyn);                                                \
+                                                                           \
   return v;                                                                \
 }
 
-#else /* !BSR32_HAS_BSWAP */
-
-#define BSR32_DEFINE_READ_FIXED(N)                                         \
-                                                                           \
-static bsr32_u32                                                           \
-bsr32_read_fixed_##N##_at(const BitStreamReader32 *r,                      \
-                          bsr32_u64                idx)                    \
-{                                                                          \
-  const bsr32_u32 BITS  = (N);                                             \
-  const bsr32_u32 BYTES = (7 + (N) + 7) >> 3;                             \
-  const bsr32_u32 MASK  = ((N) == 32) ? ~(bsr32_u32)0                    \
-                                      : (((bsr32_u32)1 << (N)) - 1);     \
-                                                                           \
-  bsr32_u64       byte_idx = idx >> 3;                                     \
-  bsr32_u8        bit_off  = (bsr32_u8)(idx & 7);                         \
-  const bsr32_u8 *src      = &r->data[byte_idx];                          \
-  bsr32_u32       acc      = 0;                                            \
-  bsr32_u32       i;                                                       \
-                                                                           \
-  assert((idx + BITS) <= r->size);                                         \
-                                                                           \
-  if(bit_off + BITS <= 32)                                                 \
-    {                                                                      \
-      for(i = 0; i < BYTES; i++)                                           \
-        acc = (acc << 8) | src[i];                                         \
-      return (acc >> (BYTES * 8 - bit_off - BITS)) & MASK;                 \
-    }                                                                      \
-                                                                           \
-  {                                                                        \
-    bsr32_u8 remaining;                                                    \
-    for(i = 0; i < 4; i++)                                                 \
-      acc = (acc << 8) | src[i];                                           \
-    acc &= ((bsr32_u32)1 << (32 - bit_off)) - 1;                         \
-    remaining = (bsr32_u8)(BITS - (32 - bit_off));                         \
-    return (acc << remaining) | (src[4] >> (8 - remaining));               \
-  }                                                                        \
-}                                                                          \
-                                                                           \
-static bsr32_u32                                                           \
-bsr32_read_fixed_##N(BitStreamReader32 *r)                                 \
-{                                                                          \
-  bsr32_u32 v = bsr32_read_fixed_##N##_at(r, r->idx);                     \
-  r->idx += (N);                                                           \
-  return v;                                                                \
-}
-
-#endif /* BSR32_HAS_BSWAP */
-
-
-#define BSR32_X_ALL \
-  X(1)  X(2)  X(3)  X(4)  X(5)  X(6)  X(7)  X(8)  \
-  X(9)  X(10) X(11) X(12) X(13) X(14) X(15) X(16) \
-  X(17) X(18) X(19) X(20) X(21) X(22) X(23) X(24) \
-  X(25) X(26) X(27) X(28) X(29) X(30) X(31) X(32)
+#define BSR32_X_ALL BSD32_X_ALL
 
 #define X(n) BSR32_DEFINE_READ_FIXED(n)
 BSR32_X_ALL

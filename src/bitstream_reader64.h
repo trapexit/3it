@@ -1,8 +1,10 @@
 /*
  * bitstream_reader64.h - Header-only C89 bit stream reader (64-bit)
  *
- * All functions are static to allow header-only usage without linker
- * conflicts. Compilers will inline at optimization levels >= -O1.
+ * Publicly this remains a compact read-only view. Internally the
+ * read/fixed-width core is shared with bitstream_dyn64.h by adapting
+ * BitStreamReader64 to a fixed read-only BitStreamDyn64 view
+ * (realloc_fn == NULL).
  *
  * Requires compiler support for 64-bit integers (unsigned long long
  * or equivalent). Override BSR64_U64 if your platform uses a
@@ -21,45 +23,35 @@
 #ifndef BITSTREAM_READER64_H
 #define BITSTREAM_READER64_H
 
-#include <assert.h>
-#include <string.h>
-
-#ifndef BSR64_U8
-typedef unsigned char      bsr64_u8;
-#else
-typedef BSR64_U8           bsr64_u8;
+#ifndef BSD64_U8
+  #ifdef BSR64_U8
+    #define BSD64_U8 BSR64_U8
+  #endif
 #endif
 
-#ifndef BSR64_U64
-typedef unsigned long long bsr64_u64;
-#else
-typedef BSR64_U64          bsr64_u64;
+#ifndef BSD64_U64
+  #ifdef BSR64_U64
+    #define BSD64_U64 BSR64_U64
+  #endif
 #endif
 
-#define BSR64_BITS_PER_BYTE 8
-#define BSR64_ONE  ((bsr64_u64)1)
-#define BSR64_MASK(b) (((b) == 64) ? ~(bsr64_u64)0 : (BSR64_ONE << (b)) - 1)
+#include "bitstream_dyn64.h"
 
+typedef bsd64_u8  bsr64_u8;
+typedef bsd64_u64 bsr64_u64;
 
-/* bswap detection */
-#if defined(__GNUC__) || defined(__clang__)
-  #define BSR64_HAS_BSWAP 1
-  #define bsr64_bswap64(v) __builtin_bswap64(v)
-#elif defined(_MSC_VER)
-  #include <stdlib.h>
-  #define BSR64_HAS_BSWAP 1
-  #define bsr64_bswap64(v) _byteswap_uint64(v)
-#else
-  #define BSR64_HAS_BSWAP 0
-#endif
+#define BSR64_BITS_PER_BYTE BSD64_BITS_PER_BYTE
+#define BSR64_ONE           BSD64_ONE
+#define BSR64_MASK(b)       BSD64_MASK(b)
+#define BSR64_HAS_BSWAP     BSD64_HAS_BSWAP
 
 #if BSR64_HAS_BSWAP
+  #define bsr64_bswap64(v) bsd64_bswap64(v)
+
 static bsr64_u64
 bsr64_load64_be(const bsr64_u8 *p)
 {
-  bsr64_u64 v;
-  memcpy(&v, p, 8);
-  return bsr64_bswap64(v);
+  return (bsr64_u64)bsd64_load64_be((const bsd64_u8 *)p);
 }
 #endif
 
@@ -70,6 +62,26 @@ typedef struct BitStreamReader64
   bsr64_u64       size; /* in bits */
   bsr64_u64       idx;  /* in bits */
 } BitStreamReader64;
+
+
+static void
+bsr64__to_dyn(const BitStreamReader64 *src, BitStreamDyn64 *dst)
+{
+  dst->data        = (bsd64_u8 *)src->data;
+  dst->capacity    = (bsd64_u64)src->size;
+  dst->size        = (bsd64_u64)src->size;
+  dst->idx         = (bsd64_u64)src->idx;
+  dst->realloc_fn  = NULL;
+  dst->realloc_ctx = NULL;
+}
+
+static void
+bsr64__from_dyn(BitStreamReader64 *dst, const BitStreamDyn64 *src)
+{
+  dst->data = (const bsr64_u8 *)src->data;
+  dst->size = (bsr64_u64)src->size;
+  dst->idx  = (bsr64_u64)src->idx;
+}
 
 
 static void
@@ -196,71 +208,10 @@ bsr64_read_at(const BitStreamReader64 *r,
               bsr64_u64                idx,
               bsr64_u64                bits)
 {
-  bsr64_u64       byte_idx;
-  bsr64_u8        bit_off;
-  const bsr64_u8 *src;
-  bsr64_u64       mask;
-  bsr64_u64       acc;
-  bsr64_u8        remaining;
+  BitStreamDyn64 dyn;
 
-  assert((idx + bits) <= r->size);
-
-  if(bits == 0)
-    return 0;
-
-  byte_idx = idx >> 3;
-  bit_off  = (bsr64_u8)(idx & 7);
-  src      = &r->data[byte_idx];
-  mask     = BSR64_MASK(bits);
-
-#if BSR64_HAS_BSWAP
-  if(bit_off + bits <= 64)
-    {
-      acc = bsr64_load64_be(src);
-      return (acc >> (64 - bit_off - bits)) & mask;
-    }
-
-  /* spans 9 bytes: bit_off in [1..7] */
-  acc = bsr64_load64_be(src);
-  acc &= (BSR64_ONE << (64 - bit_off)) - 1;
-  remaining = (bsr64_u8)(bits - (64 - bit_off));
-  return (acc << remaining) | (src[8] >> (8 - remaining));
-#else
-  /* byte-aligned fast path */
-  if(!bit_off && !(bits & 7))
-    {
-      bsr64_u64 val = 0;
-      bsr64_u64 i;
-      for(i = 0; i < (bits >> 3); i++)
-        val = (val << 8) | src[i];
-      return val;
-    }
-
-  /* fits in 8 bytes */
-  if(bit_off + bits <= 64)
-    {
-      bsr64_u64 n;
-      acc = 0;
-      n = (bit_off + bits + 7) >> 3;
-      {
-        bsr64_u64 i;
-        for(i = 0; i < n; i++)
-          acc = (acc << 8) | src[i];
-      }
-      return (acc >> (n * 8 - bit_off - bits)) & mask;
-    }
-
-  /* spans 9 bytes: bit_off in [1..7] */
-  acc = 0;
-  {
-    bsr64_u64 i;
-    for(i = 0; i < 8; i++)
-      acc = (acc << 8) | src[i];
-  }
-  acc &= (BSR64_ONE << (64 - bit_off)) - 1;
-  remaining = (bsr64_u8)(bits - (64 - bit_off));
-  return (acc << remaining) | (src[8] >> (8 - remaining));
-#endif
+  bsr64__to_dyn(r, &dyn);
+  return (bsr64_u64)bsd64_read_at(&dyn, (bsd64_u64)idx, (bsd64_u64)bits);
 }
 
 
@@ -271,10 +222,12 @@ static bsr64_u64
 bsr64_read(BitStreamReader64 *r,
            bsr64_u64          bits)
 {
-  bsr64_u64 v;
+  BitStreamDyn64 dyn;
+  bsr64_u64      v;
 
-  v = bsr64_read_at(r, r->idx, bits);
-  r->idx += bits;
+  bsr64__to_dyn(r, &dyn);
+  v = (bsr64_u64)bsd64_read(&dyn, (bsd64_u64)bits);
+  bsr64__from_dyn(r, &dyn);
 
   return v;
 }
@@ -285,113 +238,34 @@ bsr64_read(BitStreamReader64 *r,
  *
  *   bsr64_read_fixed_N_at(r, idx)  - random access, N bits
  *   bsr64_read_fixed_N(r)          - streaming, N bits
- *
- * The bit width is baked into the code so the compiler can
- * eliminate all branches and unroll all loops.
- *
- * For widths 1-57, bit_off + N <= 64 always holds (max 7+57=64),
- * so the 9-byte path is dead code and optimized away.
- *
- * For widths 58-64, the 9-byte path may be taken when bit_off > 0.
  */
 
-#if BSR64_HAS_BSWAP
-
-#define BSR64_DEFINE_READ_FIXED(N)                                         \
+#define BSR64_DEFINE_READ_FIXED(N)                                          \
                                                                            \
 static bsr64_u64                                                           \
 bsr64_read_fixed_##N##_at(const BitStreamReader64 *r,                      \
-                          bsr64_u64                idx)                     \
+                          bsr64_u64                idx)                    \
 {                                                                          \
-  const bsr64_u64 BITS = (N);                                              \
-  const bsr64_u64 MASK = BSR64_MASK(N);                                    \
+  BitStreamDyn64 dyn;                                                      \
                                                                            \
-  bsr64_u64       byte_idx = idx >> 3;                                     \
-  bsr64_u8        bit_off  = (bsr64_u8)(idx & 7);                         \
-  const bsr64_u8 *src      = &r->data[byte_idx];                          \
-  bsr64_u64       acc;                                                     \
-                                                                           \
-  assert((idx + BITS) <= r->size);                                         \
-                                                                           \
-  acc = bsr64_load64_be(src);                                              \
-  if(bit_off + BITS <= 64)                                                 \
-    return (acc >> (64 - bit_off - BITS)) & MASK;                          \
-                                                                           \
-  /* 9-byte span: only reachable when N >= 58 && bit_off > 0 */           \
-  {                                                                        \
-    bsr64_u8 remaining;                                                    \
-    acc &= (BSR64_ONE << (64 - bit_off)) - 1;                             \
-    remaining = (bsr64_u8)(BITS - (64 - bit_off));                         \
-    return (acc << remaining) | (src[8] >> (8 - remaining));               \
-  }                                                                        \
+  bsr64__to_dyn(r, &dyn);                                                  \
+  return (bsr64_u64)bsd64_read_fixed_##N##_at(&dyn, (bsd64_u64)idx);      \
 }                                                                          \
                                                                            \
 static bsr64_u64                                                           \
 bsr64_read_fixed_##N(BitStreamReader64 *r)                                 \
 {                                                                          \
-  bsr64_u64 v = bsr64_read_fixed_##N##_at(r, r->idx);                     \
-  r->idx += (N);                                                           \
+  BitStreamDyn64 dyn;                                                      \
+  bsr64_u64      v;                                                        \
+                                                                           \
+  bsr64__to_dyn(r, &dyn);                                                  \
+  v = (bsr64_u64)bsd64_read_fixed_##N(&dyn);                               \
+  bsr64__from_dyn(r, &dyn);                                                \
+                                                                           \
   return v;                                                                \
 }
 
-#else /* !BSR64_HAS_BSWAP */
-
-#define BSR64_DEFINE_READ_FIXED(N)                                         \
-                                                                           \
-static bsr64_u64                                                           \
-bsr64_read_fixed_##N##_at(const BitStreamReader64 *r,                      \
-                          bsr64_u64                idx)                     \
-{                                                                          \
-  const bsr64_u64 BITS  = (N);                                             \
-  const bsr64_u64 BYTES = (7 + (N) + 7) >> 3;                             \
-  const bsr64_u64 MASK  = BSR64_MASK(N);                                   \
-                                                                           \
-  bsr64_u64       byte_idx = idx >> 3;                                     \
-  bsr64_u8        bit_off  = (bsr64_u8)(idx & 7);                         \
-  const bsr64_u8 *src      = &r->data[byte_idx];                          \
-  bsr64_u64       acc      = 0;                                            \
-  bsr64_u64       i;                                                       \
-                                                                           \
-  assert((idx + BITS) <= r->size);                                         \
-                                                                           \
-  if(bit_off + BITS <= 64)                                                 \
-    {                                                                      \
-      for(i = 0; i < BYTES; i++)                                           \
-        acc = (acc << 8) | src[i];                                         \
-      return (acc >> (BYTES * 8 - bit_off - BITS)) & MASK;                 \
-    }                                                                      \
-                                                                           \
-  /* 9-byte span: only reachable when N >= 58 && bit_off > 0 */           \
-  {                                                                        \
-    bsr64_u8 remaining;                                                    \
-    for(i = 0; i < 8; i++)                                                 \
-      acc = (acc << 8) | src[i];                                           \
-    acc &= (BSR64_ONE << (64 - bit_off)) - 1;                             \
-    remaining = (bsr64_u8)(BITS - (64 - bit_off));                         \
-    return (acc << remaining) | (src[8] >> (8 - remaining));               \
-  }                                                                        \
-}                                                                          \
-                                                                           \
-static bsr64_u64                                                           \
-bsr64_read_fixed_##N(BitStreamReader64 *r)                                 \
-{                                                                          \
-  bsr64_u64 v = bsr64_read_fixed_##N##_at(r, r->idx);                     \
-  r->idx += (N);                                                           \
-  return v;                                                                \
-}
-
-#endif /* BSR64_HAS_BSWAP */
-
-
-#define BSR64_X_ALL \
-  X(1)  X(2)  X(3)  X(4)  X(5)  X(6)  X(7)  X(8)  \
-  X(9)  X(10) X(11) X(12) X(13) X(14) X(15) X(16) \
-  X(17) X(18) X(19) X(20) X(21) X(22) X(23) X(24) \
-  X(25) X(26) X(27) X(28) X(29) X(30) X(31) X(32) \
-  X(33) X(34) X(35) X(36) X(37) X(38) X(39) X(40) \
-  X(41) X(42) X(43) X(44) X(45) X(46) X(47) X(48) \
-  X(49) X(50) X(51) X(52) X(53) X(54) X(55) X(56) \
-  X(57) X(58) X(59) X(60) X(61) X(62) X(63) X(64)
+#define BSR64_X_ALL BSD64_X_ALL
 
 #define X(n) BSR64_DEFINE_READ_FIXED(n)
 BSR64_X_ALL

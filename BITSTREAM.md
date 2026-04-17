@@ -140,7 +140,8 @@ Extends the combined struct with an optional resize callback.  When
 `realloc_fn` is `NULL` the behaviour is identical to `BitStreamT` (fixed,
 assert on overflow).  When non-NULL the buffer doubles on demand.
 
-This is also the shared implementation underneath the fixed C headers.
+This is also the shared implementation underneath the fixed and one-direction
+C headers.
 
 ```c
 #include "bitstream_dyn32.h"
@@ -207,6 +208,11 @@ Specialised for decoding.  Holds a `const` data pointer.  Slightly simpler
 struct (no write machinery) and a useful choice when you want the type system
 to prevent accidental writes at the call site.
 
+Implementation note: `bitstream_reader32.h` / `bitstream_reader64.h` keep
+their compact 3-field public structs, but forward the read/fixed-width core
+through `bitstream_dyn32.h` / `bitstream_dyn64.h` in fixed read-only mode
+(`realloc_fn == NULL`).
+
 ```c
 #include "bitstream_reader32.h"
 
@@ -227,6 +233,11 @@ bsr32_skip_to_8bit_boundary(&r);
 Specialised for encoding.  Holds a writable pointer and a `capacity` field.
 Asserts if capacity is exceeded.
 
+Implementation note: `bitstream_writer32.h` / `bitstream_writer64.h` keep
+their compact 3-field public structs, but forward the write/fixed-width core
+through `bitstream_dyn32.h` / `bitstream_dyn64.h` in fixed mode
+(`realloc_fn == NULL`).
+
 ```c
 #include "bitstream_writer32.h"
 
@@ -235,7 +246,7 @@ bsw32_init(&w, buffer, sizeof(buffer), 0);
 
 bsw32_write(&w, 3, 0x5);
 bsw32_write_fixed_16(&w, header_word);
-bsw32_zero_till_32bit_boundary(&w);
+bsw32_skip_to_32bit_boundary(&w);
 ```
 
 ### C alias headers
@@ -315,10 +326,10 @@ counterparts) share the same navigation API.  The dynamic family (`bsd32_`,
 | `*_write_bytes(s, src, count)`    | Write `count` raw bytes; memcpy when byte-aligned |
 | `*_write_fixed_N_at(s, idx, val)` | Write `N` bits at absolute position               |
 | `*_write_fixed_N(s, val)`         | Write `N` bits at cursor and advance              |
-| `*_zero_till_8bit_boundary(s)`    | Write zero bits up to next byte boundary          |
-| `*_zero_till_16bit_boundary(s)`   | Write zero bits up to next 16-bit boundary        |
-| `*_zero_till_32bit_boundary(s)`   | Write zero bits up to next 32-bit boundary        |
-| `*_zero_till_64bit_boundary(s)`   | Write zero bits up to next 64-bit boundary (64-bit only) |
+| `*_zero_till_8bit_boundary(s)`    | Write zero bits up to next byte boundary (combined/dynamic only) |
+| `*_zero_till_16bit_boundary(s)`   | Write zero bits up to next 16-bit boundary (combined/dynamic only) |
+| `*_zero_till_32bit_boundary(s)`   | Write zero bits up to next 32-bit boundary (combined/dynamic only) |
+| `*_zero_till_64bit_boundary(s)`   | Write zero bits up to next 64-bit boundary (64-bit combined/dynamic only) |
 
 ### Fixed-width functions
 
