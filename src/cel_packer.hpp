@@ -27,8 +27,9 @@
 
 namespace CelPacker
 {
-  void
+  bool
   pack(const Bitmap            &b_,
        const RGBA8888Converter &pc_,
-       ByteVec                 &pdat_);
+       ByteVec                 &pdat_,
+       bool                     allow_zero_transparency_ = true);
 }

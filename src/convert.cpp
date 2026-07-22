@@ -617,22 +617,24 @@ convert::bitmap_to_uncoded_unpacked_lrform_16bpp(const Bitmap &bitmap_,
     }
 }
 
-void
+bool
 convert::bitmap_to_uncoded_packed_linear_8bpp(const Bitmap &bitmap_,
-                                              ByteVec      &pdat_)
+                                              ByteVec      &pdat_,
+                                              const bool    allow_zero_transparency_)
 {
   RGBA8888Converter pc(BPP_8);
 
-  CelPacker::pack(bitmap_,pc,pdat_);
+  return CelPacker::pack(bitmap_,pc,pdat_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_uncoded_packed_linear_16bpp(const Bitmap &bitmap_,
-                                               ByteVec      &pdat_)
+                                               ByteVec      &pdat_,
+                                               const bool    allow_zero_transparency_)
 {
   RGBA8888Converter pc(BPP_16);
 
-  CelPacker::pack(bitmap_,pc,pdat_);
+  return CelPacker::pack(bitmap_,pc,pdat_,allow_zero_transparency_);
 }
 
 static
@@ -749,14 +751,39 @@ convert::bitmap_to_coded_unpacked_linear_16bpp(const Bitmap &bitmap_,
 }
 
 static
-void
+bool
+reserve_zero_plut_entry(const int bpp_,
+                        PLUT     &plut_)
+{
+  for(size_t i = 0; i < plut_.size(); ++i)
+    {
+      if(plut_[i] == 0)
+        {
+          if(i != 0)
+            {
+              plut_.erase(plut_.begin() + i);
+              plut_.insert(plut_.begin(),0);
+            }
+
+          return true;
+        }
+    }
+
+  if(plut_.size() >= plut_.min_size(bpp_))
+    return false;
+
+  plut_.insert(plut_.begin(),0);
+  return true;
+}
+
+static
+bool
 bitmap_to_coded_packed_linear_Xbpp(const Bitmap &bitmap_,
                                    const int     bpp_,
                                    ByteVec      &pdat_,
-                                   PLUT         &plut_)
+                                   PLUT         &plut_,
+                                   const bool    allow_zero_transparency_)
 {
-  RGBA8888Converter pc(bpp_,plut_);
-
   ::check_coded_colors(bitmap_,bpp_);
 
   if(bitmap_.has("external-palette"))
@@ -784,55 +811,78 @@ bitmap_to_coded_packed_linear_Xbpp(const Bitmap &bitmap_,
       plut_.build(bitmap_);
     }
 
-  CelPacker::pack(bitmap_,pc,pdat_);
+  if(allow_zero_transparency_ && !bitmap_.has("external-palette"))
+    {
+      const PLUT regular_plut = plut_;
+
+      if(::reserve_zero_plut_entry(bpp_,plut_))
+        {
+          RGBA8888Converter pc(bpp_,plut_);
+
+          if(CelPacker::pack(bitmap_,pc,pdat_,true))
+            return true;
+        }
+
+      plut_ = regular_plut;
+    }
+
+  RGBA8888Converter pc(bpp_,plut_);
+  CelPacker::pack(bitmap_,pc,pdat_,false);
+  return false;
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_1bpp(const Bitmap &bitmap_,
                                             ByteVec      &pdat_,
-                                            PLUT         &plut_)
+                                            PLUT         &plut_,
+                                            const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_1,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_1,pdat_,plut_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_2bpp(const Bitmap &bitmap_,
                                             ByteVec      &pdat_,
-                                            PLUT         &plut_)
+                                            PLUT         &plut_,
+                                            const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_2,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_2,pdat_,plut_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_4bpp(const Bitmap &bitmap_,
                                             ByteVec      &pdat_,
-                                            PLUT         &plut_)
+                                            PLUT         &plut_,
+                                            const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_4,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_4,pdat_,plut_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_6bpp(const Bitmap &bitmap_,
                                             ByteVec      &pdat_,
-                                            PLUT         &plut_)
+                                            PLUT         &plut_,
+                                            const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_6,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_6,pdat_,plut_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_8bpp(const Bitmap &bitmap_,
                                             ByteVec      &pdat_,
-                                            PLUT         &plut_)
+                                            PLUT         &plut_,
+                                            const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_8,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_8,pdat_,plut_,allow_zero_transparency_);
 }
 
-void
+bool
 convert::bitmap_to_coded_packed_linear_16bpp(const Bitmap &bitmap_,
                                              ByteVec      &pdat_,
-                                             PLUT         &plut_)
+                                             PLUT         &plut_,
+                                             const bool    allow_zero_transparency_)
 {
-  ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_16,pdat_,plut_);
+  return ::bitmap_to_coded_packed_linear_Xbpp(bitmap_,BPP_16,pdat_,plut_,allow_zero_transparency_);
 }
 
 void
@@ -985,7 +1035,7 @@ unpack_row(BitStreamReader &bs_,
         case PACK_EOL:
           break;
         }
-    } while((type != PACK_EOL) && (pw_.row_pixels_remaining() != 0));
+    } while((type != PACK_EOL) && !pw_.row_filled());
 }
 
 static
@@ -1260,52 +1310,62 @@ convert::coded_unpacked_linear_16bpp_to_bitmap(cPDAT          pdat_,
   ::coded_unpacked_linear_to_bitmap(16,pdat_,plut_,pluta_,bitmap_);
 }
 
-void
+bool
 convert::bitmap_to_cel(const Bitmap  &bitmap_,
                        const CelType &celtype_,
                        ByteVec       &pdat_,
-                       PLUT          &plut_)
+                       PLUT          &plut_,
+                       const bool     allow_zero_transparency_)
 {
   switch(celtype_.switchable)
     {
     case (UNCODED|UNPACKED|LRFORM|BPP_16):
-      return convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmap_,pdat_);
+      convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmap_,pdat_);
+      return false;
 
     case (UNCODED|UNPACKED|LINEAR|BPP_8):
-      return convert::bitmap_to_uncoded_unpacked_linear_8bpp(bitmap_,pdat_);
+      convert::bitmap_to_uncoded_unpacked_linear_8bpp(bitmap_,pdat_);
+      return false;
     case (UNCODED|UNPACKED|LINEAR|BPP_16):
-      return convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap_,pdat_);
+      convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap_,pdat_);
+      return false;
 
     case (UNCODED|PACKED|LINEAR|BPP_8):
-      return convert::bitmap_to_uncoded_packed_linear_8bpp(bitmap_,pdat_);
+      return convert::bitmap_to_uncoded_packed_linear_8bpp(bitmap_,pdat_,allow_zero_transparency_);
     case (UNCODED|PACKED|LINEAR|BPP_16):
-      return convert::bitmap_to_uncoded_packed_linear_16bpp(bitmap_,pdat_);
+      return convert::bitmap_to_uncoded_packed_linear_16bpp(bitmap_,pdat_,allow_zero_transparency_);
 
     case (CODED|UNPACKED|LINEAR|BPP_1):
-      return convert::bitmap_to_coded_unpacked_linear_1bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_1bpp(bitmap_,pdat_,plut_);
+      return false;
     case (CODED|UNPACKED|LINEAR|BPP_2):
-      return convert::bitmap_to_coded_unpacked_linear_2bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_2bpp(bitmap_,pdat_,plut_);
+      return false;
     case (CODED|UNPACKED|LINEAR|BPP_4):
-      return convert::bitmap_to_coded_unpacked_linear_4bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_4bpp(bitmap_,pdat_,plut_);
+      return false;
     case (CODED|UNPACKED|LINEAR|BPP_6):
-      return convert::bitmap_to_coded_unpacked_linear_6bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_6bpp(bitmap_,pdat_,plut_);
+      return false;
     case (CODED|UNPACKED|LINEAR|BPP_8):
-      return convert::bitmap_to_coded_unpacked_linear_8bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_8bpp(bitmap_,pdat_,plut_);
+      return false;
     case (CODED|UNPACKED|LINEAR|BPP_16):
-      return convert::bitmap_to_coded_unpacked_linear_16bpp(bitmap_,pdat_,plut_);
+      convert::bitmap_to_coded_unpacked_linear_16bpp(bitmap_,pdat_,plut_);
+      return false;
 
     case (CODED|PACKED|LINEAR|BPP_1):
-      return convert::bitmap_to_coded_packed_linear_1bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_1bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
     case (CODED|PACKED|LINEAR|BPP_2):
-      return convert::bitmap_to_coded_packed_linear_2bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_2bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
     case (CODED|PACKED|LINEAR|BPP_4):
-      return convert::bitmap_to_coded_packed_linear_4bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_4bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
     case (CODED|PACKED|LINEAR|BPP_6):
-      return convert::bitmap_to_coded_packed_linear_6bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_6bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
     case (CODED|PACKED|LINEAR|BPP_8):
-      return convert::bitmap_to_coded_packed_linear_8bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_8bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
     case (CODED|PACKED|LINEAR|BPP_16):
-      return convert::bitmap_to_coded_packed_linear_16bpp(bitmap_,pdat_,plut_);
+      return convert::bitmap_to_coded_packed_linear_16bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
 
     default:
       throw fmt::exception("invalid combination of attributes: "

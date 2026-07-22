@@ -26,12 +26,12 @@
 
   0. Initialize the abstract packed image metadata.
   1. Convert each bitmap row to packed-source pixels and run dynamic
-     programming over that row to find the minimum-cost legal encoding.
+  programming over that row to find the minimum-cost legal encoding.
   2. Encode the abstract packets as 3DO packed row bitstreams.
   3. Pad each row bitstream to at least 2 words and then to a 32-bit
-     boundary.
+  boundary.
   4. Serialize the row bitstreams into a byte vector for writing to
-     disk.
+  disk.
 */
 
 #include "cel_packer.hpp"
@@ -61,7 +61,7 @@ static constexpr u32 MAX_PACKET_PIXELS = (1u << DATA_PACKET_PIXEL_COUNT_SIZE);
 
 struct PackedDataPacket
 {
-  uint8_t type = PACK_EOL;
+  uint8_t type;
   uint8_t bpp = 0;
   u32 count = 0;
   u32 pixel = 0;
@@ -95,7 +95,6 @@ struct RowChoice
   size_t begin;
   size_t end;
   u32 type;
-  u32 cost;
 };
 
 
@@ -115,7 +114,9 @@ PackedDataPacketVec::pixel_count() const
 
   c = 0;
   for(const auto &pdp : *this)
-    c += pdp.pixel_count();
+    {
+      c += pdp.pixel_count();
+    }
 
   return c;
 }
@@ -127,7 +128,9 @@ PackedDataPacketVec::size_in_bits() const
 
   c = 0;
   for(const auto &pdp : *this)
-    c += pdp.size_in_bits();
+    {
+      c += pdp.size_in_bits();
+    }
 
   return c;
 }
@@ -164,7 +167,9 @@ AbstractPackedImage::size_in_bits() const
 
   c = 0;
   for(const auto &pdpvec : *this)
-    c += pdpvec.size_in_bits();
+    {
+      c += pdpvec.size_in_bits();
+    }
 
   return c;
 }
@@ -231,35 +236,45 @@ PackedDataPacket
 build_packet_from_range(const std::vector<u32> &pixels_,
                         const u32               bpp_,
                         const size_t            begin_,
-                        const size_t            end_)
+                        const size_t            end_,
+                        const u32               type_,
+                        const bool              zero_transparency_)
 {
   PackedDataPacket pdp;
   const size_t len = (end_ - begin_);
 
   pdp.bpp = bpp_;
   pdp.count = len;
+  pdp.type = type_;
   if(len == 0)
     return pdp;
 
-  if(pixels_[begin_] == ALPHA)
-    {
-      pdp.type = PACK_TRANSPARENT;
-      return pdp;
-    }
+  if(type_ == PACK_TRANSPARENT)
+    return pdp;
 
-  if((len >= 2) &&
-     std::all_of(pixels_.begin() + begin_ + 1,
-                 pixels_.begin() + end_,
-                 [&](const u32 pixel_) { return pixel_ == pixels_[begin_]; }))
+  if(type_ == PACK_PACKED)
     {
-      pdp.type = PACK_PACKED;
+      if(pixels_[begin_] == ALPHA)
+        throw std::runtime_error("cel_packer: transparent packed pixel");
+
       pdp.pixel = pixels_[begin_];
       return pdp;
     }
 
-  pdp.type = PACK_LITERAL;
-  pdp.pixels.assign(pixels_.begin() + begin_,
-                    pixels_.begin() + end_);
+  if(type_ != PACK_LITERAL)
+    throw std::runtime_error("cel_packer: invalid packet type");
+
+  pdp.pixels.reserve(len);
+  for(size_t i = begin_; i < end_; ++i)
+    {
+      if(pixels_[i] != ALPHA)
+        pdp.pixels.emplace_back(pixels_[i]);
+      else if(zero_transparency_)
+        pdp.pixels.emplace_back(0);
+      else
+        throw std::runtime_error("cel_packer: ALPHA sentinel found in literal range");
+    }
+
   return pdp;
 }
 
@@ -304,13 +319,14 @@ pass1_choice_is_better(const RowChoice &candidate_,
     return candidate_bits < current_bits;
   if(candidate_count != current_count)
     return candidate_count > current_count;
-  return candidate_.type < current_.type;
+  return candidate_.type > current_.type;
 }
 
 static
 PackedDataPacketVec
 pass1_optimize_row_encoding(const std::vector<u32> &pixels_,
-                            const u32               bpp_)
+                            const u32               bpp_,
+                            const bool              zero_transparency_)
 {
   const size_t n = pixels_.size();
   std::vector<u32> best_cost(n + 1,std::numeric_limits<u32>::max());
@@ -328,26 +344,36 @@ pass1_optimize_row_encoding(const std::vector<u32> &pixels_,
     {
       auto consider_choice = [&](const size_t end_,
                                  const u32    type_)
-        {
-          const u32 packet_cost = packet_size_in_bits(type_,
-                                                      end_ - pos,
-                                                      bpp_);
-          const u32 total_cost = packet_cost + best_cost[end_];
-          const RowChoice choice = {pos,end_,type_,total_cost};
+      {
+        const u32 packet_cost = packet_size_in_bits(type_,
+                                                    end_ - pos,
+                                                    bpp_);
+        const u32 total_cost = packet_cost + best_cost[end_];
+        const RowChoice choice = {pos,end_,type_};
 
-          if(!has_choice[pos] ||
-             (total_cost < best_cost[pos]) ||
-             ((total_cost == best_cost[pos]) &&
-              pass1_choice_is_better(choice,best_choice[pos],bpp_)))
-            {
-              best_cost[pos] = total_cost;
-              best_choice[pos] = choice;
-              has_choice[pos] = true;
-            }
-        };
+        if(!has_choice[pos] ||
+           (total_cost < best_cost[pos]) ||
+           ((total_cost == best_cost[pos]) &&
+            pass1_choice_is_better(choice,best_choice[pos],bpp_)))
+          {
+            best_cost[pos] = total_cost;
+            best_choice[pos] = choice;
+            has_choice[pos] = true;
+          }
+      };
 
       if(transparent_suffix[pos])
         consider_choice(n,PACK_EOL);
+
+      if(zero_transparency_)
+        {
+          for(size_t end = pos + 1;
+              (end <= n) && ((end - pos) <= MAX_PACKET_PIXELS);
+              ++end)
+            {
+              consider_choice(end,PACK_LITERAL);
+            }
+        }
 
       if(pixels_[pos] == ALPHA)
         {
@@ -374,14 +400,19 @@ pass1_optimize_row_encoding(const std::vector<u32> &pixels_,
                 (pixels_[packed_end] != ALPHA))
             ++packed_end;
 
-          for(size_t end = pos + 1;
-              (end <= n) && ((end - pos) <= MAX_PACKET_PIXELS);
-              ++end)
+          if(!zero_transparency_)
             {
-              consider_choice(end,PACK_LITERAL);
+              for(size_t end = pos + 1;
+                  (end <= n) && ((end - pos) <= MAX_PACKET_PIXELS) && (pixels_[end - 1] != ALPHA);
+                  ++end)
+                {
+                  consider_choice(end,PACK_LITERAL);
+                }
+            }
 
-              if((end - pos >= 2) && (end <= packed_end))
-                consider_choice(end,PACK_PACKED);
+          for(size_t end = pos + 2; end <= packed_end; ++end)
+            {
+              consider_choice(end,PACK_PACKED);
             }
         }
     }
@@ -406,8 +437,9 @@ pass1_optimize_row_encoding(const std::vector<u32> &pixels_,
       packet = build_packet_from_range(pixels_,
                                        bpp_,
                                        choice.begin,
-                                       choice.end);
-      packet.type = choice.type;
+                                       choice.end,
+                                       choice.type,
+                                       zero_transparency_);
       out.emplace_back(std::move(packet));
       pos = choice.end;
     }
@@ -419,13 +451,15 @@ static
 void
 pass1_optimize_rows(const Bitmap            &b_,
                     const RGBA8888Converter &pc_,
-                    AbstractPackedImage     &api_)
+                    AbstractPackedImage     &api_,
+                    const bool               zero_transparency_)
 {
   for(size_t row = 0; row < api_.size(); row++)
     {
       const auto pixels = build_row_pixels(b_,pc_,row);
       api_[row] = pass1_optimize_row_encoding(pixels,
-                                              api_.bpp);
+                                              api_.bpp,
+                                              zero_transparency_);
     }
 }
 
@@ -471,6 +505,10 @@ pass2_api_to_bitstreams(const AbstractPackedImage &api_,
             }
         }
 
+      if((pdpvec.pixel_count() < api_.line_width) &&
+         (pdpvec.empty() || pdpvec.back().type != PACK_EOL))
+        row.write(DATA_PACKET_DATA_TYPE_SIZE,PACK_EOL);
+
       // Finalize the row offset header before padding.
       {
         u64 word_offset;
@@ -515,17 +553,67 @@ pass4_bitstreams_to_bytevec(const BitStreamVec &rows_,
     }
 }
 
+static
 void
-CelPacker::pack(const Bitmap            &b_,
-                const RGBA8888Converter &pc_,
-                ByteVec                 &pdat_)
+pack_with_mode(const Bitmap            &b_,
+               const RGBA8888Converter &pc_,
+               const bool               zero_transparency_,
+               ByteVec                 &pdat_)
 {
   AbstractPackedImage api;
   BitStreamVec rows;
 
   pass0_init_api(b_,pc_,api);
-  pass1_optimize_rows(b_,pc_,api);
+  pass1_optimize_rows(b_,pc_,api,zero_transparency_);
   pass2_api_to_bitstreams(api,rows);
   pass3_pad_rows(rows);
   pass4_bitstreams_to_bytevec(rows,pdat_);
+}
+
+static
+bool
+can_use_zero_transparency(const Bitmap            &b_,
+                          const RGBA8888Converter &pc_)
+{
+  bool has_transparency = false;
+
+  for(size_t y = 0; y < b_.h; ++y)
+    {
+      for(size_t x = 0; x < b_.w; ++x)
+        {
+          const RGBA8888 *pixel = b_.xy(x,y);
+
+          if(pixel->a == 0)
+            has_transparency = true;
+          else if(pc_.convert(pixel) == 0)
+            return false;
+        }
+    }
+
+  return has_transparency;
+}
+
+bool
+CelPacker::pack(const Bitmap            &b_,
+                const RGBA8888Converter &pc_,
+                ByteVec                 &pdat_,
+                const bool               allow_zero_transparency_)
+{
+  ByteVec regular_pdat;
+
+  ::pack_with_mode(b_,pc_,false,regular_pdat);
+  if(allow_zero_transparency_ && ::can_use_zero_transparency(b_,pc_))
+    {
+      ByteVec zero_pdat;
+
+      ::pack_with_mode(b_,pc_,true,zero_pdat);
+      if(zero_pdat.size() < regular_pdat.size())
+        {
+          pdat_ = std::move(zero_pdat);
+          return true;
+        }
+    }
+
+  pdat_ = std::move(regular_pdat);
+  return false;
 };
