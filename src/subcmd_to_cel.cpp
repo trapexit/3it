@@ -234,11 +234,12 @@ namespace l
   }
 
   static
-  void
+  bool
   find_smallest_regular(Bitmap  &bitmap_,
                         CelType &celtype_,
                         PLUT    &plut_,
-                        ByteVec &pdat_)
+                        ByteVec &pdat_,
+                        const bool allow_zero_transparency_)
   {
     CelType tmp_celtype;
     PLUT    tmp_plut;
@@ -248,6 +249,8 @@ namespace l
     ByteVec best_pdat;
     CelType best_celtype;
     Bitmap  best_bitmap;
+    bool    tmp_zero_transparency;
+    bool    best_zero_transparency = false;
     std::array<bool,2>    packeds   = {false, true};
     std::array<bool,2>    codeds    = {false, true};
     std::array<uint8_t,6> bpps      = {1,2,4,6,8,16};
@@ -269,7 +272,11 @@ namespace l
                 tmp_celtype.coded  = coded;
                 try
                   {
-                    convert::bitmap_to_cel(bitmap_,tmp_celtype,tmp_pdat,tmp_plut);
+                    tmp_zero_transparency = convert::bitmap_to_cel(bitmap_,
+                                                                   tmp_celtype,
+                                                                   tmp_pdat,
+                                                                   tmp_plut,
+                                                                   allow_zero_transparency_);
                   }
                 catch(...)
                   {
@@ -283,6 +290,7 @@ namespace l
                 best_pdat    = tmp_pdat;
                 best_plut    = tmp_plut;
                 best_bitmap  = bitmap_;
+                best_zero_transparency = tmp_zero_transparency;
               }
           }
       }
@@ -291,14 +299,16 @@ namespace l
     plut_    = best_plut;
     pdat_    = best_pdat;
     bitmap_  = best_bitmap;
+    return best_zero_transparency;
   }
 
   static
-  void
+  bool
   find_smallest_rotation(Bitmap  &bitmap_,
                          CelType &celtype_,
                          PLUT    &plut_,
-                         ByteVec &pdat_)
+                         ByteVec &pdat_,
+                         const bool allow_zero_transparency_)
   {
     CelType tmp_celtype;
     PLUT    tmp_plut;
@@ -308,6 +318,8 @@ namespace l
     ByteVec best_pdat;
     CelType best_celtype;
     Bitmap  best_bitmap;
+    bool    tmp_zero_transparency;
+    bool    best_zero_transparency = false;
     std::array<int,4>     rotations = {0,90,180,270};
     std::array<bool,2>    packeds   = {false, true};
     std::array<bool,2>    codeds    = {false, true};
@@ -333,7 +345,11 @@ namespace l
                     tmp_celtype.coded  = coded;
                     try
                       {
-                        convert::bitmap_to_cel(bitmap_,tmp_celtype,tmp_pdat,tmp_plut);
+                        tmp_zero_transparency = convert::bitmap_to_cel(bitmap_,
+                                                                       tmp_celtype,
+                                                                       tmp_pdat,
+                                                                       tmp_plut,
+                                                                       allow_zero_transparency_);
                       }
                     catch(...)
                       {
@@ -347,6 +363,7 @@ namespace l
                     best_pdat    = tmp_pdat;
                     best_plut    = tmp_plut;
                     best_bitmap  = bitmap_;
+                    best_zero_transparency = tmp_zero_transparency;
                   }
               }
           }
@@ -356,6 +373,7 @@ namespace l
     plut_    = best_plut;
     pdat_    = best_pdat;
     bitmap_  = best_bitmap;
+    return best_zero_transparency;
   }
 
   static
@@ -369,6 +387,10 @@ namespace l
     CelType celtype;
     CelControlChunk ccc;
     fs::path filepath;
+    bool zero_transparency;
+    const bool allow_zero_transparency =
+      ((opts_.ccb_flags.bgnd != Options::Flag::SET) &&
+       (opts_.pre0_flags.bgnd != Options::Flag::SET));
 
     celtype.bpp    = opts_.bpp;
     celtype.coded  = opts_.coded;
@@ -376,11 +398,23 @@ namespace l
     celtype.packed = opts_.packed;
 
     if(opts_.find_smallest.empty())
-      convert::bitmap_to_cel(bitmap_,celtype,pdat,plut);
+      zero_transparency = convert::bitmap_to_cel(bitmap_,
+                                                 celtype,
+                                                 pdat,
+                                                 plut,
+                                                 allow_zero_transparency);
     else if(opts_.find_smallest == "regular")
-      l::find_smallest_regular(bitmap_,celtype,plut,pdat);
+      zero_transparency = l::find_smallest_regular(bitmap_,
+                                                   celtype,
+                                                   plut,
+                                                   pdat,
+                                                   allow_zero_transparency);
     else if(opts_.find_smallest == "rotation")
-      l::find_smallest_rotation(bitmap_,celtype,plut,pdat);
+      zero_transparency = l::find_smallest_rotation(bitmap_,
+                                                    celtype,
+                                                    plut,
+                                                    pdat,
+                                                    allow_zero_transparency);
     else
       throw std::runtime_error("Unknown request");
 
@@ -391,6 +425,11 @@ namespace l
 
     l::modify_ccb_flags(opts_.ccb_flags,ccc);
     l::modify_pre0_flags(opts_.pre0_flags,ccc);
+    if(zero_transparency)
+      {
+        ccc.ccb_Flags &= ~CCB_BGND;
+        ccc.ccb_PRE0  &= ~PRE0_BGND;
+      }
 
     filepath = l::generate_filepath(filepath_,
                                     opts_.output_path,
