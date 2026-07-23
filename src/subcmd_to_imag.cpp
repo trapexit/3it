@@ -26,6 +26,7 @@
 #include "read_file.hpp"
 #include "stbi.hpp"
 #include "template.hpp"
+#include "vecrw.hpp"
 #include "video_image.hpp"
 
 #include "fmt.hpp"
@@ -39,6 +40,40 @@ namespace fs = std::filesystem;
 namespace l
 {
   static
+  convert::ImagMode
+  imag_mode(const std::string &mode_)
+  {
+    if(mode_ == "fixed")
+      return convert::ImagMode::FIXED;
+    if(mode_ == "v480")
+      return convert::ImagMode::V480;
+    if(mode_ == "vdl")
+      return convert::ImagMode::VDL;
+    if(mode_ == "xvdl")
+      return convert::ImagMode::XVDL;
+    if(mode_ == "v480-vdl")
+      return convert::ImagMode::V480_VDL;
+    if(mode_ == "v480-xvdl")
+      return convert::ImagMode::V480_XVDL;
+    if(mode_ == "z24")
+      return convert::ImagMode::Z24;
+
+    throw fmt::exception("unknown IMAG mode: {}",mode_);
+  }
+
+  static
+  convert::ImagPalette
+  imag_palette(const std::string &palette_)
+  {
+    if(palette_ == "legacy")
+      return convert::ImagPalette::LEGACY;
+    if(palette_ == "modern")
+      return convert::ImagPalette::MODERN;
+
+    throw fmt::exception("unknown IMAG palette: {}",palette_);
+  }
+
+  static
   fs::path
   generate_filepath(const fs::path  src_filepath_,
                     const fs::path  dst_filepath_,
@@ -49,6 +84,7 @@ namespace l
       {
         {"w",fmt::format("{}",bitmap_.w)},
         {"h",fmt::format("{}",bitmap_.h)},
+        {"_name",bitmap_.has("name") ? "_" + bitmap_.get("name") : ""},
         {"index",bitmap_.get("index","0")},
         {"_index",bitmap_.has("index") ? "_" + bitmap_.get("index") : ""}
       };
@@ -62,11 +98,16 @@ namespace l
   }
 
   static
-  void
+  bool
   to_imag(const fs::path        &input_filepath_,
           const Options::ToIMAG &opts_)
   {
     BitmapVec bitmaps;
+    convert::ImagEncodingOptions encoding;
+    bool success = true;
+
+    encoding.mode = l::imag_mode(opts_.mode);
+    encoding.palette = l::imag_palette(opts_.palette);
 
     convert::to_bitmap(input_filepath_,bitmaps);
     if(bitmaps.empty())
@@ -76,26 +117,39 @@ namespace l
       {
         int rv;
         FileRW f;
+        ByteVec encoded;
+        VecRW writer;
         fs::path output_filepath;
 
         output_filepath = l::generate_filepath(input_filepath_,
                                                opts_.output_path,
                                                bitmap);
 
+        writer.reset(&encoded);
+        convert::bitmap_to_imag(bitmap,writer,encoding);
+
         rv = f.open_write_trunc(output_filepath);
         if(rv < 0)
           {
             fmt::print(" - {}: {}\n",output_filepath,strerror(-rv));
+            success = false;
             continue;
           }
 
-        convert::bitmap_to_imag(bitmap,f);
+        f.w(encoded);
 
-        if((bitmap.w != 320) || (bitmap.h != 240))
+        if((encoding.mode == convert::ImagMode::V480) ||
+           (encoding.mode == convert::ImagMode::V480_VDL) ||
+           (encoding.mode == convert::ImagMode::V480_XVDL))
+          fmt::print(" - NOTE: v480 output requires a VDL_480RES display path; "
+                     "LoadImage() does not display it directly.\n");
+        else if((bitmap.w != 320) || (bitmap.h != 240))
           fmt::print(" - WARNING: 3DO SDK's LoadImage() really only supports 320x240.\n");
 
         fmt::print(" - {}\n",output_filepath);
       }
+
+    return success;
   }
 
   static
@@ -112,7 +166,7 @@ namespace l
   }
 
   static
-  void
+  bool
   handle_file(const fs::path        &filepath_,
               const Options::ToIMAG &opts_)
   {
@@ -121,12 +175,12 @@ namespace l
     if(l::same_extension(filepath_,opts_))
       {
         fmt::print(" - WARNING - skipping file with target extension\n");
-        return;
+        return true;
       }
 
     try
       {
-        l::to_imag(filepath_,opts_);
+        return l::to_imag(filepath_,opts_);
       }
     catch(const std::system_error &e_)
       {
@@ -136,20 +190,27 @@ namespace l
       {
         fmt::print(" - ERROR - {}\n",e_.what());
       }
+
+    return false;
   }
 
   static
-  void
+  bool
   handle_dir(const fs::path        &dirpath_,
              const Options::ToIMAG &opts_)
   {
+    bool success = true;
+
     for(const fs::directory_entry &de : fs::recursive_directory_iterator(dirpath_))
       {
         if(!de.is_regular_file())
           continue;
 
-        l::handle_file(de.path(),opts_);
+        if(!l::handle_file(de.path(),opts_))
+          success = false;
       }
+
+    return success;
   }
 }
 
@@ -158,14 +219,25 @@ namespace SubCmd
   void
   to_imag(const Options::ToIMAG &opts_)
   {
+    bool success = true;
+
     for(auto const &filepath : opts_.filepaths)
       {
         fs::directory_entry de(filepath);
 
         if(de.is_regular_file())
-          l::handle_file(de.path(),opts_);
+          {
+            if(!l::handle_file(de.path(),opts_))
+              success = false;
+          }
         else if(de.is_directory())
-          l::handle_dir(de.path(),opts_);
+          {
+            if(!l::handle_dir(de.path(),opts_))
+              success = false;
+          }
       }
+
+    if(!success)
+      throw fmt::exception("one or more IMAG conversions failed");
   }
 }

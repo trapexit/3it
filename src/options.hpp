@@ -119,6 +119,8 @@ public:
   {
     PathVec filepaths;
     Path    output_path;
+    std::string mode = "fixed";
+    std::string palette = "legacy";
     bool    ignore_target_ext = false;
   };
 

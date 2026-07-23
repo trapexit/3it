@@ -6,9 +6,10 @@ PGID := $(shell id -g)
 
 OUTPUT = build/$(EXE)
 
-CC    = $(COMPILER_PREFIX)-gcc
-CXX   = $(COMPILER_PREFIX)-g++
-STRIP = $(COMPILER_PREFIX)-strip
+TOOL_PREFIX := $(if $(strip $(COMPILER_PREFIX)),$(strip $(COMPILER_PREFIX))-)
+CC    = $(TOOL_PREFIX)gcc
+CXX   = $(TOOL_PREFIX)g++
+STRIP = $(TOOL_PREFIX)strip
 
 ifeq ($(NOLTO),1)
 LTO :=

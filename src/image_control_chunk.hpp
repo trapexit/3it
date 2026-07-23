@@ -14,7 +14,7 @@ public:
   int32_t  w;                   /* width in pixels */
   int32_t  h;                   /* height in pixels */
   int32_t  bytesperrow;         /* may include pad bytes at row end for alignment */
-  uint8_t  bitsperpixel;        /* 8, 16, 24 */
+  uint8_t  bitsperpixel;        /* 8, 16, 24, 32 */
   uint8_t  numcomponents;       /* 3 => RGB (or YUV) , 1 => color index */
                                 /* 3 => RGB (8  16 or 24 bits per pixel) */
                                 /* 8 bit is 332 RGB (or YUV) */
@@ -36,6 +36,7 @@ public:
   uint8_t  pixelorder;          /* 0 => (0,0), (1,0), (2,0) (x,y) is (row,column) */
                                 /* 1 => (0,0), (0,1), (1,0), (1,1) Sherrie LRform */
 				/* 2 => (0,1), (0,0), (1,1), (1,0) UGO LRform */
+                                /* 3 => z24 paired-line 24-bit display format */
   uint8_t  version;             /* file format version identifier. 0 for now */
 
 // public:
