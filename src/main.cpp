@@ -383,6 +383,20 @@ generate_to_imag_argparser(CLI::App        &app_,
     ->default_val(default_output_path)
     ->default_str(default_output_path)
     ->take_last();
+  subcmd->add_option("--mode",options_.mode)
+    ->description("IMAG encoding: fixed, v480, vdl, xvdl, v480-vdl, "
+                  "v480-xvdl, or z24")
+    ->check(CLI::IsMember({"fixed","v480","vdl","xvdl",
+                           "v480-vdl","v480-xvdl","z24"}))
+    ->default_val("fixed")
+    ->default_str("fixed")
+    ->take_last();
+  subcmd->add_option("--palette",options_.palette)
+    ->description("Custom VDL palette selection: legacy or modern")
+    ->check(CLI::IsMember({"legacy","modern"}))
+    ->default_val("legacy")
+    ->default_str("legacy")
+    ->take_last();
   subcmd->add_option("-i,--ignore-target-ext",options_.ignore_target_ext)
     ->description("Ignore files with target extension")
     ->default_val(false)
@@ -680,10 +694,12 @@ main(int    argc_,
   catch(const std::system_error &e_)
     {
       fmt::print("{} ({})\n",e_.what(),e_.code().message());
+      return 1;
     }
   catch(const std::runtime_error &e_)
     {
       fmt::print("{}\n",e_.what());
+      return 1;
     }
 
   return 0;

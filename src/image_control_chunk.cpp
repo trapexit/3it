@@ -77,6 +77,8 @@ ImageControlChunk::pixelorder_str() const
       return "Sherrie LRForm";
     case 2:
       return "UGO LRForm";
+    case 3:
+      return "z24 paired-line";
     default:
       return "unknown";
     }

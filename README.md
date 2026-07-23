@@ -45,8 +45,8 @@ All subcommands have their own help and arguments. Use `--help` or
 * All images are first converted to RGBA8888 before converting to the
   target format.
 * No dithering is done by 3it when reducing bit depth.
-* VDLP is not considered at all. The assumption is that the fixed,
-  default CLUT is used. IE a linear dark to light gradiant.
+* IMAG decoding applies embedded single-image and per-scanline VDL
+  palettes. Other image types continue to assume the fixed display CLUT.
 * When converting to coded (paletted) formats the number of colors
   will be checked. The transparent color is not included.
 * The 3DO CEL renderer has many features. A good number of them are
@@ -59,6 +59,57 @@ All subcommands have their own help and arguments. Use `--help` or
 
 
 ## File Types
+
+### IMAG
+
+`to-imag` supports seven encodings selected with `--mode`:
+
+* `fixed` writes the traditional 16-bit LRFORM image using the fixed
+  display CLUT. This remains the default.
+* `v480` writes a spatial 320x480 16-bit LRFORM image using the fixed display
+  CLUT. All 480 source rows remain distinct. The IMAG does not embed a VDL and
+  requires an external `VDL_480RES` display path; it is not compatible with
+  the SDK's ordinary `LoadImage()` display path.
+* `vdl` writes 16-bit LRFORM data with one custom VDL palette for the
+  complete image.
+* `xvdl` writes 16-bit LRFORM data with one custom VDL palette per
+  logical scanline.
+* `v480-vdl` is the 320x480 spatial form of `vdl`. Its VDL record selects
+  480-resolution DMA and disables vertical interpolation.
+* `v480-xvdl` is the 320x480 spatial form of `xvdl`, with one custom palette
+  per spatial row and the same 480-resolution VDL controls.
+* `z24` writes two 15-bit samples per logical pixel in the 32-bit paired-line
+  format used by the 24-bit slideshow example. The IMAG does not embed a VDL:
+  the slideshow's external 480/576-line VDL places the samples in the two
+  display fields and enables vertical interpolation. The displayed component
+  is the truncated average of the two programmed CLUT values, which reconstructs
+  the logical 8-bit value exactly.
+
+Custom VDL modes accept `--palette legacy` (the default SDK-compatible
+box-population-length selection) or `--palette modern` (a deterministic
+error-reducing refinement of the legacy palette).
+
+Examples:
+
+```
+3it to-imag source.png --mode vdl --palette legacy -o source_1vdl.imag
+3it to-imag source.png --mode xvdl --palette modern -o source_xvdl.imag
+3it to-imag source_320x480.png --mode v480 -o source_480.imag
+3it to-imag source_320x480.png --mode v480-vdl -o source_480_vdl.imag
+3it to-imag source_320x480.png --mode v480-xvdl -o source_480_xvdl.imag
+3it to-png source_480.imag -o source_320x480.png
+3it to-imag source.png --mode z24 -o source_z24.imag
+```
+
+The 16-bit LRFORM modes require an even image height; all three `v480` modes
+additionally require an exact 320x480 input. They store spatial vertical detail
+rather than the paired color samples used by `z24`. The application must place
+the image in the field buffers expected by its `VDL_480RES` setup. The custom
+VDL records are included for palette/control data, but the application still
+has to install and patch its 480-line display path; the SDK's ordinary
+`LoadImage()` path does not do this. `z24` is intended for static displays using
+the matching slideshow VDL; ordinary cels do not render normally into that
+double-height framebuffer.
 
 ### LRFORM
 

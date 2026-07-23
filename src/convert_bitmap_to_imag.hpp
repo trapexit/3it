@@ -23,7 +23,31 @@
 
 namespace convert
 {
+  enum class ImagMode
+    {
+      FIXED,
+      V480,
+      VDL,
+      XVDL,
+      V480_VDL,
+      V480_XVDL,
+      Z24
+    };
+
+  enum class ImagPalette
+    {
+      LEGACY,
+      MODERN
+    };
+
+  struct ImagEncodingOptions
+  {
+    ImagMode    mode    = ImagMode::FIXED;
+    ImagPalette palette = ImagPalette::LEGACY;
+  };
+
   void
   bitmap_to_imag(const Bitmap &bitmap,
-                 DataRW       &data);
+                 DataRW       &data,
+                 const ImagEncodingOptions &options = {});
 }
