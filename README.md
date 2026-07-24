@@ -4,6 +4,18 @@ An all purpose 3DO image conversion tool. Can convert to and from JPEG, PNG,
 BMP, 3DO CEL, 3DO Banner, 3DO ANIM, 3DO IMAG, NFS 3SH, and NFS wwww formats.
 Supports coded and uncoded, packed and unpacked, linear and lrform CELs.
 
+## Build
+
+```bash
+make
+make NDEBUG=1
+make SANITIZE=1
+make clean
+make release
+```
+
+Run `make help` for installation, cleanup, and direct Zig
+cross-compilation targets.
 
 ## Usage
 

@@ -41,6 +41,8 @@
 #include "base.h"
 
 #ifndef FMT_MODULE
+#  include <stdlib.h>  // malloc, free
+
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
 #  include <cstdint>  // uint32_t

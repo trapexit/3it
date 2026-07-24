@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd /src
-make "$@"
+make release-base

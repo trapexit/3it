@@ -1,5 +1,0 @@
-COMPILER_PREFIX = i686-w64-mingw32
-PLATFORM = win32
-EXE = 3it_win32.exe
-
-include Makefile.base
