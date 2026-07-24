@@ -10,13 +10,20 @@ JOBS := $(shell nproc)
 
 OUTPUT = build/$(EXE)
 
+.DEFAULT_GOAL := all
+
 CC    ?= gcc
 CXX   ?= g++
 STRIP ?= strip
 
 ifeq ($(NDEBUG),1)
-OPT := -O3 -flto -static
-LDFLAGS += -Wl,--strip-all
+OPT := -Os -flto -ffunction-sections -fdata-sections
+ifeq ($(filter %-macos,$(TARGET)),)
+OPT += -static
+LDFLAGS += -Wl,--gc-sections -Wl,--strip-all
+else
+LDFLAGS += -Wl,-dead_strip -Wl,-S -Wl,-x
+endif
 else
 OPT := -O0 -ggdb -ftrapv
 endif
@@ -25,7 +32,7 @@ ifeq ($(SANITIZE),1)
 OPT += -fsanitize=address,undefined
 endif
 
-CFLAGS = $(OPT) -Wall -Wextra -Wpedantic -Wshadow
+CFLAGS = $(OPT) -Wall -Wextra -Wpedantic -Wshadow -Wno-error=date-time
 CXXFLAGS = $(OPT) -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor -std=c++17
 CPPFLAGS ?= -MMD -MP
 
@@ -55,7 +62,7 @@ help:
 	@echo "  distclean    Deep clean (git clean -xfd)"
 	@echo ""
 	@echo "Options (make <target> VAR=val):"
-	@echo "  NDEBUG=1     Release build (-O3 -flto -static)"
+	@echo "  NDEBUG=1     Release build optimized for size"
 	@echo "  SANITIZE=1   AddressSanitizer + UBSan"
 	@echo "  TARGET=...   Cross-compilation target suffix"
 	@echo "  PREFIX=\$${HOME}/dev/3do-devkit  Install prefix"
@@ -100,22 +107,26 @@ release-base: clean
 		CC="zig cc -target x86_64-linux-musl" \
 		CXX="zig c++ -target x86_64-linux-musl" \
 		STRIP="zig llvm-strip" \
-		TARGET="x86_64-linux-musl"
+		TARGET="x86_64-linux-musl" \
+		OPT="-Oz -flto -ffunction-sections -fdata-sections -static"
 	$(MAKE) NDEBUG=1 -j$(JOBS) \
 		CC="zig cc -target aarch64-linux-musl" \
 		CXX="zig c++ -target aarch64-linux-musl" \
 		STRIP="zig llvm-strip" \
-		TARGET="aarch64-linux-musl"
+		TARGET="aarch64-linux-musl" \
+		OPT="-Oz -flto -ffunction-sections -fdata-sections -static"
 	$(MAKE) NDEBUG=1 -j$(JOBS) \
 		CC="zig cc -target x86_64-windows-gnu" \
 		CXX="zig c++ -target x86_64-windows-gnu" \
 		STRIP="zig llvm-strip" \
-		TARGET="x86_64-windows-gnu.exe" OPT="-O3 -static"
+		TARGET="x86_64-windows-gnu.exe" \
+		OPT="-Oz -ffunction-sections -fdata-sections -static"
 	$(MAKE) NDEBUG=1 -j$(JOBS) \
 		CC="zig cc -target aarch64-macos" \
 		CXX="zig c++ -target aarch64-macos" \
 		STRIP="zig llvm-strip" \
-		TARGET="aarch64-macos" OPT="-O3"
+		TARGET="aarch64-macos" \
+		OPT="-Oz -ffunction-sections -fdata-sections"
 
 release:
 	podman build -t localhost/cxxbuilder buildtools/
