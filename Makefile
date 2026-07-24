@@ -50,7 +50,7 @@ help:
 	@echo "  release      Cross-compile release builds via podman"
 	@echo "  release-base Cross-compile release builds directly with zig"
 	@echo "  strip        Strip debug symbols from binary"
-	@echo "  install      Install binary to \$${DESTDIR}\$${PREFIX}/bin"
+	@echo "  install      Install binary to \$${DESTDIR}\$${BINDIR}"
 	@echo "  clean        Remove build artifacts"
 	@echo "  distclean    Deep clean (git clean -xfd)"
 	@echo ""
@@ -58,16 +58,18 @@ help:
 	@echo "  NDEBUG=1     Release build (-O3 -flto -static)"
 	@echo "  SANITIZE=1   AddressSanitizer + UBSan"
 	@echo "  TARGET=...   Cross-compilation target suffix"
-	@echo "  PREFIX=/usr/local  Install prefix"
-	@echo "  BINDIR=\$${PREFIX}/bin  Install directory"
+	@echo "  PREFIX=\$${HOME}/dev/3do-devkit  Install prefix"
+	@echo "  BINDIR=\$${PREFIX}/bin/tools/linux  Install directory"
 	@echo ""
 	@echo "Cross-compilation (requires zig):"
 	@echo "  make release-base"
 	@echo "    Builds: x86_64-linux-musl, aarch64-linux-musl,"
 	@echo "            x86_64-windows-gnu.exe, aarch64-macos"
 
-$(OUTPUT): builddir $(OBJS)
+$(OUTPUT): $(OBJS) | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJS) $(LDFLAGS)
+
+$(OBJS): | $(BUILDDIR)
 
 strip: $(OUTPUT)
 	$(STRIP) --strip-all $(OUTPUT)
@@ -84,11 +86,11 @@ clean:
 distclean: clean
 	git clean -xfd
 
-builddir:
-	mkdir -p $(BUILDDIR)
+$(BUILDDIR):
+	mkdir -p $@
 
-PREFIX ?= /usr/local
-BINDIR ?= $(PREFIX)/bin
+PREFIX ?= $(HOME)/dev/3do-devkit
+BINDIR ?= $(PREFIX)/bin/tools/linux
 
 install: $(OUTPUT)
 	install -Dm755 $(OUTPUT) $(DESTDIR)$(BINDIR)/$(EXE)
@@ -123,6 +125,6 @@ release:
 		-e ZIG_LOCAL_CACHE_DIR=/tmp/zig-local-cache \
 		-v ${PWD}:/src:Z localhost/cxxbuilder "/src/buildtools/podman-make-release"
 
-.PHONY: help all clean distclean builddir release release-base strip install
+.PHONY: help all clean distclean release release-base strip install
 
 -include $(DEPS)

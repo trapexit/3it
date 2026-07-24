@@ -18,6 +18,8 @@ public:
     u8[3] = '?';
   }
 
+  ChunkID(const ChunkID &v_) = default;
+
   ChunkID(const uint8_t a_,
           const uint8_t b_,
           const uint8_t c_,
@@ -58,12 +60,7 @@ public:
     return *this;
   }
 
-  ChunkID&
-  operator=(const ChunkID &v_)
-  {
-    u32 = v_.u32;
-    return *this;
-  }
+  ChunkID& operator=(const ChunkID &v_) = default;
 
 public:
   bool

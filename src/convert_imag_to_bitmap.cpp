@@ -83,6 +83,20 @@ namespace
   }
 
   static
+  size_t
+  vdl_chunk_size(const uint32_t count_,
+                 const size_t   record_size_)
+  {
+    constexpr size_t HEADER_SIZE = sizeof(uint32_t);
+
+    if(count_ > ((std::numeric_limits<size_t>::max() - HEADER_SIZE) /
+                 record_size_))
+      throw fmt::exception("VDL record count is too large: {}",count_);
+
+    return (HEADER_SIZE + (size_t(count_) * record_size_));
+  }
+
+  static
   uint8_t
   startup_clut_value(const uint8_t value_)
   {
@@ -270,6 +284,7 @@ namespace
   parse_vdl(cspan<uint8_t> vdl_,
             const size_t   height_)
   {
+    constexpr size_t VDL_HEADER_SIZE = sizeof(uint32_t);
     constexpr size_t A_VDL_RECORD_SIZE = 36 * sizeof(uint32_t);
     constexpr size_t SDK_VDL_RECORD_SIZE = 40 * sizeof(uint32_t);
     std::vector<VDLState> states;
@@ -277,8 +292,9 @@ namespace
     uint32_t count;
     size_t record_size;
     size_t expected_size;
+    size_t sdk_expected_size;
 
-    if(vdl_.size() < sizeof(uint32_t))
+    if(vdl_.size() < VDL_HEADER_SIZE)
       throw fmt::exception("VDL chunk is truncated");
 
     count = u32be(vdl_.data());
@@ -286,29 +302,25 @@ namespace
       throw fmt::exception("VDL chunk contains no records");
     if(count > height_)
       throw fmt::exception("VDL record count {} exceeds image height {}",count,height_);
-    if(count > ((std::numeric_limits<size_t>::max() - 4) /
-                A_VDL_RECORD_SIZE))
-      throw fmt::exception("VDL record count is too large: {}",count);
 
-    expected_size = 4 + (size_t(count) * A_VDL_RECORD_SIZE);
+    expected_size = vdl_chunk_size(count,A_VDL_RECORD_SIZE);
+    sdk_expected_size = vdl_chunk_size(count,SDK_VDL_RECORD_SIZE);
     if(vdl_.size() == expected_size)
       record_size = A_VDL_RECORD_SIZE;
-    else if((count <= ((std::numeric_limits<size_t>::max() - 4) /
-                       SDK_VDL_RECORD_SIZE)) &&
-            (vdl_.size() ==
-             (4 + (size_t(count) * SDK_VDL_RECORD_SIZE))))
+    else if(vdl_.size() == sdk_expected_size)
       record_size = SDK_VDL_RECORD_SIZE;
     else
       throw fmt::exception("VDL data size {} does not match {} records "
                            "({} documented or {} SDK bytes)",
                            vdl_.size(),count,expected_size,
-                           4 + (size_t(count) * SDK_VDL_RECORD_SIZE));
+                           sdk_expected_size);
 
     current.clut = startup_clut();
     states.reserve(count);
     for(size_t record_idx = 0; record_idx < count; record_idx++)
       {
-        const uint8_t *record = vdl_.data() + 4 + (record_idx * record_size);
+        const uint8_t *record =
+          vdl_.data() + VDL_HEADER_SIZE + (record_idx * record_size);
         const bool documented = (record_size == A_VDL_RECORD_SIZE);
         const uint32_t control = u32be(record + (documented ? 4 : 0));
         const uint32_t command_count = documented ? 33 :

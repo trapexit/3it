@@ -244,7 +244,7 @@ namespace l
   void
   print_3do_image_info(cspan<uint8_t> data_)
   {
-    ImageControlChunk icc;
+    ImageControlChunk icc{};
     ChunkVec chunks;
 
     ChunkReader::chunkify(data_,chunks);
@@ -257,6 +257,9 @@ namespace l
             break;
           }
       }
+
+    if(!icc)
+      throw fmt::exception("IMAG chunk is missing or invalid");
 
     fmt::print("  - id: {}\n"
                "  - w: {}\n"
