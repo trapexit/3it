@@ -58,6 +58,9 @@ $(BUILDDIR)/%.cpp.o: src/%.cpp
 clean:
 	rm -rfv build/
 
+distclean: clean
+	git clean -xfd
+
 builddir:
 	mkdir -p $(BUILDDIR)
 
@@ -79,6 +82,6 @@ builder:
 release: build-builder x64-linux x64-windows aarch64-linux aarch64-macos
 
 
-.PHONY: clean builddir release docker-release build-builder
+.PHONY: clean distclean builddir release docker-release build-builder
 
 -include $(DEPS)
