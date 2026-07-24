@@ -48,14 +48,6 @@
 
 namespace fs = std::filesystem;
 
-#define CODED    (1 << 7)
-#define UNCODED  (0 << 7)
-#define PACKED   (1 << 6)
-#define UNPACKED (0 << 6)
-#define LRFORM   (1 << 5)
-#define LINEAR   (0 << 5)
-
-
 static
 u32
 round_up(const u32 number_,
@@ -391,7 +383,7 @@ convert::lrform_to_bitmap(cspan<u8>  data_,
   else
     throw fmt::exception("data must be exactly 153600 or 202752 bytes");
 
- convert:uncoded_unpacked_lrform_16bpp_to_bitmap(pdat,bitmaps_.back());
+  convert::uncoded_unpacked_lrform_16bpp_to_bitmap(pdat,bitmaps_.back());
 }
 
 void
@@ -1253,54 +1245,57 @@ convert::bitmap_to_cel(const Bitmap  &bitmap_,
                        PLUT          &plut_,
                        const bool     allow_zero_transparency_)
 {
-  switch(celtype_.switchable)
+  switch(CEL_TYPE(celtype_.coded,
+                  celtype_.packed,
+                  celtype_.lrform,
+                  celtype_.bpp))
     {
-    case (UNCODED|UNPACKED|LRFORM|BPP_16):
+    case UNCODED_UNPACKED_LRFORM_16BPP:
       convert::bitmap_to_uncoded_unpacked_lrform_16bpp(bitmap_,pdat_);
       return false;
 
-    case (UNCODED|UNPACKED|LINEAR|BPP_8):
+    case UNCODED_UNPACKED_LINEAR_8BPP:
       convert::bitmap_to_uncoded_unpacked_linear_8bpp(bitmap_,pdat_);
       return false;
-    case (UNCODED|UNPACKED|LINEAR|BPP_16):
+    case UNCODED_UNPACKED_LINEAR_16BPP:
       convert::bitmap_to_uncoded_unpacked_linear_16bpp(bitmap_,pdat_);
       return false;
 
-    case (UNCODED|PACKED|LINEAR|BPP_8):
+    case UNCODED_PACKED_LINEAR_8BPP:
       return convert::bitmap_to_uncoded_packed_linear_8bpp(bitmap_,pdat_,allow_zero_transparency_);
-    case (UNCODED|PACKED|LINEAR|BPP_16):
+    case UNCODED_PACKED_LINEAR_16BPP:
       return convert::bitmap_to_uncoded_packed_linear_16bpp(bitmap_,pdat_,allow_zero_transparency_);
 
-    case (CODED|UNPACKED|LINEAR|BPP_1):
+    case CODED_UNPACKED_LINEAR_1BPP:
       convert::bitmap_to_coded_unpacked_linear_1bpp(bitmap_,pdat_,plut_);
       return false;
-    case (CODED|UNPACKED|LINEAR|BPP_2):
+    case CODED_UNPACKED_LINEAR_2BPP:
       convert::bitmap_to_coded_unpacked_linear_2bpp(bitmap_,pdat_,plut_);
       return false;
-    case (CODED|UNPACKED|LINEAR|BPP_4):
+    case CODED_UNPACKED_LINEAR_4BPP:
       convert::bitmap_to_coded_unpacked_linear_4bpp(bitmap_,pdat_,plut_);
       return false;
-    case (CODED|UNPACKED|LINEAR|BPP_6):
+    case CODED_UNPACKED_LINEAR_6BPP:
       convert::bitmap_to_coded_unpacked_linear_6bpp(bitmap_,pdat_,plut_);
       return false;
-    case (CODED|UNPACKED|LINEAR|BPP_8):
+    case CODED_UNPACKED_LINEAR_8BPP:
       convert::bitmap_to_coded_unpacked_linear_8bpp(bitmap_,pdat_,plut_);
       return false;
-    case (CODED|UNPACKED|LINEAR|BPP_16):
+    case CODED_UNPACKED_LINEAR_16BPP:
       convert::bitmap_to_coded_unpacked_linear_16bpp(bitmap_,pdat_,plut_);
       return false;
 
-    case (CODED|PACKED|LINEAR|BPP_1):
+    case CODED_PACKED_LINEAR_1BPP:
       return convert::bitmap_to_coded_packed_linear_1bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
-    case (CODED|PACKED|LINEAR|BPP_2):
+    case CODED_PACKED_LINEAR_2BPP:
       return convert::bitmap_to_coded_packed_linear_2bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
-    case (CODED|PACKED|LINEAR|BPP_4):
+    case CODED_PACKED_LINEAR_4BPP:
       return convert::bitmap_to_coded_packed_linear_4bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
-    case (CODED|PACKED|LINEAR|BPP_6):
+    case CODED_PACKED_LINEAR_6BPP:
       return convert::bitmap_to_coded_packed_linear_6bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
-    case (CODED|PACKED|LINEAR|BPP_8):
+    case CODED_PACKED_LINEAR_8BPP:
       return convert::bitmap_to_coded_packed_linear_8bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
-    case (CODED|PACKED|LINEAR|BPP_16):
+    case CODED_PACKED_LINEAR_16BPP:
       return convert::bitmap_to_coded_packed_linear_16bpp(bitmap_,pdat_,plut_,allow_zero_transparency_);
 
     default:

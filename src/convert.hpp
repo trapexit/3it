@@ -28,17 +28,12 @@
 #include <filesystem>
 
 
-union CelType
+struct CelType
 {
-  struct
-  {
-    u8 bpp:5;
-    u8 lrform:1;
-    u8 packed:1;
-    u8 coded:1;
-  };
-
-  u8 switchable;
+  u8 bpp;
+  bool lrform;
+  bool packed;
+  bool coded;
 };
 
 namespace convert

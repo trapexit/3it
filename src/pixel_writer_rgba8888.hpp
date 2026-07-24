@@ -10,6 +10,8 @@ protected:
   u64     _idx;
 
 public:
+  virtual ~PixelWriterRGBA8888() = default;
+
   void init(Bitmap &b);
 
 public:

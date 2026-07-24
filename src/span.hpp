@@ -111,8 +111,10 @@ public:
     _off  = off_;
   }
 
+  cspan(const cspan<T> &data_) = default;
+
   cspan(const cspan<T> &data_,
-        const size_t    off_ = 0)
+        const size_t    off_)
   {
     _data = data_._data;
     _size = data_._size - off_;
@@ -137,6 +139,8 @@ public:
   }
 
 public:
+  cspan<T>& operator=(const cspan<T> &data_) = default;
+
   cspan<T>&
   operator=(const std::vector<T> &vec_)
   {

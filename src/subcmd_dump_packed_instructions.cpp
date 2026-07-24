@@ -65,7 +65,6 @@ namespace l
     u32 pixels_read;
     u32 width;
     u32 line_size;
-    u32 start_offset;
 
     pixels_read = 0;
     bpp = ccc_.bpp();
@@ -188,7 +187,9 @@ namespace l
 
             fmt::print("data: ");
             bs.seek(offset * BITS_PER_BYTE);
-            for(u64 i = offset; i < next_offset; i+=4)
+            for(u64 word_offset = offset;
+                word_offset < next_offset;
+                word_offset += 4)
               {
                 u32 x = bs.read(BITS_PER_BYTE * 4);
                 fmt::print("{:08X} ",x);

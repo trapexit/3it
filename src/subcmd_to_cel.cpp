@@ -579,10 +579,10 @@ namespace l
           {
             auto diriter = fs::recursive_directory_iterator(filepath);
 
-            for(const fs::directory_entry &de : diriter)
+            for(const fs::directory_entry &entry : diriter)
               {
-                if(de.is_regular_file())
-                  rv.emplace_back(de.path());
+                if(entry.is_regular_file())
+                  rv.emplace_back(entry.path());
               }
           }
       }

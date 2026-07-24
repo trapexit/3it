@@ -138,14 +138,14 @@ PackedDataPacketVec::size_in_bits() const
 u32
 PackedDataPacket::size_in_bits() const
 {
-  const u32 count = pixel_count();
+  const u32 packet_pixel_count = pixel_count();
 
   switch(type)
     {
     case PACK_LITERAL:
       return (DATA_PACKET_DATA_TYPE_SIZE +
               DATA_PACKET_PIXEL_COUNT_SIZE +
-              (count * bpp));
+              (packet_pixel_count * bpp));
     case PACK_TRANSPARENT:
       return (DATA_PACKET_DATA_TYPE_SIZE +
               DATA_PACKET_PIXEL_COUNT_SIZE);
